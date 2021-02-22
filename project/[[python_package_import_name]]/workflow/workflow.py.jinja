@@ -17,6 +17,7 @@ from [[python_package_import_name]].workflow.product_entity import ProductEntity
 from [[python_package_import_name]].utils.sentry import capture_exception
 
 
+[% raw %]
 class XLMRWorkflow(Workflow):
     """
     An instance of this class provides the workflow to access:
@@ -201,3 +202,4 @@ class XLMRWorkflow(Workflow):
         intent = self.classify()
         entities = self.extract()
         self.output = intent, entities
+[% endraw %]
