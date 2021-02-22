@@ -4,9 +4,9 @@ import attr
 from flask import jsonify, request
 from dialogy.types.intent import Intent
 
-from [[python_package_import_name]].api import app
-from [[python_package_import_name]] import constants as const
-from [[python_package_import_name]].controller.prediction import predict_wrapper
+from [[ python_package_import_name ]].api import app
+from [[ python_package_import_name ]] import constants
+from [[ python_package_import_name ]].controller.prediction import predict_wrapper
 
 
 @app.route("/", methods=["GET"])
@@ -19,16 +19,16 @@ def health_check():
 
 @app.route("/predict/<lang>/<project_name>/", methods=["POST"])
 def slu(_, __):
-    utterance: List[List[Dict[str, Any]]] = request.json.get(const.ALTERNATIVES)
-    context: str = request.json.get(const.CONTEXT)
+    utterance: List[List[Dict[str, Any]]] = request.json.get(constants.ALTERNATIVES)
+    context: str = request.json.get(constants.CONTEXT)
 
     predict = predict_wrapper()
 
     if not utterance:
-        utterance = [[{const.TRANSCRIPT: request.json.get(const.TEXT)}]]
+        utterance = [[{constants.TRANSCRIPT: request.json.get(constants.TEXT)}]]
 
     if not utterance:
-        return {const.INTENTS: [attr.asdict(Intent(name="_oos_", score=1))]}
+        return {constants.INTENTS: [attr.asdict(Intent(name="_oos_", score=1))]}
 
     response = predict(utterance, context)
 
