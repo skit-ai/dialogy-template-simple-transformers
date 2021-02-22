@@ -89,7 +89,7 @@ def remove_older_data_versions(current_version: str) -> None:
 
 def vcs_add() -> None:
     """
-    Run dvc/git commands in a dirty way. 😉
+    Run dvc/git commands in a dirty way.
     """
     subprocess.call(["dvc", "add", "data"], shell=False)
     subprocess.call(["git", "add", "data.dvc"], shell=False)
