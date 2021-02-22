@@ -2,6 +2,7 @@ import os
 import sentry_sdk
 from flask import Flask
 from sentry_sdk.integrations.flask import FlaskIntegration
+from copier import copy
 
 sentry_sdk.init(
     dsn=os.environ["SENTRY_DSN"],

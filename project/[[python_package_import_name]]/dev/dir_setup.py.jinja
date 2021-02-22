@@ -37,7 +37,7 @@ def create_data_directory(version: str, force: bool = False) -> None:
         version (str): Semver for the dataset, model and metrics.
         force (bool, optional): Flag to overwrite existing directory. Defaults to False.
     """
-    # 👇 will raise an exception for invalid semver. So we don't have to catch it.
+    # This will raise an exception for invalid semver. So we don't have to catch it.
     semver.VersionInfo.parse(version)
 
     base_module_path = os.path.join(const.DATA, version)
@@ -63,7 +63,7 @@ def copy_data_directory(copy_from: str, copy_to: str, force: bool = False) -> No
         copy_to (str): semver -> Destination directory.
         force (bool, optional): Flag to overwrite existing directory. Defaults to False.
     """
-    # 👇 will raise an exception for invalid semver. So we don't have to catch it.
+    # This will raise an exception for invalid semver. So we don't have to catch it.
     semver.VersionInfo.parse(copy_from)
     semver.VersionInfo.parse(copy_to)
 
