@@ -1,0 +1,18 @@
+SHELL := /bin/zsh
+python_version = 3.8.5
+
+lint:
+	@echo -e "🐟🐳🐠🦐"
+	@echo -e "Running linter 📃"
+	@black [[python_package_import_name]]
+	@echo -e "🐡🐲🦑🐙"
+	@echo -e "Running type checker 🔍"
+	@mypy dialogy_simple_transformers_template
+
+test: lint ## Run the tests.
+	@echo -e "🦎🐊🐢🐸"
+	@pytest --cov=src --cov-report html --cov-report term:skip-covered tests/
+	@echo -e "The tests pass!" 
+	@echo -e "✨ 🍰 ✨"
+
+all: test

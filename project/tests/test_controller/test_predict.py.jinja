@@ -1,0 +1,14 @@
+from [[python_package_import_name]].controller.prediction import predict
+from [[python_package_import_name]] import constants as const
+
+
+def test_response():
+    output = predict(["yes"])
+    assert output[const.INTENTS] is not None
+    assert output[const.ENTITIES] is not None
+
+
+def test_ood():
+    output = predict(["i want credit card"])
+    assert output[const.INTENTS] is not None
+    assert output[const.ENTITIES][0] is not None

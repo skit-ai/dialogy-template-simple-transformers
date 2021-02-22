@@ -1,0 +1,46 @@
+import os
+from tqdm import tqdm  # type: ignore
+import pandas as pd  # type: ignore
+
+from sklearn.metrics import classification_report
+from seqeval.metrics import classification_report as multi_label_report
+
+from [[python_package_import_name]] import constants as const
+
+
+def map_tag(tag, config):
+    if not config:
+        return tag
+    return config.get(tag, tag)
+
+
+def read_multiclass_dataset_csv(full_path, alias=None, **kwargs):
+    df = pd.read_csv(full_path, **kwargs)
+    alias = alias or {}
+
+    for i, row in tqdm(df.iterrows(), total=len(df)):
+        tag = map_tag(row[const.TAG], alias)
+        df.loc[i, const.TAG] = tag
+
+    return df
+
+
+def read_multilabel_dataset_csv(full_path, **kwargs):
+    return pd.read_csv(full_path, **kwargs)[
+        [const.SENTENCE_ID, const.WORDS, const.LABELS]
+    ]
+
+
+def save_report(classification_report_output, metrics_dir):
+    report = pd.DataFrame(classification_report_output).T
+    report.index.names = [const.METRICS]
+    report.to_csv(os.path.join(metrics_dir, const.S_REPORT))
+
+
+def save_classification_report(true_labels, pred_labels, metrics_dir):
+    report = classification_report(true_labels, pred_labels, digits=2, output_dict=True)
+    save_report(report, metrics_dir)
+
+
+def save_ner_report(results, metrics_dir):
+    save_report(results[const.REPORT], metrics_dir)

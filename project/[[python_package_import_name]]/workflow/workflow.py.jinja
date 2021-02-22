@@ -1,0 +1,203 @@
+"""
+Imports:
+
+- XLMRWorkflow
+"""
+from typing import Any, Dict, List
+
+import numpy as np
+from dialogy.workflow import Workflow  # type: ignore
+from dialogy.types.intent import Intent
+from dialogy.types.entity import BaseEntity
+
+from [[python_package_import_name]].utils.logger import log
+from [[python_package_import_name]] import constants as const
+from [[python_package_import_name]].utils.config import Config
+from [[python_package_import_name]].workflow.product_entity import ProductEntity
+from [[python_package_import_name]].utils.sentry import capture_exception
+
+
+class XLMRWorkflow(Workflow):
+    """
+    An instance of this class provides the workflow to access:
+
+    - XLMR classifier
+    - XLMR NER
+    - Duckling entities
+
+    Do note, XLMR NER would need parsing unlike Duckling which does detection and parsing both.
+    To use Duckling, provide DucklingParser that ships with Dialogy as a preprocessor.
+    """
+    def __init__(
+        self,
+        preprocessors: Any,
+        postprocessors: Any,
+        ner_dims: List[str],
+        debug: bool = False,
+    ):
+        """
+        A workflow instance allows inference of an intent and a set of pre-configured entities.
+        Slot filling applies as per rules.
+        """
+        super().__init__(
+            preprocessors=preprocessors, postprocessors=postprocessors, debug=debug
+        )
+
+        # Read config/config.yaml and setup project-level utils.
+        self.config = Config()
+
+        # XLMR Classifier
+        self.classifier = self.config.get_model(const.CLASSIFICATION, const.PROD)
+
+        # XLMR NER
+        self.ner = self.config.get_model(const.NER, const.PROD)
+
+        # Tags (BIO tagging) - https://natural-language-understanding.fandom.com/wiki/Named_entity_recognition#BIO
+        self.ner_dims = ner_dims
+
+        # Processed labels for classification tasks.
+        self.labelencoder = self.config.load_pickle(
+            const.CLASSIFICATION, const.S_INTENT_LABEL_ENCODER
+        )
+
+    def classify(self, fallback_intent="_ood_") -> Intent:
+        """
+        Sentence to Intent classification.
+
+        Returns:
+            Intent: name and score (confidence) are the prominent attributes.
+        """
+        predictions, raw_outputs = self.classifier.predict(self.input)
+
+        try:
+            # We will expect only one sentence within `self.input`.
+            predicted_intent = self.labelencoder.inverse_transform(predictions)[0]
+            raw_output = raw_outputs[0]
+
+            # Confidence estimate.
+            confidence = max(np.exp(raw_output) / sum(np.exp(raw_output)))
+
+            # Threshold's should also consider data samples available per class.
+            # Using http://rasbt.github.io/mlxtend/user_guide/plotting/plot_decision_regions/
+            # should shed more light on optimal threshold usage.
+            if confidence < self.config.classification_threshold:
+                predicted_intent = fallback_intent
+        except IndexError as index_error:
+            # This exception means raw_outputs classifier failed to produce raw_outputs.
+            predicted_intent = fallback_intent
+            confidence = 1
+            capture_exception(index_error, ctx="workflow", message="raw_outputs")
+
+        return Intent(name=predicted_intent, score=confidence)
+
+    def collect(self, token_list: List[Dict]) -> List[ProductEntity]:
+        """
+        Collect tokens where entity label is not O (viz outside in BIO tag format).
+
+        Args:
+            token_list (List[Dict]): XLMR NER produces this output.
+
+        Returns:
+            List[ProductEntity]
+        """
+        # To measure the string range of each token starting from the first.
+        tape = 0
+        entities = []
+
+        # An example of `token_list` is:
+        # 
+        # [{'I': 'O'},
+        #   {'need': 'O'},
+        #   {'a': 'O'},
+        #   {'flight': 'B-vehicle'},
+        #   {'from': 'O'},
+        #   {'delhi': 'B-location'},
+        #   {'to': 'O'},
+        #   {'bangalore': 'B-location'}]
+        # 
+        # Produced by: "I need a flight from delhi to bangalore"
+        for token in token_list:
+            # since the output is a Dict[str, str], where the key is the token,
+            for key, value in token.items():
+                # We check if the token is a valid entity that we want from the workflow.
+                # Ideally "O" tagged items shouldn't be desired.
+                if value in self.ner_dims:
+                    # Measuring tape implementation, tape measures each token length and (+ 1) space.
+                    # adds back to the `start` to measure span of new tokens.
+                    start = tape
+                    end = start + len(key)
+                    entities.append(
+                        ProductEntity( # type: ignore
+                            range={"start": start, "end": end},
+                            type="product_kind",
+                            body=key,
+                            dim="product_kind",
+                            score=0,
+                            slot_names=["product_kind"],
+                            alternative_index=0,
+                            latent=False,
+                            values=[{"value": value}],
+                        )
+                    )
+                tape += len(key) + 1
+        return entities
+
+    def entity_consensus(self, entities_list: List[Any]) -> List[Any]:
+        """
+        Resolve output from multiple sources.
+        
+        Args:
+            items_list (List[Any]): List of list of intents or entities.
+            type_ (str): One of intent or entities.
+
+        Returns:
+            List[Any]: List of intents or entities.
+        """
+        # Resolving strategy for entities is to flatten. 
+        # This should be moved to max voting at-least before release.
+        return [entity for entity_list in entities_list for entity in entity_list]
+
+    def extract(self) -> List[BaseEntity]:
+        """
+        NER from a given sentence.
+
+        **WARNING**: The implementation here doesn't ship a parser or a combining logic yet.
+
+        Returns:
+            List[ProductEntity]: List of entities
+        """
+        if not self.ner_dims:
+            log.warning(
+                "Expected ner_dims to be List[str] but ner_dims=%s. Skipping NER.",
+                self.ner_dims,
+            )
+            return []
+
+        # The second value is `raw_output` which can be used for estimating confidence
+        # scores for each token identified as an entity.
+        raw_token_lists, _ = self.ner.predict(self.input)
+
+        entities = []
+
+        # An example of `raw_token_lists` is:
+        #
+        # [[{'I': 'O'},
+        #   {'need': 'O'},
+        #   {'a': 'O'},
+        #   {'flight': 'B-vehicle'},
+        #   {'from': 'O'},
+        #   {'delhi': 'B-location'},
+        #   {'to': 'O'},
+        #   {'bangalore': 'B-location'}]]
+        # 
+        # Produced by: "I need a flight from delhi to bangalore"
+
+        for token_list in raw_token_lists:
+            entities.append(self.collect(token_list))
+
+        return self.entity_consensus(entities)
+
+    def inference(self):
+        intent = self.classify()
+        entities = self.extract()
+        self.output = intent, entities

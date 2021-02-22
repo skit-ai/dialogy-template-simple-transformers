@@ -1,0 +1,27 @@
+import json
+
+import pandas as pd
+from tqdm import tqdm
+from dialogy.preprocess.text.merge_asr_output import merge_asr_output  # type: ignore
+
+from [[python_package_import_name]] import constants as const  # type: ignore
+from [[python_package_import_name]].dev.io.reader.csv import read_multiclass_dataset_csv  # type: ignore
+from [[python_package_import_name]].dev.io.mp import parallel_proc  # type: ignore
+
+
+def preprocess(df):
+    texts = []
+    tags = []
+    for _, row in tqdm(df.iterrows(), total=len(df)):
+        alternatives = json.loads(row[const.DATA])[const.ALTERNATIVES]
+        tag = row[const.TAG]
+        texts.append(merge_asr_output(alternatives))
+        tags.append(tag)
+    return pd.DataFrame({const.DATA: texts, const.TAG: tags})
+
+
+def prepare(data_file, alias, n_cores=const.N_DEFAULT_CORES):
+    dataset = read_multiclass_dataset_csv(
+        data_file, alias, usecols=[const.DATA, const.TAG]
+    )
+    return parallel_proc(dataset, preprocess, return_df=True, n_cores=n_cores)

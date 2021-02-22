@@ -1,0 +1,77 @@
+"""
+Testing routine.
+
+Usage:
+  test.py <version>
+  test.py (classification|ner) <version>
+  test.py (-h | --help)
+  test.py --version
+
+Options:
+    <version>   The version of the dataset to use, the model produced will also be in the same dir.
+    -h --help   Show this screen.
+    --version   Show version.
+"""
+from functools import partial
+
+import numpy as np
+from docopt import docopt
+from sklearn.metrics import accuracy_score, classification_report
+from seqeval.metrics import classification_report as multi_label_report
+
+from [[python_package_import_name]].utils.logger import log
+from [[python_package_import_name]] import constants as const
+from [[python_package_import_name]].utils.config import Config
+
+
+def test_classifier(config):
+    log.info("Preparing dataset.")
+    test_df = config.get_dataset(const.CLASSIFICATION, const.TEST)
+    labelencoder = config.load_pickle(
+        const.CLASSIFICATION, const.S_INTENT_LABEL_ENCODER
+    )
+    test_df[const.TAG] = labelencoder.transform(test_df[const.TAG])
+    model = config.get_model(const.CLASSIFICATION, const.TEST)
+
+    _, model_outputs, _ = model.eval_model(
+        test_df,
+        acc=accuracy_score,
+        report=classification_report,
+    )
+
+    pred_labels = labelencoder.inverse_transform(np.argmax(model_outputs, axis=1))
+    true_labels = labelencoder.inverse_transform(test_df[const.TAG])
+
+    log.info("saving report.")
+    config.save_report(const.CLASSIFICATION, (true_labels, pred_labels))
+
+
+def test_ner(config):
+    log.info("Preparing dataset.")
+    test_df = config.get_dataset(const.NER, const.TEST)
+    report_fn = partial(multi_label_report, output_dict=True)
+    model = config.get_model(const.NER, const.TEST)
+
+    results, _, _ = model.eval_model(test_df, report=report_fn, verbose=False)
+
+    log.info("saving report.")
+    config.save_report(const.NER, results)
+
+
+def main():
+    args = docopt(__doc__)
+    version = args["<version>"]
+    config = Config()
+
+    template_msg = "Welcome! evaluating %s task(s). version=%s."
+
+    if args[const.CLASSIFICATION]:
+        log.info(template_msg, const.CLASSIFICATION, version)
+        test_classifier(config)
+    elif args[const.NER]:
+        log.info(template_msg, const.NER, version)
+        test_ner(config)
+    else:
+        log.info(template_msg, "all", version)
+        test_classifier(config)
+        test_ner(config)

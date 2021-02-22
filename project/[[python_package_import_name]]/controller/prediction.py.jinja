@@ -1,0 +1,42 @@
+from typing import Any, List, Dict
+
+import attr
+from dialogy.postprocess.text.slot_filler.rule_slot_filler import (
+    RuleBasedSlotFillerPlugin,
+)
+from dialogy.preprocess.text.merge_asr_output import merge_asr_output_plugin
+
+from [[python_package_import_name]].utils.config import Config
+from [[python_package_import_name]].workflow.workflow import XLMRWorkflow
+from [[python_package_import_name]] import constants as const
+
+config = Config()
+
+
+slot_filler = RuleBasedSlotFillerPlugin(
+    rules=config.rules[const.SLOTS], access=lambda w: w.output
+)()
+
+
+def update_input(w: XLMRWorkflow, input_: str) -> None:
+    w.input = input_
+
+
+merge_asr_output = merge_asr_output_plugin(access=lambda w: w.input, mutate=update_input)
+
+
+def predict_wrapper():
+    workflow = XLMRWorkflow(
+        preprocessors=[merge_asr_output],
+        postprocessors=[slot_filler],
+        ner_dims=["B-product_kind", "I-product_kind"],
+    )
+
+    def predict(utterance: List[List[Dict[str, Any]]], _):
+        intent, entities = workflow.run(utterance)
+
+        return {
+            const.INTENTS: [attr.asdict(intent)],
+            const.ENTITIES: [attr.asdict(entity) for entity in entities],
+        }
+    return predict
