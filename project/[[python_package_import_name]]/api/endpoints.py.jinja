@@ -8,7 +8,7 @@ from [[python_package_import_name]].api import app
 from [[python_package_import_name]] import constants as const
 from [[python_package_import_name]].controller.prediction import predict_wrapper
 
-
+{% raw %}
 @app.route("/", methods=["GET"])
 def health_check():
     return jsonify(
@@ -33,3 +33,5 @@ def slu(_, __):
     response = predict(utterance, context)
 
     return jsonify(status="ok", response=response)
+
+{% endraw %}
