@@ -26,7 +26,7 @@ from [[python_package_import_name]].utils.logger import log
 from [[python_package_import_name]] import constants as const
 from [[python_package_import_name]].utils.config import Config
 
-
+[% raw %]
 def train_intent_classifier(config, eval_split=const.N_EVAL_SPLIT):
     log.info("Preparing dataset.")
     train_df = config.get_dataset(const.CLASSIFICATION, const.TRAIN)
@@ -72,3 +72,4 @@ def train_ner_model(config):
     config.remove_checkpoints(const.NER)
 
     log.debug("Finished!")
+[% endraw %]

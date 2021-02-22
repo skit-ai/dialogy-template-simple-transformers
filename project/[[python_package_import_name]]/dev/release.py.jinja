@@ -38,7 +38,7 @@ from [[python_package_import_name]] import constants as const
 from [[python_package_import_name]].utils.logger import log
 from [[python_package_import_name]].utils.config import Config
 
-
+[% raw %]
 def update_project_version_toml(version: str) -> None:
     """
     Update the version in pyproject.toml.
@@ -216,3 +216,4 @@ def release(version: str) -> None:
     vcs_add()
     vcs_tag_and_commit_state(version, changelog_body)
     vcs_push_remote(version, active_branch)
+[% endraw %]
