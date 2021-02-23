@@ -20,6 +20,7 @@ from [[python_package_import_name]].dev.io.reader.csv import (
     save_ner_report,
 )
 
+
 [% raw %]
 @attr.s
 class Config:
@@ -105,16 +106,18 @@ class Config:
     def get_model_path(self, task) -> str:
         return os.path.join(self.get_model_dir(task), self.version)
 
-    def get_dataset(self, task, purpose) -> Any:
+    def get_dataset(self, task, purpose, file_format=const.CSV) -> Any:
         data_dir = os.path.join(const.DATA, self.version, task)
         dataset_dir = os.path.join(data_dir, const.DATASETS)
         dataset_file = os.path.join(dataset_dir, f"{purpose}.csv")
         alias = self.get_alias(task)
 
         if task == const.CLASSIFICATION:
-            return prepare(dataset_file, alias, n_cores=self.n_cores)
+            data, labels = prepare(dataset_file, alias, n_cores=self.n_cores, file_format=file_format)
         elif task == const.NER:
-            return read_multilabel_dataset_csv(dataset_file)
+            data, labels = read_multilabel_dataset_csv(dataset_file)
+
+        self.set_labels_on_init(task, labels)
         raise ValueError(f"Expected task to be {const.CLASSIFICATION} or {const.NER} instead, {task} was found")
 
     def get_model_args(self, task, purpose) -> Dict[str, Any]:
@@ -161,6 +164,10 @@ class Config:
 
     def get_labels(self, task) -> List[str]:
         return self._config.get(const.TASKS, {}).get(task, {}).get(const.LABELS)
+
+    def set_labels_on_init(self, task, labels) -> None:
+        if not self.get_labels(task):
+            self._config[const.TASKS][task][const.LABELS] = labels
 
     def get_alias(self, task) -> List[str]:
         return self._config.get(const.TASKS, {}).get(task, {}).get(const.ALIAS)
