@@ -30,24 +30,25 @@ To setup [`dvc`](https://dvc.org/doc/install) for dataset and model versioning:
 ```shell
 dvc init
 dvc remote add -d s3remote s3://bucket-name/path/to/dir
+poetry run dialogy data
+dvc add data
 ```
 
 ## Directory Structure
 
-| File                | Description                                                                  |
-| ------------------- | ---------------------------------------------------------------------------- |
-| **config**          | A directory that contains `yaml` files.                                      |
-| **data**            | Version controlled by `dvc`.                                                 |
-| **data/0.0.0**      | A directory that would contain these directories: datasets, metrics, models. |
-| **dev**             | Programs not required in production.                                         |
-| **src**             | Programs required in production, makes smaller Dockerfiles.                  |
-| **prod.Dockerfile** | Containerize applications for production use.                                |
-| **dev.Dockerfile**  | There is some extra set of programs for integrations, staging env? use this. |
-| **LICENSE**         | Depending on your usage choose the correct copy, don't keep the default!     |
-| **Makefile**        | Helps maintain hygiene before deploying code.                                |
-| **pyproject.toml**  | Track dependencies here. Also, this means you would be using poetry.         |
-| **README.md**       | This must ring a bell.                                                       |
-| **uwsgi.ini**       | Modify as per use.                                                           |
+| File               | Description                                                                  |
+| ------------------ | ---------------------------------------------------------------------------- |
+| **config**         | A directory that contains `yaml` files.                                      |
+| **data**           | Version controlled by `dvc`.                                                 |
+| **data/0.0.0**     | A directory that would contain these directories: datasets, metrics, models. |
+| **dev**            | Programs not required in production.                                         |
+| **src**            | Programs required in production, makes smaller Dockerfiles.                  |
+| **Dockerfile**     | Containerize the application for production use.                             |
+| **LICENSE**        | Depending on your usage choose the correct copy, don't keep the default!     |
+| **Makefile**       | Helps maintain hygiene before deploying code.                                |
+| **pyproject.toml** | Track dependencies here. Also, this means you would be using poetry.         |
+| **README.md**      | This must ring a bell.                                                       |
+| **uwsgi.ini**      | Modify as per use.                                                           |
 
 ## Commands
 
@@ -125,7 +126,7 @@ These are the APIs which are being used. Some of these are not needed in product
 2.  Predict - This is the main production API.
 
     ```python
-    @app.route("/predict/<lang>/&lt;project_name>/", methods=["POST"])
+    @app.route("/predict/<lang>/<project_name>/", methods=["POST"])
     ```
 
 ## Customization
