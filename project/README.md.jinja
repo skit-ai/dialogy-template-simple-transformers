@@ -1,4 +1,6 @@
-# Dialogy Template with Simple Transformers
+# [[python_package_import_name]]
+
+Made with Dialogy Template with Simple Transformers
 
 ## Features
 
@@ -36,19 +38,19 @@ dvc add data
 
 ## Directory Structure
 
-| File                | Description                                                                  |
-| ------------------- | ---------------------------------------------------------------------------- |
-| **config**          | A directory that contains `yaml` files.                                      |
-| **data**            | Version controlled by `dvc`.                                                 |
-| **data/0.0.0**      | A directory that would contain these directories: datasets, metrics, models. |
-| **dev**             | Programs not required in production.                                         |
-| **src**             | Programs required in production, makes smaller Dockerfiles.                  |
-| **Dockerfile**      | Containerize the application for production use.                             |
-| **LICENSE**         | Depending on your usage choose the correct copy, don't keep the default!     |
-| **Makefile**        | Helps maintain hygiene before deploying code.                                |
-| **pyproject.toml**  | Track dependencies here. Also, this means you would be using poetry.         |
-| **README.md**       | This must ring a bell.                                                       |
-| **uwsgi.ini**       | Modify as per use.                                                           |
+| File               | Description                                                                  |
+| ------------------ | ---------------------------------------------------------------------------- |
+| **config**         | A directory that contains `yaml` files.                                      |
+| **data**           | Version controlled by `dvc`.                                                 |
+| **data/0.0.0**     | A directory that would contain these directories: datasets, metrics, models. |
+| **dev**            | Programs not required in production.                                         |
+| **src**            | Programs required in production, makes smaller Dockerfiles.                  |
+| **Dockerfile**     | Containerize the application for production use.                             |
+| **LICENSE**        | Depending on your usage choose the correct copy, don't keep the default!     |
+| **Makefile**       | Helps maintain hygiene before deploying code.                                |
+| **pyproject.toml** | Track dependencies here. Also, this means you would be using poetry.         |
+| **README.md**      | This must ring a bell.                                                       |
+| **uwsgi.ini**      | Modify as per use.                                                           |
 
 ## Commands
 
@@ -67,17 +69,17 @@ These are the available cli commands:
     Routine for testing both Classifier and NER sequentially.
     Provide a version to evaluate a trained model on an evaluation dataset.
 
-3.  poetry run dialogy (train|test) (classification|ner) &lt;version>
+3.  poetry run dialogy (train|test) (classification|ner) &lt;version&gt;
 
     Same as the previous train and test commands with an exception of only one type of
     task (classification|ner) is picked.
 
 4.  poetry run dialogy data [--version=&lt;version&gt;]
 
-    This command creates a directory named &lt;version> under data.
+    This command creates a directory named &lt;version&gt; under data.
     Helpful if only empty directory structures are needed.
 
-5.  poetry run dialogy clone &lt;from_version> &lt;to_version>
+5.  poetry run dialogy clone &lt;from_version&gt; &lt;to_version&gt;
 
     This command copies a directory from another under data.
     Helpful if only directory structures and their data should be copied.
@@ -87,7 +89,7 @@ These are the available cli commands:
     This command starts up an interactive terminal to dump json or plain text
     and interact with the trained models.
 
-7.  poetry run dialogy release &lt;version>
+7.  poetry run dialogy release &lt;version&gt;
 
     This command syncs dvc and git data, produces a tag on the repo and manages remote state.
 
@@ -126,7 +128,7 @@ These are the APIs which are being used. Some of these are not needed in product
 2.  Predict - This is the main production API.
 
     ```python
-    @app.route("/predict/<lang>/&lt;project_name>/", methods=["POST"])
+    @app.route("/predict/<lang>/<project_name>/", methods=["POST"])
     ```
 
 ## Customization
