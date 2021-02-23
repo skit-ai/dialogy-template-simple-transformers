@@ -14,15 +14,24 @@ def map_tag(tag, config):
     return config.get(tag, tag)
 
 
-def read_multiclass_dataset_csv(full_path, alias=None, **kwargs):
-    df = pd.read_csv(full_path, **kwargs)
-    alias = alias or {}
+def get_unique_labels(data_frame):
+    return data_frame[const.TAG].unique().tolist()
 
-    for i, row in tqdm(df.iterrows(), total=len(df)):
+
+def map_tags_in_df(data_frame, alias=None):
+    if not alias:
+        return data_frame
+
+    for i, row in tqdm(data_frame.iterrows(), total=len(data_frame)):
         tag = map_tag(row[const.TAG], alias)
-        df.loc[i, const.TAG] = tag
+        data_frame.loc[i, const.TAG] = tag
 
-    return df
+    return data_frame
+
+
+def read_multiclass_dataset_csv(full_path, alias=None, **kwargs):
+    data_frame = pd.read_csv(full_path, **kwargs)
+    return map_tags_in_df(data_frame, alias=alias)
 
 
 def read_multilabel_dataset_csv(full_path, **kwargs):

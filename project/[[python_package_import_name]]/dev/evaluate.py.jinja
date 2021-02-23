@@ -24,9 +24,10 @@ from [[python_package_import_name]] import constants as const
 from [[python_package_import_name]].utils.config import Config
 
 
-def test_classifier(config):
+[% raw %]
+def test_classifier(config, file_format=const.CSV):
     log.info("Preparing dataset.")
-    test_df = config.get_dataset(const.CLASSIFICATION, const.TEST)
+    test_df = config.get_dataset(const.CLASSIFICATION, const.TEST, file_format=file_format)
     labelencoder = config.load_pickle(
         const.CLASSIFICATION, const.S_INTENT_LABEL_ENCODER
     )
@@ -46,9 +47,9 @@ def test_classifier(config):
     config.save_report(const.CLASSIFICATION, (true_labels, pred_labels))
 
 
-def test_ner(config):
+def test_ner(config, file_format=const.CSV):
     log.info("Preparing dataset.")
-    test_df = config.get_dataset(const.NER, const.TEST)
+    test_df = config.get_dataset(const.NER, const.TEST, file_format=file_format)
     report_fn = partial(multi_label_report, output_dict=True)
     model = config.get_model(const.NER, const.TEST)
 
@@ -75,3 +76,4 @@ def main():
         log.info(template_msg, "all", version)
         test_classifier(config)
         test_ner(config)
+[% endraw %]
