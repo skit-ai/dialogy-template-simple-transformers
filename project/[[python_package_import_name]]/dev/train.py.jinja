@@ -26,10 +26,11 @@ from [[python_package_import_name]].utils.logger import log
 from [[python_package_import_name]] import constants as const
 from [[python_package_import_name]].utils.config import Config
 
+
 [% raw %]
-def train_intent_classifier(config, eval_split=const.N_EVAL_SPLIT):
+def train_intent_classifier(config, eval_split=const.N_EVAL_SPLIT, file_format=const.CSV):
     log.info("Preparing dataset.")
-    train_df = config.get_dataset(const.CLASSIFICATION, const.TRAIN)
+    train_df = config.get_dataset(const.CLASSIFICATION, const.TRAIN, file_format=file_format)
 
     label_encoder = preprocessing.LabelEncoder()
     encoder = label_encoder.fit(train_df[const.TAG])
@@ -58,9 +59,9 @@ def train_intent_classifier(config, eval_split=const.N_EVAL_SPLIT):
     log.debug("Finished!")
 
 
-def train_ner_model(config):
+def train_ner_model(config, file_format=const.CSV):
     log.info("Preparing dataset.")
-    train_df = config.get_dataset(const.NER, const.TRAIN)
+    train_df = config.get_dataset(const.NER, const.TRAIN, file_format=file_format)
     model = config.get_model(const.NER, const.TRAIN)
 
     log.info("Training started.")
