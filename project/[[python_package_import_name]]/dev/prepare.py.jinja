@@ -5,7 +5,8 @@ from tqdm import tqdm
 from dialogy.preprocess.text.merge_asr_output import merge_asr_output  # type: ignore
 
 from [[python_package_import_name]] import constants as const  # type: ignore
-from [[python_package_import_name]].dev.io.reader.csv import read_multiclass_dataset_csv  # type: ignore
+from [[python_package_import_name]].dev.io.reader.csv import read_multiclass_dataset_csv, map_tags_in_df, get_unique_labels  # type: ignore
+from [[python_package_import_name]].dev.io.reader.sqlite import read_multiclass_dataset_sqlite  # type: ignore
 from [[python_package_import_name]].dev.io.mp import parallel_proc  # type: ignore
 
 
@@ -20,8 +21,25 @@ def preprocess(df):
     return pd.DataFrame({const.DATA: texts, const.TAG: tags})
 
 
-def prepare(data_file, alias, n_cores=const.N_DEFAULT_CORES):
-    dataset = read_multiclass_dataset_csv(
-        data_file, alias, usecols=[const.DATA, const.TAG]
+def read_multiclass_dataset(full_path, alias=None, file_format=const.CSV, **kwargs):
+    if file_format == const.SQLITE:
+        data_frame = read_multiclass_dataset_sqlite(full_path, **kwargs)
+        return map_tags_in_df(data_frame, alias=alias)
+
+    if file_format == const.CSV:
+        return read_multiclass_dataset_csv(full_path, alias=alias, **kwargs)
+    else:
+        raise ValueError("Expected format to be a string with"
+        f" values in {const.V_SUPPORTED_DATA_FORMATS} but {file_format} was found.")
+
+
+def prepare(data_file, alias, file_format=const.CSV, n_cores=const.N_DEFAULT_CORES):
+    dataset = read_multiclass_dataset(
+        data_file,
+        alias,
+        file_format=file_format,
+        usecols=[const.DATA, const.TAG]
     )
-    return parallel_proc(dataset, preprocess, return_df=True, n_cores=n_cores)
+    data_frame = parallel_proc(dataset, preprocess, return_df=True, n_cores=n_cores)
+    labels = get_unique_labels(data_frame)
+    return data_frame, labels
