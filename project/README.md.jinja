@@ -341,6 +341,52 @@ Options:
     -h --help               Show this screen.
 ```
 
+## Config
+
+```yaml
+project_name: [[python_package_import_name]]
+version: 0.0.0 # Default version
+cores: 8 # no of cpu cores to use for pre-processing.
+tasks:
+  classification:
+    use: true # Use classifier model only if this is True.
+    threshold: 0.1 # confidence threshold.
+    labels: [] # Expected labels, auto-populates the first time a dataset is given.
+    alias: # Label aliases
+        label_alias_1: an_original_label
+        label_alias_2: an_original_label
+        label_alias_3: another_original_label
+        label_alias_4: yet_another_original_label
+    model_args:
+      train: {} # These are model arguments for
+      prod: {}  # simpletansformers models
+      test: {}  # refer to description.
+  ner:
+    use: false # prediction will not invoke ner predictions.
+    threshold: 0.6 # confidence threshold.
+    labels: [] # Expected labels, auto-populates the first time a dataset is given.
+    model_args:
+      train: {} # These are model arguments for
+      prod: {}  # simpletansformers models
+      test: {}  # refer to description.
+rules:
+  slots: # Relationship shows intents that can contain certain entities.
+    intent_a: # contains entity_x and entity_y within slots a-slot-name
+        entity_x: # and other-slot-name respectively.
+            slot_name: "a-slot-name"
+            entity_type: "x-type"
+        entity_y:
+            slot_name: "other-slot-name"
+            entity_type: "y-type"
+    intent_b: # contains only entity_y within another-slot-name.
+        entity_y:
+            slot_name: "another-slot-name"
+            entity_type: "y-type"
+# Other intents don't contain entities so their slots will be empty.
+```
+
+Model args help maintain the configuration of models in a single place, [here](https://simpletransformers.ai/docs/usage/#configuring-a-simple-transformers-model) is a full list, for classification or NER model configuration.
+
 ## APIs
 
 These are the APIs which are being used. Some of these are not needed in production.
