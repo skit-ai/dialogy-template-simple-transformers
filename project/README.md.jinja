@@ -39,19 +39,21 @@ dvc add data
 
 ## Directory Structure
 
-| File               | Description                                                                  |
-| ------------------ | ---------------------------------------------------------------------------- |
-| **config**         | A directory that contains `yaml` files.                                      |
-| **data**           | Version controlled by `dvc`.                                                 |
-| **data/0.0.0**     | A directory that would contain these directories: datasets, metrics, models. |
-| **dev**            | Programs not required in production.                                         |
-| **src**            | Programs required in production, makes smaller Dockerfiles.                  |
-| **Dockerfile**     | Containerize the application for production use.                             |
-| **LICENSE**        | Depending on your usage choose the correct copy, don't keep the default!     |
-| **Makefile**       | Helps maintain hygiene before deploying code.                                |
-| **pyproject.toml** | Track dependencies here. Also, this means you would be using poetry.         |
-| **README.md**      | This must ring a bell.                                                       |
-| **uwsgi.ini**      | Modify as per use.                                                           |
+| File                                      | Description                                                                  |
+| ----------------------------------------- | ---------------------------------------------------------------------------- |
+| **config**                                | A directory that contains `yaml` files.                                      |
+| **data**                                  | Version controlled by `dvc`.                                                 |
+| **data/0.0.0**                            | A directory that would contain these directories: datasets, metrics, models. |
+| **[[python_package_import_name]]/dev**    | Programs not required in production.                                         |
+| **[[python_package_import_name]]/src**    | Programs required in production, makes smaller Dockerfiles.                  |
+| **tests**                                 | Unit tests for functionality added apart from the boilerplate.               |
+| **CHANGELOG.md**                          | Track changes in the code, datasets, etc.                                    |
+| **Dockerfile**                            | Containerize the application for production use.                             |
+| **LICENSE**                               | Depending on your usage choose the correct copy, don't keep the default!     |
+| **Makefile**                              | Helps maintain hygiene before deploying code.                                |
+| **pyproject.toml**                        | Track dependencies here. Also, this means you would be using poetry.         |
+| **README.md**                             | This must ring a bell.                                                       |
+| **uwsgi.ini**                             | Modify as per use.                                                           |
 
 ## Commands
 
