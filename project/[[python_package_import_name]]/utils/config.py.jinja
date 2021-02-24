@@ -88,8 +88,8 @@ class Config:
         ]
         self.ner_threshold = self._config[const.TASKS][const.NER][const.THRESHOLD]
         self.rules = self._config[const.RULES]
-        self.use_classifier = self._config[const.CLASSIFICATION][const.USE]
-        self.use_ner = self._config[const.NER][const.USE]
+        self.use_classifier = self._config[const.TASKS][const.CLASSIFICATION][const.USE]
+        self.use_ner = self._config[const.TASKS][const.NER][const.USE]
 
     def set_version(self, version) -> "Config":
         self.version = version
