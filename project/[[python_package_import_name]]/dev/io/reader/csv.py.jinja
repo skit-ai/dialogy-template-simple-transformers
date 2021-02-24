@@ -14,8 +14,8 @@ def map_tag(tag, config):
     return config.get(tag, tag)
 
 
-def get_unique_labels(data_frame):
-    return data_frame[const.TAG].unique().tolist()
+def get_unique_labels(data_frame, tag_column):
+    return data_frame[tag_column].unique().tolist()
 
 
 def map_tags_in_df(data_frame, alias=None):
@@ -35,9 +35,11 @@ def read_multiclass_dataset_csv(full_path, alias=None, **kwargs):
 
 
 def read_multilabel_dataset_csv(full_path, **kwargs):
-    return pd.read_csv(full_path, **kwargs)[
+    data_frame = pd.read_csv(full_path, **kwargs)[
         [const.SENTENCE_ID, const.WORDS, const.LABELS]
     ]
+    labels = get_unique_labels(data_frame, const.LABELS)
+    return data_frame, labels
 
 
 def save_report(classification_report_output, metrics_dir):
