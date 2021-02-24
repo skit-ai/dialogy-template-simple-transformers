@@ -14,7 +14,7 @@ To setup a project using this template, use the following to generate the scaffo
 
 ```shell
 pip install dialogy
-dialogy app simple-transformers 
+dialogy create [[python_package_import_name]] dialogy-template-simple-transformers
 ```
 
 The above should initiate an interactive session. The questions here will address some project level
@@ -23,16 +23,17 @@ template also expects [poetry](https://python-poetry.org/docs/), here
  are the [installation steps](https://python-poetry.org/docs/#installation).
 
 ```shell
-cd $project_name
+cd [[python_package_import_name]]
 poetry install
 ```
 
 To setup [`dvc`](https://dvc.org/doc/install) for dataset and model versioning:
 
 ```shell
+git init
 dvc init
 dvc remote add -d s3remote s3://bucket-name/path/to/dir
-poetry run dialogy data
+poetry run dialogy data --version=0.0.0
 dvc add data
 ```
 
