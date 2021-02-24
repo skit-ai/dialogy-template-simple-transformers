@@ -68,6 +68,9 @@ class XLMRWorkflow(Workflow):
         Returns:
             Intent: name and score (confidence) are the prominent attributes.
         """
+        if not self.config.use_classifier:
+            return Intent(name=const.S_OOS, score=0)
+
         predictions, raw_outputs = self.classifier.predict(self.input)
 
         try:
@@ -167,6 +170,9 @@ class XLMRWorkflow(Workflow):
         Returns:
             List[ProductEntity]: List of entities
         """
+        if not self.config.use_ner:
+            return []
+
         if not self.ner_dims:
             log.warning(
                 "Expected ner_dims to be List[str] but ner_dims=%s. Skipping NER.",

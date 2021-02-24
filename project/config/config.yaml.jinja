@@ -3,6 +3,7 @@ version: 0.0.0
 cores: 8
 tasks:
   classification:
+    use: True
     threshold: 0.1
     labels: []
     alias: {}
@@ -41,6 +42,7 @@ tasks:
         best_model_dir: null
         reprocess_input_data: true
   ner:
+    use: True
     threshold: 0.6
     labels: []
     model_args:

@@ -88,6 +88,8 @@ class Config:
         ]
         self.ner_threshold = self._config[const.TASKS][const.NER][const.THRESHOLD]
         self.rules = self._config[const.RULES]
+        self.use_classifier = self._config[const.CLASSIFICATION][const.USE]
+        self.use_ner = self._config[const.NER][const.USE]
 
     def set_version(self, version) -> "Config":
         self.version = version
@@ -137,6 +139,10 @@ class Config:
         return model_args
 
     def get_classification_model(self, purpose, tags) -> ClassificationModel:
+        if not self.use_classifier:
+            log.warning("You have set `classification.use = false` within file `config.yaml`. Model will not be loaded.")
+            return None
+
         model_args = self.get_model_args(const.CLASSIFICATION, purpose)
         return ClassificationModel(
             const.S_XLMR,
@@ -151,6 +157,10 @@ class Config:
         )
 
     def get_ner_model(self, purpose, tags) -> NERModel:
+        if not self.use_ner:
+            log.warning("You have set `ner.use = false` within file `config.yaml`. Model will not be loaded.")
+            return None
+
         model_args = self.get_model_args(const.NER, purpose)
         return NERModel(
             const.S_XLMR,
