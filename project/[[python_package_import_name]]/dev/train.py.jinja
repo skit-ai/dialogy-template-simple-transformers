@@ -33,11 +33,11 @@ def train_intent_classifier(config, eval_split=const.N_EVAL_SPLIT, file_format=c
     train_df = config.get_dataset(const.CLASSIFICATION, const.TRAIN, file_format=file_format)
 
     label_encoder = preprocessing.LabelEncoder()
-    encoder = label_encoder.fit(train_df[const.TAG])
-    train_df[const.TAG] = encoder.transform(train_df[const.TAG])
+    encoder = label_encoder.fit(train_df[const.LABELS])
+    train_df[const.LABELS] = encoder.transform(train_df[const.LABELS])
 
     train_df, eval_df = train_test_split(
-        train_df, test_size=eval_split, random_state=0, stratify=train_df[[const.TAG]]
+        train_df, test_size=eval_split, random_state=0, stratify=train_df[[const.LABELS]]
     )
 
     model = config.get_model(const.CLASSIFICATION, const.TRAIN)

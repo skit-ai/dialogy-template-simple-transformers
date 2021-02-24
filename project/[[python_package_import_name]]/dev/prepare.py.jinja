@@ -18,7 +18,7 @@ def preprocess(df):
         tag = row[const.TAG]
         texts.append(merge_asr_output(alternatives))
         tags.append(tag)
-    return pd.DataFrame({const.DATA: texts, const.TAG: tags})
+    return pd.DataFrame({const.TEXT: texts, const.LABELS: tags}, columns=[const.TEXT, const.LABELS])
 
 
 def read_multiclass_dataset(full_path, alias=None, file_format=const.CSV, **kwargs):
