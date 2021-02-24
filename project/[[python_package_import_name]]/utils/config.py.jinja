@@ -116,9 +116,11 @@ class Config:
             data, labels = prepare(dataset_file, alias, n_cores=self.n_cores, file_format=file_format)
         elif task == const.NER:
             data, labels = read_multilabel_dataset_csv(dataset_file)
+        else:
+            raise ValueError(f"Expected task to be {const.CLASSIFICATION} or {const.NER} instead, {task} was found")
 
         self.set_labels_on_init(task, labels)
-        raise ValueError(f"Expected task to be {const.CLASSIFICATION} or {const.NER} instead, {task} was found")
+        return data
 
     def get_model_args(self, task, purpose) -> Dict[str, Any]:
         model_args = self._config[const.TASKS][task][const.S_MODEL_ARGS][purpose]
@@ -179,7 +181,8 @@ class Config:
             return self.get_classification_model(purpose, tags)
         elif task == const.NER:
             return self.get_ner_model(purpose, tags)
-        raise ValueError(f"Expected task to be {const.CLASSIFICATION} or {const.NER} instead, {task} was found")
+        else:
+            raise ValueError(f"Expected task to be {const.CLASSIFICATION} or {const.NER} instead, {task} was found")
 
     def save_pickle(self, task, prop, value) -> "Config":
         model_dir = self.get_model_dir(task)
@@ -204,7 +207,8 @@ class Config:
         elif task == const.NER:
             save_ner_report(results, self.get_metrics_dir(task))
             return self
-        raise ValueError(f"Expected task to be {const.CLASSIFICATION} or {const.NER} instead, {task} was found")
+        else:
+            raise ValueError(f"Expected task to be {const.CLASSIFICATION} or {const.NER} instead, {task} was found")
 
     def remove_checkpoints(self, task) -> None:
         model_dir = self.get_model_dir(task)
