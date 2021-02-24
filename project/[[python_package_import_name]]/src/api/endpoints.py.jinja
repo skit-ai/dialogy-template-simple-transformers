@@ -4,9 +4,9 @@ import attr
 from flask import jsonify, request
 from dialogy.types.intent import Intent
 
-from [[python_package_import_name]].api import app
 from [[python_package_import_name]] import constants as const
-from [[python_package_import_name]].controller.prediction import predict_wrapper
+from [[python_package_import_name]].src.api import app
+from [[python_package_import_name]].src.controller.prediction import predict_wrapper
 
 [% raw %]
 @app.route("/", methods=["GET"])
