@@ -28,7 +28,7 @@ def slu(_, __):
         utterance = [[{const.TRANSCRIPT: request.json.get(const.TEXT)}]]
 
     if not utterance:
-        return {const.INTENTS: [attr.asdict(Intent(name=const.S_OOS, score=1))]}
+        return {const.INTENTS: [attr.asdict(Intent(name=const.S_INTENT_ERROR, score=1))]}
 
     response = predict(utterance, context)
 

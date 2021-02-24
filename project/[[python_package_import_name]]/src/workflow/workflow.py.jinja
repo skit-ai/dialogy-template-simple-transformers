@@ -69,7 +69,7 @@ class XLMRWorkflow(Workflow):
             Intent: name and score (confidence) are the prominent attributes.
         """
         if not self.config.use_classifier:
-            return Intent(name=const.S_OOS, score=0)
+            return Intent(name=const.S_INTENT_ERROR, score=1)
 
         predictions, raw_outputs = self.classifier.predict(self.input)
 
