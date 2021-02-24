@@ -16,7 +16,7 @@ Made with Dialogy Template with Simple Transformers
 | **data**                                  | Version controlled by `dvc`.                                                 |
 | **data/0.0.0**                            | A directory that would contain these directories: datasets, metrics, models. |
 | **\[[python_package_import_name]]/dev**   | Programs not required in production.                                         |
-| **\[[python_package_import_name]]/src**   | Programs required in production, makes smaller Dockerfiles.                  |
+| **\[[python_package_import_name]]/src**   | Programs required in production.                                             |
 | **\[[python_package_import_name]]/utils** | Programs that offer assitance in either dev or src belong here.              |
 | **CHANGELOG.md**                          | Track changes in the code, datasets, etc.                                    |
 | **Dockerfile**                            | Containerize the application for production use.                             |
@@ -28,33 +28,33 @@ Made with Dialogy Template with Simple Transformers
 
 ## Getting started
 
-### Pre-requisites
+Make sure you have `git`, `python==^3.8`, [`poetry`](https://python-poetry.org/docs/#installation) installed. Preferably within a virtual environment.
 
-Make sure you have `git`, `python` pre installed. Preferably runnning python within a virtual environment.
-The project runs on `python==^3.8`.
+### 1. Boilerplate
 
-### Boilerplate
-
-To setup a project using this template, use the following to generate the scaffolding:
+To create a project using this template, run:
 
 ```shell
 pip install dialogy
-dialogy create [[python_package_import_name]] dialogy-template-simple-transformers
+dialogy create hello-world dialogy-template-simple-transformers
 ```
 
-The above should initiate an interactive session. The questions here will address some project level
-details of thse, `project_name` creates a directory which contains all the relevant scaffolding. This 
-template also expects [poetry](https://python-poetry.org/docs/), here
- are the [installation steps](https://python-poetry.org/docs/#installation).
+The above initiates an interactive session.
+![scaffolding_screenshots](./images/dialogy_template_create_command_guide.png)
 
-### Dependencies
+The questions here help: 
+
+-   Populate your [`pyproject.toml`](https://python-poetry.org/docs/pyproject/) since we use [`poetry`](https://python-poetry.org/docs/) for managing dependencies and other nifty tools.
+-   Create a repository and python package with the scaffolding you need.
+
+### 2. Install Dependencies
 
 ```shell
 cd [[python_package_import_name]]
 poetry install
 ```
 
-### Data versioning and management
+### 3. Version control
 
 We use [`dvc`](https://dvc.org/doc/install) for dataset and model versioning. 
 s3 is the preferred remote to save project level data that are not fit for tracking via git.
@@ -85,10 +85,72 @@ data
 ```
 
 It is evident that this template concerns itself with only `classification` and `ner` tasks.
-You'd typically move your datasets into the datasets directory. The dataset should be split before hand into `train.csv` and `test.csv`
-which is the expected naming convention.
 
-### Training
+You'd typically move your datasets into the datasets directory. The dataset should be split beforehand into `train.csv` and `test.csv`. This template expects these files to be named this way.
+
+The format for classification task `train.csv` is:
+
+```python
+In [1]: df[["data", "detailed_tags"]].sample(40)
+Out[1]:
+                                                    data                  labels
+7359   {"alternatives": [[{"transcript": "मुझे अपना ड..."                  status
+19337  {"alternatives": [[{"am_score": -182.39217, "c..."            stop_payment
+903    {"alternatives": [[{"transcript": "का", "confi..."               _confirm_
+15473  {"alternatives": [[{"transcript": "मैं लोन का ..."                query_loan
+18133  {"alternatives": [[{"transcript": "मुझे अपने अ..."        request_statement
+18954  {"alternatives": [[{"am_score": -718.3479, "co..."       request_statement
+2047   {"alternatives": [[{"am_score": -440.15454, "c..."          account_status
+16159  {"alternatives": [[{"transcript": "कस्टमर केयर..."            request_agent
+13193  {"alternatives": [[{"am_score": -702.66943, "c..."                   limit
+4359   {"alternatives": [[{"am_score": -556.99493, "c..."  branch_address_readout
+9561   {"alternatives": [[{"am_score": -479.57098, "c..."       ifsc_code_readout
+4084   {"alternatives": [[{"am_score": -304.17725, "c..."  branch_address_readout
+15437  {"alternatives": [[{"transcript": "मेरा लोन का..."               query_loan
+19543  {"alternatives": [[{"am_score": -182.39217, "c..."            stop_payment
+```
+
+And an example for the ner task dataset is:
+
+```python
+In [2]: df[df["labels"] != "O"].sample(10)
+Out[2]:
+        sentence_id   words          labels
+79854         14114       ?               O
+47782         10007  credit  B-product_kind
+37038          7785   still               O
+16142          5511    card  I-product_kind
+13709          5205    want               O
+114028        18547    just               O
+61436         12006  offers    B-properties
+106472        17546      my               O
+91673         15458       i               O
+85928         14710   other               O
+```
+
+Either dataset may contain any number of arbitrary columns but:
+
+-   The columns named `data` and `labels` are necessary for the classification datasets.
+-   Likewise, `sentence_id`, `words`, `labels` are necessary for NER datasets.
+
+A single instance in the `data` column for classification tasks should look like:
+
+```json
+{
+    "alternatives": [[
+        {"transcript": "चेक बुक कब मिलेगा",
+            "confidence": 0.9581535,
+            "am_score": -364.68695,
+            "lm_score": 121.946655},
+        {"transcript": "चेकबुक कब मिलेगा",
+            "confidence": 0.958522,
+            "am_score": -362.57028,
+            "lm_score": 123.00037}]],
+    "context": "...""
+}
+```
+
+### 4. Training
 
 Before training, your directory tree should look like:
 
@@ -109,25 +171,16 @@ data
         +---models
 ```
 
-In case you only need to train both classifier and ner models? run:
+These commands help in training the classifier and the NER model.
+Specifying the model name in the command will train only the mentioned model.
 
 ```shell
 poetry run dialogy train [--version=<version>]
+poetry run dialogy train classifier [--version=<version>] # trains only classifier.
+poetry run dialogy train ner [--version=<version>] # trains only NER.
 ```
 
-... need to train only `classifier`? run:
-
-```shell
-poetry run dialogy train classifier [--version=<version>]
-```
-
-... need to train only `ner`? run:
-
-```shell
-poetry run dialogy train ner [--version=<version>]
-```
-
-Once training is complete, you can expect model dir to be populated:
+Once the training is complete, you would notice the models would be populated:
 
 ```shell
 data
@@ -165,9 +218,9 @@ data
             +---training_args.bin
 ```
 
-### Evaluation
+### 5. Evaluation
 
-To evaluate replace the above commands with test instead of train like so:
+To evaluate the models just replace the above commands with test!
 
 ```shell
 poetry run dialogy test [--version=<version>]
@@ -175,32 +228,30 @@ poetry run dialogy test classifier [--version=<version>]
 poetry run dialogy test ner [--version=<version>]
 ```
 
-(If version is not provided, the default **0.0.0** is used from the _config.yaml_.)
+(If the version argument is not provided, a default value is used from the _config/config.yaml_.)
 
-Once tests are run, expect your directory to have a reports.csv. Not logging the models directory since it would take too much space and convey so little.
+Evaluation scripts save the reports in the `metrics` directory.
 
 ```shell
 data
 +---0.0.0
     +---classification
-    |   +---datasets
-    |   |   +---train.csv
-    |   |   +---test.csv
+    |   >---datasets # collapsed
     |   +---metrics
-    |       +---report.csv
-    |   <---models
+    |   |   +---report.csv
+    |   >---models # collapsed
     +---ner
         +---datasets
         |   +---train.csv
         |   +---test.csv
         +---metrics
-            +---report.csv
-        <---models
+        |   +---report.csv
+        >---models # collapsed
 ```
 
 You may see it only in one directory depending on the test command arguments provided.
 
-### Interactive Session
+### 6. Interactive Session
 
 To run your models to see how they perform on live inputs, use the following command:
 
@@ -209,19 +260,28 @@ poetry run dialogy repl
 ```
 
 This prints a set of expected input formats, **if nothing matches, it assumes the input to be plain-text!**
-**Make sure you press ESC then ENTER to submit**. 
+**Make sure you press ESC then ENTER to submit**.
 
-> The interface accepts multiline input and takes most people off-guard as they lie waiting for a response. The reason for putting in a multiline input is to offer convenience over pasting large json request bodies encountered in production and
-> need to be tested locally for debugging.
+This interface accepts multiline input and takes most people off-guard as they lie waiting for a response.
 
-### Releases
+The reason for putting in a multiline input is to offer convenience over pasting large json request bodies encountered in production and need to be tested locally for debugging.
+
+### 7. Releases
 
 The project comes with an opinion on data management. The default branch (main/master) is expected to contain only the latest version of datasets and models.
 The process creates a git tag with the semver so that you can checkout the tag for working on it in isolation to the rest of the project.
 
 To initiate a release process, perform:
 
-    poetry run dialogy release --version=<version>
+```shell
+poetry run dialogy release --version=<version>
+```
+
+### 8. Serving
+
+This template also installs [`Flask`](https://flask.palletsprojects.com/en/1.1.x/) for serving APIs. Use its standard documentation for setting up APIs and serving applications.
+
+**Do note, the default Flask server is not meant for production!**. Use [`uwsgi`](https://www.digitalocean.com/community/tutorials/how-to-serve-flask-applications-with-uswgi-and-nginx-on-ubuntu-18-04) instead.
 
 ## Commands
 
