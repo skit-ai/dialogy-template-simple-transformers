@@ -41,5 +41,5 @@ def prepare(data_file, alias, file_format=const.CSV, n_cores=const.N_DEFAULT_COR
         usecols=[const.DATA, const.TAG]
     )
     data_frame = parallel_proc(dataset, preprocess, return_df=True, n_cores=n_cores)
-    labels = get_unique_labels(data_frame)
+    labels = get_unique_labels(data_frame, const.LABELS)
     return data_frame, labels
