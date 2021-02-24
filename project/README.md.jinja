@@ -90,6 +90,7 @@ You'd typically move your datasets into the datasets directory. The dataset shou
 
 The format for classification task `train.csv` is:
 
+[% raw %]
 ```python
 In [1]: df[["data", "labels"]].sample(40)
 Out[1]:
@@ -127,6 +128,7 @@ Out[2]:
 91673         15458       i               O
 85928         14710   other               O
 ```
+[% endraw %]
 
 Either dataset may contain any number of arbitrary columns but:
 
