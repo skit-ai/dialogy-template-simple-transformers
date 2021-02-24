@@ -91,7 +91,7 @@ You'd typically move your datasets into the datasets directory. The dataset shou
 The format for classification task `train.csv` is:
 
 ```python
-In [1]: df[["data", "detailed_tags"]].sample(40)
+In [1]: df[["data", "labels"]].sample(40)
 Out[1]:
                                                     data                  labels
 7359   {"alternatives": [[{"transcript": "मुझे अपना ड..."                  status

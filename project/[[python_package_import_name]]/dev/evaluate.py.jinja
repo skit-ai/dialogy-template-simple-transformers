@@ -31,7 +31,7 @@ def test_classifier(config, file_format=const.CSV):
     labelencoder = config.load_pickle(
         const.CLASSIFICATION, const.S_INTENT_LABEL_ENCODER
     )
-    test_df[const.TAG] = labelencoder.transform(test_df[const.TAG])
+    test_df[const.LABELS] = labelencoder.transform(test_df[const.LABELS])
     model = config.get_model(const.CLASSIFICATION, const.TEST)
 
     _, model_outputs, _ = model.eval_model(
@@ -41,7 +41,7 @@ def test_classifier(config, file_format=const.CSV):
     )
 
     pred_labels = labelencoder.inverse_transform(np.argmax(model_outputs, axis=1))
-    true_labels = labelencoder.inverse_transform(test_df[const.TAG])
+    true_labels = labelencoder.inverse_transform(test_df[const.LABELS])
 
     log.info("saving report.")
     config.save_report(const.CLASSIFICATION, (true_labels, pred_labels))
