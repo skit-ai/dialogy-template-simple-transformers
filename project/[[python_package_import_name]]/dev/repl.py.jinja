@@ -49,6 +49,8 @@ def parse_as(text: str, func) -> Tuple[Optional[List[List[Dict[str, Any]]]], Opt
         return None, None
     except ValueError:
         return None, None
+    except SyntaxError:
+        return None, None
 
 
 def repl_prompt(separator="", show_help=True):
