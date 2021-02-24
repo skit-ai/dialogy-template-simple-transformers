@@ -26,6 +26,12 @@ merge_asr_output = merge_asr_output_plugin(access=lambda w: w.input, mutate=upda
 
 
 def predict_wrapper():
+    """
+    Create a closure for the predict function.
+
+    Ensures that the workflow is loaded just once without creating global variables for it.
+    This can also be made into a class if needed.
+    """
     workflow = XLMRWorkflow(
         preprocessors=[merge_asr_output],
         postprocessors=[slot_filler],
@@ -33,6 +39,12 @@ def predict_wrapper():
     )
 
     def predict(utterance: List[List[Dict[str, Any]]], _):
+        """
+        Produce intent and entities for a given utterance.
+
+        The second argument is context. Use it when available, it is
+        a good practice to use it for modeling.
+        """
         intent, entities = workflow.run(utterance)
 
         return {

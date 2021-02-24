@@ -6,8 +6,9 @@ Import class
 To read more about creating custom entities visit:
 https://vernacular-ai.github.io/dialogy/dialogy/types/entity/base_entity.html
 """
-import attr
 from typing import List, Dict
+
+import attr
 from dialogy.types.entity import BaseEntity
 
 

@@ -11,6 +11,11 @@ from [[python_package_import_name]].src.controller.prediction import predict_wra
 [% raw %]
 @app.route("/", methods=["GET"])
 def health_check():
+    """
+    Get server status health.
+
+    The purpose of this API is to help other people/machines know liveness of the application.
+    """
     return jsonify(
         status="ok",
         response={"message": "Server is up."},
@@ -19,6 +24,11 @@ def health_check():
 
 @app.route("/predict/<lang>/<project_name>/", methods=["POST"])
 def slu(_, __):
+    """
+    Get SLU predictions.
+
+    Produces a json response containing intents and entities.
+    """
     utterance: List[List[Dict[str, Any]]] = request.json.get(const.ALTERNATIVES)
     context: str = request.json.get(const.CONTEXT)
 
