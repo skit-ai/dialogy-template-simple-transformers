@@ -44,7 +44,7 @@ The above initiates an interactive session.
 
 The questions here help: 
 
--   Populate your [`pyproject.toml`](https://python-poetry.org/docs/pyproject/) since we use [`poetry`](https://python-poetry.org/docs/) for managing dependencies and other nifty tools.
+-   Populate your [`pyproject.toml`](https://python-poetry.org/docs/pyproject/) since we use [`poetry`](https://python-poetry.org/docs/) for managing dependencies.
 -   Create a repository and python package with the scaffolding you need.
 
 ### 2. Install Dependencies
@@ -90,45 +90,45 @@ You'd typically move your datasets into the datasets directory. The dataset shou
 
 The format for classification task `train.csv` is:
 
-[% raw %]
 ```python
 In [1]: df[["data", "labels"]].sample(40)
-Out[1]:
-                                                    data                  labels
-7359   {"alternatives": [[{"transcript": "मुझे अपना ड..."                  status
-19337  {"alternatives": [[{"am_score": -182.39217, "c..."            stop_payment
-903    {"alternatives": [[{"transcript": "का", "confi..."               _confirm_
-15473  {"alternatives": [[{"transcript": "मैं लोन का ..."                query_loan
-18133  {"alternatives": [[{"transcript": "मुझे अपने अ..."        request_statement
-18954  {"alternatives": [[{"am_score": -718.3479, "co..."       request_statement
-2047   {"alternatives": [[{"am_score": -440.15454, "c..."          account_status
-16159  {"alternatives": [[{"transcript": "कस्टमर केयर..."            request_agent
-13193  {"alternatives": [[{"am_score": -702.66943, "c..."                   limit
-4359   {"alternatives": [[{"am_score": -556.99493, "c..."  branch_address_readout
-9561   {"alternatives": [[{"am_score": -479.57098, "c..."       ifsc_code_readout
-4084   {"alternatives": [[{"am_score": -304.17725, "c..."  branch_address_readout
-15437  {"alternatives": [[{"transcript": "मेरा लोन का..."               query_loan
-19543  {"alternatives": [[{"am_score": -182.39217, "c..."            stop_payment
 ```
+
+|       | data                                              | labels                 |
+| ----- | ------------------------------------------------- | ---------------------- |
+| 7359  | {"alternatives": {"transcript": "..."             | status                 |
+| 19337 | {"alternatives": {"am_score": -182.39217, "c..."  | stop_payment           |
+| 903   | {"alternatives": {"transcript": "...", "confi..." | confirm                |
+| 15473 | {"alternatives": {"transcript": "..."             | query_loan             |
+| 18133 | {"alternatives": {"transcript": "..."             | request_statement      |
+| 18954 | {"alternatives": {"am_score": -718.3479, "co..."  | request_statement      |
+| 2047  | {"alternatives": {"am_score": -440.15454, "c..."  | account_status         |
+| 16159 | {"alternatives": {"transcript": "..."             | request_agent          |
+| 13193 | {"alternatives": {"am_score": -702.66943, "c..."  | limit                  |
+| 4359  | {"alternatives": {"am_score": -556.99493, "c..."  | branch_address_readout |
+| 9561  | {"alternatives": {"am_score": -479.57098, "c..."  | ifsc_code_readout      |
+| 4084  | {"alternatives": {"am_score": -304.17725, "c..."  | branch_address_readout |
+| 15437 | {"alternatives": {"transcript": "..."             | query_loan             |
+| 19543 | {"alternatives": {"am_score": -182.39217, "c..."  | stop_payment           |
 
 And an example for the ner task dataset is:
 
 ```python
 In [2]: df[df["labels"] != "O"].sample(10)
-Out[2]:
-        sentence_id   words          labels
-79854         14114       a               O
-47782         10007  credit  B-product_kind
-37038          7785   still               O
-16142          5511    card  I-product_kind
-13709          5205    want               O
-114028        18547    just               O
-61436         12006  offers    B-properties
-106472        17546      my               O
-91673         15458       i               O
-85928         14710   other               O
 ```
-[% endraw %]
+
+|        | sentence_id | words  | labels         |
+| ------ | ----------- | ------ | -------------- |
+| 79854  | 14114       | a      | O              |
+| 47782  | 10007       | credit | B-product_kind |
+| 37038  | 7785        | still  | O              |
+| 16142  | 5511        | card   | I-product_kind |
+| 13709  | 5205        | want   | O              |
+| 114028 | 18547       | just   | O              |
+| 61436  | 12006       | offers | B-properties   |
+| 106472 | 17546       | my     | O              |
+| 91673  | 15458       | i      | O              |
+| 85928  | 14710       | other  | O              |
 
 Either dataset may contain any number of arbitrary columns but:
 
@@ -140,11 +140,11 @@ A single instance in the `data` column for classification tasks should look like
 ```json
 {
     "alternatives": [[
-        {"transcript": "चेक बुक कब मिलेगा",
+        {"transcript": "I need a chequebook",
             "confidence": 0.9581535,
             "am_score": -364.68695,
             "lm_score": 121.946655},
-        {"transcript": "चेकबुक कब मिलेगा",
+        {"transcript": "I need a cheque book",
             "confidence": 0.958522,
             "am_score": -362.57028,
             "lm_score": 123.00037}]],
@@ -289,7 +289,7 @@ This template also installs [`Flask`](https://flask.palletsprojects.com/en/1.1.x
 
 These are the available cli commands:
 
-1.  poetry run dialogy train [--version=&lt;version&gt;]
+1.  `poetry run dialogy train [--version=<version>]`
 
     Routine for training both Classifier and NER sequntially.
     Provide a version and a model will be trained on a dataset of the same version.
@@ -297,32 +297,32 @@ These are the available cli commands:
     This script expects data/&lt;version> to be a directory where models, metrics
     and dataset are present.
 
-2.  poetry run dialogy test [--version=&lt;version&gt;]
+2.  `poetry run dialogy test [--version=<version>]`
 
     Routine for testing both Classifier and NER sequentially.
     Provide a version to evaluate a trained model on an evaluation dataset.
 
-3.  poetry run dialogy (train|test) (classification|ner) &lt;version>
+3.  `poetry run dialogy (train|test) (classification|ner) &lt;version>`
 
     Same as the previous train and test commands with an exception of only one type of
     task (classification|ner) is picked.
 
-4.  poetry run dialogy data [--version=&lt;version&gt;]
+4.  `poetry run dialogy data [--version=<version>]`
 
     This command creates a directory named &lt;version> under data.
     Helpful if only empty directory structures are needed.
 
-5.  poetry run dialogy clone &lt;from_version> &lt;to_version>
+5.  `poetry run dialogy clone &lt;from_version> &lt;to_version>`
 
     This command copies a directory from another under data.
     Helpful if only directory structures and their data should be copied.
 
-6.  poetry run dialogy repl [--version=&lt;version&gt;]
+6.  `poetry run dialogy repl [--version=<version>]`
 
     This command starts up an interactive terminal to dump json or plain text
     and interact with the trained models.
 
-7.  poetry run dialogy release &lt;version>
+7.  `poetry run dialogy release <version>`
 
     This command syncs dvc and git data, produces a tag on the repo and manages remote state.
 
