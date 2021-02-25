@@ -84,6 +84,7 @@ Input interactions:
 def repl() -> None:
     separator = "-" * 100
     show_help = True
+    log.info("Loading models... this takes around 20s.")
     predict = predict_wrapper()
     try:
         while True:
