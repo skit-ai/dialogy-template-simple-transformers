@@ -4,7 +4,7 @@
 import os
 import pickle
 import shutil
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Optional
 
 import semver
 import attr
@@ -19,6 +19,7 @@ from [[python_package_import_name]].dev.io.reader.csv import (
     save_classification_report,
     save_ner_report,
 )
+from [[python_package_import_name]].utils.logger import log
 
 
 [% raw %]
@@ -138,9 +139,9 @@ class Config:
 
         return model_args
 
-    def get_classification_model(self, purpose, labels) -> ClassificationModel:
+    def get_classification_model(self, purpose, labels) -> Optional[ClassificationModel]:
         if not self.use_classifier:
-            log.warning("You have set `classification.use = false` within file `config.yaml`. Model will not be loaded.")
+            log.warning("You have set `classification.use = false` within `config.yaml`. Model will not be loaded.")
             return None
 
         model_args = self.get_model_args(const.CLASSIFICATION, purpose)
@@ -156,9 +157,9 @@ class Config:
             args=model_args,
         )
 
-    def get_ner_model(self, purpose, labels) -> NERModel:
+    def get_ner_model(self, purpose, labels) -> Optional[NERModel]:
         if not self.use_ner:
-            log.warning("You have set `ner.use = false` within file `config.yaml`. Model will not be loaded.")
+            log.warning("You have set `ner.use = false` within `config.yaml`. Model will not be loaded.")
             return None
 
         model_args = self.get_model_args(const.NER, purpose)
