@@ -289,7 +289,7 @@ This template also installs [`Flask`](https://flask.palletsprojects.com/en/1.1.x
 
 These are the available cli commands:
 
-1.  `poetry run dialogy train [--version=<version>]`
+1.  `poetry run dialogy train [--version=<version>] [--file-format=<file_format>]`
 
     Routine for training both Classifier and NER sequntially.
     Provide a version and a model will be trained on a dataset of the same version.
@@ -297,12 +297,12 @@ These are the available cli commands:
     This script expects data/&lt;version> to be a directory where models, metrics
     and dataset are present.
 
-2.  `poetry run dialogy test [--version=<version>]`
+2.  `poetry run dialogy test [--version=<version>] [--file-format=<file_format>]`
 
     Routine for testing both Classifier and NER sequentially.
     Provide a version to evaluate a trained model on an evaluation dataset.
 
-3.  `poetry run dialogy (train|test) (classification|ner) &lt;version>`
+3.  `poetry run dialogy (train|test) (classification|ner) <version> [--file-format=<file_format>]`
 
     Same as the previous train and test commands with an exception of only one type of
     task (classification|ner) is picked.
@@ -328,19 +328,20 @@ These are the available cli commands:
 
 ```shell
 Usage:
-  __init__.py (train|test|repl) [--version=<version>]
-  __init__.py (train|test) (classification|ner) [--version=<version>]
+  __init__.py (train|test|repl) [--version=<version>] [--file-format=<file_format>]
+  __init__.py (train|test) (classification|ner) [--version=<version>] [--file-format=<file_format>]
   __init__.py data --version=<version> [--force]
   __init__.py clone <from_version> <to_version> [--force]
   __init__.py release --version=<version>
   __init__.py (-h | --help)
 
 Options:
-    <from_version>          The source data directory; models, datasets, metrics will be copied from here.
-    <to_version>            The destination data directory; models, datasets, metrics will be copied here.
-    --version=<version>     The version of the dataset, model, metrics to use.
-    --force                 Pass this flag to overwrite existing directories.
-    -h --help               Show this screen.
+    <from_version>              The source data directory; models, datasets, metrics will be copied from here.
+    <to_version>                The destination data directory; models, datasets, metrics will be copied here.
+    --version=<version>         The version of the dataset, model, metrics to use.
+    --file-format=<file_format> One of "csv" or "sqlite".
+    --force                     Pass this flag to overwrite existing directories.
+    -h --help                   Show this screen.
 ```
 
 ## Config
