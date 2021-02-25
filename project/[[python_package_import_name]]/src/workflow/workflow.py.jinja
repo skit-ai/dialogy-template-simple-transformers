@@ -71,7 +71,7 @@ class XLMRWorkflow(Workflow):
         if not self.config.use_classifier:
             return Intent(name=const.S_INTENT_ERROR, score=1)
 
-        predictions, raw_outputs = self.classifier.predict(self.input)
+        predictions, raw_outputs = self.classifier.predict([self.input[const.S_CLASSIFICATION_INPUT]])
 
         try:
             # We will expect only one sentence within `self.input`.
@@ -182,7 +182,7 @@ class XLMRWorkflow(Workflow):
 
         # The second value is `raw_output` which can be used for estimating confidence
         # scores for each token identified as an entity.
-        raw_token_lists, _ = self.ner.predict(self.input)
+        raw_token_lists, _ = self.ner.predict([self.input[S_NER_INPUT]])
 
         entities = []
 

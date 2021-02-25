@@ -19,7 +19,12 @@ slot_filler = RuleBasedSlotFillerPlugin(
 
 
 def update_input(w: XLMRWorkflow, input_: str) -> None:
-    w.input = input_
+    utterance = w.input
+    w.input = {
+        const.S_CLASSIFICATION_INPUT: input_,
+        # This should actually be a plugin!
+        const.S_NER_INPUT: [alternative[const.TRANSCRIPT] for alternative in utterance[0]]
+    }
 
 
 merge_asr_output = merge_asr_output_plugin(access=lambda w: w.input, mutate=update_input)
