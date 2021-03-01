@@ -9,7 +9,7 @@ This module offers the cli utility to interact with this project.
     This script expects data/<version> to be a directory where models, metrics
     and dataset are present.
 
-2. poetry run dialogy test [--version=<version>] [--file-format=<file_format>]
+2. poetry run dialogy test [--version=<version>] [--file-format=<file_format>] [--file=<test_file>]
 
     Routine for testing both Classifier and NER sequentially.
     Provide a version to evaluate a trained model on an evaluation dataset.
@@ -41,7 +41,7 @@ This module offers the cli utility to interact with this project.
 
 Usage:
   __init__.py (train|test) [--version=<version>] [--file-format=<file_format>]
-  __init__.py (train|test) (classification|ner) [--version=<version>] [--file-format=<file_format>]
+  __init__.py (train|test) (classification|ner) [--version=<version>] [--file-format=<file_format>] [--file=<test_file>]
   __init__.py data --version=<version> [--force]
   __init__.py clone <from_version> <to_version> [--force]
   __init__.py release --version=<version>
@@ -53,6 +53,7 @@ Options:
     <to_version>                The destination data directory; models, datasets, metrics will be copied here.
     --version=<version>         The version of the dataset, model, metrics to use.
     --file-format=<file_format> One of "csv" or "sqlite".
+    --file=<test_file>          A file to be tested separately.
     --force                     Pass this flag to overwrite existing directories.
     -h --help                   Show this screen.
 """
@@ -83,23 +84,58 @@ def main() -> None:
     else:
         version = config.version
 
-    file_format = args["--file-format"] or const.CSV
+    if args[const.CLASSIFICATION]:
+        file_format = args["--file-format"] or config.classification_file_format
+    elif args[const.NER]:
+        file_format = args["--file-format"] or config.ner_file_format
+    else:
+        file_format = const.CSV
 
     if args[const.TRAIN] and args[const.CLASSIFICATION]:
-        train_intent_classifier(config, file_format=file_format)
+        if config.use_classifier:
+            train_intent_classifier(config, file_format=file_format)
+        else:
+            log.warning("Config is not prepared for using classification model.")
+
     elif args[const.TRAIN] and args[const.NER]:
-        train_ner_model(config, file_format=file_format)
+        if config.use_ner:
+            train_ner_model(config, file_format=file_format)
+        else:
+            log.warning("Config is not prepared for using ner model.")
+
     elif args[const.TRAIN]:
-        train_intent_classifier(config, file_format=file_format)
-        train_ner_model(config, file_format=file_format)
+        if config.use_classifier:
+            train_intent_classifier(config, file_format=file_format)
+        else:
+            log.warning("Config is not prepared for using classification model.")
+
+        if config.use_ner:
+            train_ner_model(config, file_format=file_format)
+        else:
+            log.warning("Config is not prepared for using ner model.")
 
     if args[const.TEST] and args[const.CLASSIFICATION]:
-        test_classifier(config, file_format=file_format)
+        if config.use_classifier:
+            test_classifier(config, file_format=file_format, custom_file=args["--file"])
+        else:
+            log.warning("Config is not prepared for using classification model.")
+
     elif args[const.TEST] and args[const.NER]:
-        test_ner(config, file_format=file_format)
+        if config.use_ner:
+            test_ner(config, file_format=file_format, custom_file=args["--file"])
+        else:
+            log.warning("Config is not prepared for using ner model.")
+
     elif args[const.TEST]:
-        test_classifier(config, file_format=file_format)
-        test_ner(config, file_format=file_format)
+        if config.use_classifier:
+            test_classifier(config, file_format=file_format, custom_file=args["--file"])
+        else:
+            log.warning("Config is not prepared for using classification model.")
+
+        if config.use_ner:
+            test_ner(config, file_format=file_format, custom_file=args["--file"])
+        else:
+            log.warning("Config is not prepared for using ner model.")
 
     if args[const.DATA]:
         create_data_directory(version, force=force)
