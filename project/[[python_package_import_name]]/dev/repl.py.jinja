@@ -23,7 +23,7 @@ def make_alts_from_text(text: str) -> Tuple[List[List[Dict[str, Any]]], Optional
     Returns:
         List[Dict[str, Any]]: [description]
     """
-    return [[{const.TRANSCRIPT: text, const.CONFIDENCE: None}]], None
+    return [[{const.TRANSCRIPT: text.strip(), const.CONFIDENCE: None}]], None
 
 
 def parse_as(text: str, func) -> Tuple[Optional[List[List[Dict[str, Any]]]], Optional[str]]:
