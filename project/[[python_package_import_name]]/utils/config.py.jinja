@@ -113,18 +113,22 @@ class Config:
     def get_model_path(self, task) -> str:
         return os.path.join(self.get_model_dir(task), self.version)
 
-    def get_dataset(self, task, purpose, file_format=const.CSV) -> Any:
+    def get_dataset(self, task, purpose, file_format=const.CSV, custom_file=None) -> Any:
         data_dir = os.path.join(const.DATA, self.version, task)
         dataset_dir = os.path.join(data_dir, const.DATASETS)
-        dataset_file = os.path.join(dataset_dir, f"{purpose}.{file_format}")
+        dataset_file = custom_file or os.path.join(dataset_dir, f"{purpose}.{file_format}")
         alias = self.get_alias(task)
 
-        if task == const.CLASSIFICATION:
-            data, labels = prepare(dataset_file, alias, n_cores=self.n_cores, file_format=file_format)
-        elif task == const.NER:
-            data, labels = read_multilabel_dataset_csv(dataset_file)
-        else:
-            raise ValueError(f"Expected task to be {const.CLASSIFICATION} or {const.NER} instead, {task} was found")
+        try:
+            if task == const.CLASSIFICATION:
+                data, labels = prepare(dataset_file, alias, n_cores=self.n_cores, file_format=file_format)
+            elif task == const.NER:
+                data, labels = read_multilabel_dataset_csv(dataset_file)
+            else:
+                raise ValueError(f"Expected task to be {const.CLASSIFICATION} or {const.NER} instead, {task} was found")
+        except FileNotFoundError as file_missing_error:
+            raise ValueError(f"{dataset_file} not found! Are you sure {const.TASKS}.{purpose}.use = true?"\
+            " within config/config.yaml?") from file_missing_error
 
         self.set_labels_on_init(task, labels)
         return data
