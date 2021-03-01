@@ -25,9 +25,9 @@ from [[python_package_import_name]].utils.config import Config
 
 
 [% raw %]
-def test_classifier(config, file_format=const.CSV):
+def test_classifier(config, file_format=const.CSV, custom_file=None):
     log.info("Preparing dataset.")
-    test_df = config.get_dataset(const.CLASSIFICATION, const.TEST, file_format=file_format)
+    test_df = config.get_dataset(const.CLASSIFICATION, const.TEST, file_format=file_format, custom_file=custom_file)
     labelencoder = config.load_pickle(
         const.CLASSIFICATION, const.S_INTENT_LABEL_ENCODER
     )
@@ -47,9 +47,9 @@ def test_classifier(config, file_format=const.CSV):
     config.save_report(const.CLASSIFICATION, (true_labels, pred_labels))
 
 
-def test_ner(config, file_format=const.CSV):
+def test_ner(config, file_format=const.CSV, custom_file=None):
     log.info("Preparing dataset.")
-    test_df = config.get_dataset(const.NER, const.TEST, file_format=file_format)
+    test_df = config.get_dataset(const.NER, const.TEST, file_format=file_format, custom_file=custom_file)
     report_fn = partial(multi_label_report, output_dict=True)
     model = config.get_model(const.NER, const.TEST)
 
