@@ -84,9 +84,13 @@ class Config:
         semver.VersionInfo.parse(self._config.get(const.VERSION))
         self.version = self._config.get(const.VERSION)
         self.n_cores = self._config.get(const.CORES)
-        self.classification_threshold = self._config[const.TASKS][const.CLASSIFICATION][
+        self.classification_threshold = self._config[const.TASKS][const.CLASSIFICATI ON][
             const.THRESHOLD
         ]
+
+        self.classification_file_format = self._config[const.TASKS][const.CLASSIFICATION][const.FORMAT]
+        self.ner_file_format = self._config[const.TASKS][const.NER][const.FORMAT]
+
         self.ner_threshold = self._config[const.TASKS][const.NER][const.THRESHOLD]
         self.rules = self._config[const.RULES]
         self.use_classifier = self._config[const.TASKS][const.CLASSIFICATION][const.USE]
