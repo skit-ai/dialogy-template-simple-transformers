@@ -153,17 +153,22 @@ class Config:
             return None
 
         model_args = self.get_model_args(const.CLASSIFICATION, purpose)
-        return ClassificationModel(
-            const.S_XLMR,
-            (
-                const.S_XLMRB
-                if purpose == const.TRAIN
-                else model_args[const.S_BEST_MODEL]
-            ),
-            num_labels=len(labels),
-            use_cuda=(purpose != const.PROD),
-            args=model_args,
-        )
+
+        try:
+            return ClassificationModel(
+                const.S_XLMR,
+                (
+                    const.S_XLMRB
+                    if purpose == const.TRAIN
+                    else model_args[const.S_BEST_MODEL]
+                ),
+                num_labels=len(labels),
+                use_cuda=(purpose != const.PROD),
+                args=model_args,
+            )
+        except OSError as os_error:
+            raise ValueError(f"config/config.yaml has {const.TASKS}.{purpose}.use = True, "
+                f"but no model found in {model_args[const.S_OUTPUT_DIR]}") from os_err
 
     def get_ner_model(self, purpose, labels) -> Optional[NERModel]:
         if not self.use_ner:
@@ -171,17 +176,21 @@ class Config:
             return None
 
         model_args = self.get_model_args(const.NER, purpose)
-        return NERModel(
-            const.S_XLMR,
-            (
-                const.S_XLMRB
-                if purpose == const.TRAIN
-                else model_args[const.S_OUTPUT_DIR]
-            ),
-            labels=labels,
-            use_cuda=(purpose != const.PROD),
-            args=model_args,
-        )
+        try:
+            return NERModel(
+                const.S_XLMR,
+                (
+                    const.S_XLMRB
+                    if purpose == const.TRAIN
+                    else model_args[const.S_OUTPUT_DIR]
+                ),
+                labels=labels,
+                use_cuda=(purpose != const.PROD),
+                args=model_args,
+            )
+        except OSError as os_err:
+            raise ValueError(f"config/config.yaml has {const.TASKS}.{purpose}.use = True, "
+                f"but no model found in {model_args[const.S_OUTPUT_DIR]}") from os_err
 
     def get_labels(self, task) -> List[str]:
         return self._config.get(const.TASKS, {}).get(task, {}).get(const.LABELS)
