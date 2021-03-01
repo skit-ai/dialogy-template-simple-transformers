@@ -4,6 +4,7 @@ cores: 8
 tasks:
   classification:
     use: true
+    format: "csv"
     threshold: 0.1
     labels: []
     alias: {}
@@ -43,6 +44,7 @@ tasks:
         reprocess_input_data: true
   ner:
     use: true
+    format: "csv"
     threshold: 0.6
     labels: []
     model_args:
