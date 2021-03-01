@@ -178,7 +178,7 @@ Specifying the model name in the command will train only the mentioned model.
 
 ```shell
 poetry run dialogy train [--version=<version>]
-poetry run dialogy train classifier [--version=<version>] # trains only classifier.
+poetry run dialogy train classification [--version=<version>] # trains only classifier.
 poetry run dialogy train ner [--version=<version>] # trains only NER.
 ```
 
@@ -226,7 +226,7 @@ To evaluate the models just replace the above commands with test!
 
 ```shell
 poetry run dialogy test [--version=<version>]
-poetry run dialogy test classifier [--version=<version>]
+poetry run dialogy test classification [--version=<version>]
 poetry run dialogy test ner [--version=<version>]
 ```
 
@@ -353,6 +353,7 @@ cores: 8 # no of cpu cores to use for pre-processing.
 tasks:
   classification:
     use: true # Use classifier model only if this is True.
+    format: "csv" # Either of csv/sqlite.
     threshold: 0.1 # confidence threshold.
     labels: [] # Expected labels, auto-populates the first time a dataset is given.
     alias: # Label aliases
@@ -366,6 +367,7 @@ tasks:
       test: {}  # refer to description.
   ner:
     use: false # prediction will not invoke ner predictions.
+    format: "csv" # Either of csv/sqlite.
     threshold: 0.6 # confidence threshold.
     labels: [] # Expected labels, auto-populates the first time a dataset is given.
     model_args:
@@ -408,7 +410,7 @@ These are the APIs which are being used. Some of these are not needed in product
 2.  Predict - This is the main production API.
 
     ```python
-    @app.route("/predict/<lang>/<project_name>/", methods=["POST"])
+    @app.route("/predict/<lang>/[[python_package_import_name]]/", methods=["POST"])
     ```
 
 ## Customization
