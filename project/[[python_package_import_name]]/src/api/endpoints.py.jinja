@@ -1,3 +1,4 @@
+import traceback
 from typing import Any, List, Dict
 
 import attr
@@ -7,6 +8,8 @@ from dialogy.types.intent import Intent
 from [[python_package_import_name]] import constants as const
 from [[python_package_import_name]].src.api import app
 from [[python_package_import_name]].src.controller.prediction import predict_wrapper
+from [[python_package_import_name]].utils.sentry import capture_exception
+
 
 [% raw %]
 @app.route("/", methods=["GET"])
@@ -29,19 +32,42 @@ def slu(lang, project_name):
 
     Produces a json response containing intents and entities.
     """
-    utterance: List[List[Dict[str, Any]]] = request.json.get(const.ALTERNATIVES)
-    context: str = request.json.get(const.CONTEXT)
+    if not isinstance(request.json, dict):
+        jsonify({
+            "message": "Invalid request.", 
+            "cause": f"Post body should be a dictionary, received {type(request.json)}."
+        }), 400
 
-    predict = predict_wrapper()
+    if not const.ALTERNATIVES in request.json or const.TEXT in request.json:
+        jsonify({
+            "message": "Invalid request.", 
+            "cause": f"Post body should have either of these keys: {const.TEXT}, {const.ALTERNATIVES}."
+        }), 400
 
-    if not utterance:
-        utterance = [[{const.TRANSCRIPT: request.json.get(const.TEXT)}]]
+    try:
+        utterance: List[List[Dict[str, Any]]] = request.json.get(const.ALTERNATIVES)
+        context: str = request.json.get(const.CONTEXT)
 
-    if not utterance:
-        return {const.INTENTS: [attr.asdict(Intent(name=const.S_INTENT_ERROR, score=1))]}
+        predict = predict_wrapper()
 
-    response = predict(utterance, context)
+        if not utterance:
+            utterance = [[{const.TRANSCRIPT: request.json.get(const.TEXT)}]]
 
-    return jsonify(status="ok", response=response)
+        if not utterance:
+            return {const.INTENTS: [attr.asdict(Intent(name=const.S_INTENT_ERROR, score=1))]}
+
+        response = predict(utterance, context)
+
+        return jsonify(status="ok", response=response)
+    except Exception as exc:
+        # Update this section to: 
+        # 1. Handle specific errors
+        # 2. provide user-friendly messages. The current is developer friendly.
+        capture_exception(index_error, ctx="api", message=request.json)
+        jsonify({"message": str(e), "cause": traceback.format_exc()}), 500
+
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0")
 
 [% endraw %]
