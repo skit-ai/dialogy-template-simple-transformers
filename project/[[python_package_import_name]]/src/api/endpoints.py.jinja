@@ -23,7 +23,7 @@ def health_check():
 
 
 @app.route("/predict/<lang>/<project_name>/", methods=["POST"])
-def slu(_, __):
+def slu(lang, project_name):
     """
     Get SLU predictions.
 
