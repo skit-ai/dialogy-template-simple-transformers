@@ -281,7 +281,11 @@ poetry run dialogy release --version=<version>
 
 ### 8. Serving
 
-This template also installs [`Flask`](https://flask.palletsprojects.com/en/1.1.x/) for serving APIs. Use its standard documentation for setting up APIs and serving applications.
+This template also installs [`Flask`](https://flask.palletsprojects.com/en/1.1.x/) for serving APIs. Use its standard documentation for setting up API endpoints. Use `uwsgi` for production use.
+
+```shell
+uwsgi --http :9002 --enable-threads --single-interpreter --threads 1 --callable=app --module [[python_package_import_name]].src.api.endpoints:app --ini uwsgi.ini
+```
 
 **Do note, the default Flask server is not meant for production!**. Use [`uwsgi`](https://www.digitalocean.com/community/tutorials/how-to-serve-flask-applications-with-uswgi-and-nginx-on-ubuntu-18-04) instead.
 
