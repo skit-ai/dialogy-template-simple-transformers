@@ -92,7 +92,7 @@ class Config:
         self.ner_file_format = self._config[const.TASKS][const.NER][const.FORMAT]
 
         self.ner_threshold = self._config[const.TASKS][const.NER][const.THRESHOLD]
-        self.rules = self._config[const.RULES]
+        self.rules = self._config[const.RULES][const.SLOTS]
         self.use_classifier = self._config[const.TASKS][const.CLASSIFICATION][const.USE]
         self.use_ner = self._config[const.TASKS][const.NER][const.USE]
 
