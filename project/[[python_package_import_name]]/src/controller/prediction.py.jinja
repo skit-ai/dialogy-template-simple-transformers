@@ -72,7 +72,7 @@ def predict_wrapper():
     preprocessors = []
     postprocessors = []
 
-    [% if intent_classification_flavor == 2]
+    [% if intent_classification_flavor == 2 %]
     postprocessors.append(vote_plugin)
     [% else %]
     preprocessors.append(merge_asr_output)
