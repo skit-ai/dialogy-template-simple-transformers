@@ -1,4 +1,4 @@
-# \[[python_package_import_name]]
+# [[python_package_import_name]]
 
 Made with Dialogy Template with Simple Transformers
 
@@ -15,9 +15,9 @@ Made with Dialogy Template with Simple Transformers
 | **config**                                | A directory that contains `yaml` files.                                      |
 | **data**                                  | Version controlled by `dvc`.                                                 |
 | **data/0.0.0**                            | A directory that would contain these directories: datasets, metrics, models. |
-| **\[[python_package_import_name]]/dev**   | Programs not required in production.                                         |
-| **\[[python_package_import_name]]/src**   | Programs required in production.                                             |
-| **\[[python_package_import_name]]/utils** | Programs that offer assitance in either dev or src belong here.              |
+| **[[python_package_import_name]]/dev**   | Programs not required in production.                                         |
+| **[[python_package_import_name]]/src**   | Programs required in production.                                             |
+| **[[python_package_import_name]]/utils** | Programs that offer assitance in either dev or src belong here.              |
 | **CHANGELOG.md**                          | Track changes in the code, datasets, etc.                                    |
 | **Dockerfile**                            | Containerize the application for production use.                             |
 | **LICENSE**                               | Depending on your usage choose the correct copy, don't keep the default!     |
@@ -172,6 +172,7 @@ In [2]: df[df["labels"] != "O"].sample(10)
 
 The columns named `sentence_id`, `words`, `labels` are necessary for NER datasets. Other arbitrary columns
 remain unused if given.
+[% endif %]
 
 ### 4. Training
 
