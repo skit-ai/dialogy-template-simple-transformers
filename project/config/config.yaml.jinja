@@ -32,16 +32,18 @@ tasks:
         output_dir: null
         best_model_dir: null
         reprocess_input_data: true
-        no_cache: false
-        use_multiprocessing: true
-        eval_batch_size: 1
-        max_seq_length: 128
+        no_cache: true
+        use_multiprocessing: false # Setting this to true hurts performance!
+        eval_batch_size: 1 # same as the number of inputs going into the model.
+        max_seq_length: 128 # reduce this to boost performance.
         thread_count: 1
+        silent: true
         dynamic_quantize: true
       test:
         output_dir: null
         best_model_dir: null
         reprocess_input_data: true
+  [% if use_ner %]
   ner:
     use: true
     format: "csv"
@@ -68,5 +70,16 @@ tasks:
       prod:
         output_dir: null
         best_model_dir: null
+        output_dir: null
+        best_model_dir: null
+        use_multiprocessing: false # Setting this to true hurts performance!
+        eval_batch_size: 1 # same as the number of inputs going into the model.
+        max_seq_length: 128 # reduce this to boost performance.
+        reprocess_input_data: true
+        no_cache: true
+        thread_count: 1
+        silent: true
+        dynamic_quantize: true
+  [% endif %]
 rules:
   slots: {}
