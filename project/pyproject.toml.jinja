@@ -13,7 +13,7 @@ python = "^3.8"
 simpletransformers = "^0.60.6"
 coloredlogs = "^15.0"
 PyYAML = "5.4.1"
-dialogy = "^0.2.1"
+dialogy = "^0.3.4"
 scikit-learn = "^0.24.1"
 pandas = "^1.2.2"
 numpy = "^1.20.1"
@@ -23,12 +23,12 @@ attrs = "^20.3.0"
 toml = "^0.10.2"
 torch = "^1.7.1"
 uwsgi = "^2.0.19.1"
+semver = "^2.13.0"
 
 [tool.poetry.dev-dependencies]
 tqdm = "^4.56.1"
 stockholm-data-manager = "^0.14.1"
 stockholm-aws-train = "^0.1.0"
-semver = "^2.13.0"
 docopt = "^0.6.2"
 pylint = "^2.6.0"
 mypy = "^0.800"
@@ -39,7 +39,7 @@ GitPython = "^3.1.13"
 prompt-toolkit = "^3.0.16"
 
 [tool.poetry.scripts]
-dialogy = "[[python_package_import_name]].dev.cli:main"
+[[python_package_import_name]] = "[[python_package_import_name]].dev.cli:main"
 
 [tool.poetry.dependencies.sentry-sdk]
 extras = [ "flask",]

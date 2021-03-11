@@ -13,12 +13,16 @@ from [[python_package_import_name]].dev.io.mp import parallel_proc  # type: igno
 def preprocess(df):
     texts = []
     labels = []
+    data_id = []
     for _, row in tqdm(df.iterrows(), total=len(df)):
-        alternatives = json.loads(row[const.DATA])[const.ALTERNATIVES]
         label = row[const.LABELS]
-        texts.append(merge_asr_output(alternatives))
+        texts.append(row[const.DATA])
         labels.append(label)
-    return pd.DataFrame({const.TEXT: texts, const.LABELS: labels}, columns=[const.TEXT, const.LABELS])
+        data_id.append(row[const.DATA_ID])
+    return pd.DataFrame(
+        {const.DATA_ID: data_id, const.TEXT: texts, const.LABELS: labels},
+        columns=[const.DATA_ID, const.TEXT, const.LABELS],
+    )
 
 
 def read_multiclass_dataset(full_path, alias=None, file_format=const.CSV, **kwargs):
@@ -29,8 +33,10 @@ def read_multiclass_dataset(full_path, alias=None, file_format=const.CSV, **kwar
     if file_format == const.CSV:
         return read_multiclass_dataset_csv(full_path, alias=alias, **kwargs)
     else:
-        raise ValueError("Expected format to be a string with"
-        f" values in {const.V_SUPPORTED_DATA_FORMATS} but {file_format} was found.")
+        raise ValueError(
+            "Expected format to be a string with"
+            f" values in {const.V_SUPPORTED_DATA_FORMATS} but {file_format} was found."
+        )
 
 
 def prepare(data_file, alias, file_format=const.CSV, n_cores=const.N_DEFAULT_CORES):
@@ -38,7 +44,7 @@ def prepare(data_file, alias, file_format=const.CSV, n_cores=const.N_DEFAULT_COR
         data_file,
         alias,
         file_format=file_format,
-        usecols=[const.DATA, const.LABELS]
+        usecols=[const.DATA_ID, const.DATA, const.LABELS],
     )
     data_frame = parallel_proc(dataset, preprocess, return_df=True, n_cores=n_cores)
     labels = get_unique_labels(data_frame, const.LABELS)

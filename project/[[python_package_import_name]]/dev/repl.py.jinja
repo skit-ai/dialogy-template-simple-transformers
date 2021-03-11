@@ -1,10 +1,14 @@
 """
 This module offers an interactive repl to run a Workflow.
 """
+import re
 import json
 import ast
+import time
 from pprint import pprint
 from typing import List, Dict, Any, Optional, Tuple
+
+from dialogy.preprocess.text.normalize_utterance import normalize
 
 from prompt_toolkit import prompt
 from [[python_package_import_name]].src.controller.prediction import predict_wrapper
@@ -13,20 +17,31 @@ from [[python_package_import_name]] import constants as const
 
 
 [% raw %]
-def make_alts_from_text(text: str) -> Tuple[List[List[Dict[str, Any]]], Optional[str]]:
+def make_alts_from_text(text: str) -> Tuple[List[str], Optional[str]]:
     """
-    [summary]
+    Create test example from raw string.
 
+    To test context pass the value with text like:
+    
+    ```python
+    "I need fruit juice" | COF1
+    ```
+    
     Args:
-        text (str): [description]
+        text (str): Raw string test input.
 
     Returns:
-        List[Dict[str, Any]]: [description]
+        Tuple[List[str], Optional[str]]
     """
-    return [[{const.TRANSCRIPT: text.strip(), const.CONFIDENCE: None}]], None
+    text_, context = text.split("|")
+    context_ = context.strip()
+    text_ = re.sub(r"\s+", " ", re.sub(r"[^a-zA-Z ]+", " ", text_)).lower().strip()
+    return [text_], context_
 
 
-def parse_as(text: str, func) -> Tuple[Optional[List[List[Dict[str, Any]]]], Optional[str]]:
+def parse_as(
+    text: str, func
+) -> Tuple[Optional[List[str]], Optional[str]]:
     """
     Parse text as Dict either expecting json, or python object.
 
@@ -39,10 +54,10 @@ def parse_as(text: str, func) -> Tuple[Optional[List[List[Dict[str, Any]]]], Opt
     """
     try:
         content = func(text)
-        if isinstance(content, list):
-            return content, None
-        elif isinstance(content, dict):
-            return content[const.ALTERNATIVES], content[const.CONTEXT]
+        if isinstance(content, dict):
+            return normalize(content[const.ALTERNATIVES]), content[const.CONTEXT]
+        elif isinstance(content, list):
+            return normalize(content), None
         else:
             return None, None
     except json.JSONDecodeError:
@@ -86,12 +101,17 @@ def repl() -> None:
     show_help = True
     log.info("Loading models... this takes around 20s.")
     predict = predict_wrapper()
+
     try:
         while True:
-            raw = prompt(repl_prompt(separator=separator, show_help=show_help), multiline=True)
+            raw = prompt(
+                repl_prompt(separator=separator, show_help=show_help), multiline=True
+            )
 
             if raw == "--help":
-                raw = prompt(repl_prompt(separator=separator, show_help=True), multiline=True)            
+                raw = prompt(
+                    repl_prompt(separator=separator, show_help=True), multiline=True
+                )
 
             show_help = False
             utterance, context = parse_as(raw, json.loads)
@@ -104,9 +124,12 @@ def repl() -> None:
             pprint(utterance)
             log.info("context: %s ", context)
 
+            start = time.time()
             response = predict(utterance, context)
+            end = time.time() - start
             log.info("response")
             pprint(response)
+            log.info("Prediction took %ds", end)
     except KeyboardInterrupt:
         log.info("Exiting...")
     except EOFError:

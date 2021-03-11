@@ -1,10 +1,22 @@
+"""
+This module provides a simple interface to provide text features
+and receive Intent and Entities.
+"""
 from typing import Any, List, Dict
 
 import attr
+
+[% if use_ner %]
 from dialogy.postprocess.text.slot_filler.rule_slot_filler import (
     RuleBasedSlotFillerPlugin,
 )
-from dialogy.preprocess.text.merge_asr_output import merge_asr_output_plugin
+[% endif %]
+[% if intent_classification_flavor == 2 %]
+from dialogy.postprocess.text.voting.intent import VotePlugin
+[% endif %]
+[% if use_duckling %]
+from dialogy.parser.text.entity.duckling_parser import duckling_parser
+[% endif %]
 
 from [[python_package_import_name]] import constants as const
 from [[python_package_import_name]].utils.config import Config
@@ -12,22 +24,42 @@ from [[python_package_import_name]].src.workflow.workflow import XLMRWorkflow
 
 config = Config()
 
-
+[% if use_ner %]
 slot_filler = RuleBasedSlotFillerPlugin(
     rules=config.rules[const.SLOTS], access=lambda w: w.output
 )()
+[% endif %]
 
+[% if intent_classification_flavor == 2 %]
+def update_intent(workflow, value):
+    _, entities = workflow.output
+    workflow.output = (value, entities)
 
+vote_plugin = VotePlugin(
+    fallback_intent=const.S_INTENT_OOS,
+    access=lambda w: w.output[0],
+    mutate=update_intent,
+)()
+[% else %]
 def update_input(w: XLMRWorkflow, input_: str) -> None:
     utterance = w.input
     w.input = {
         const.S_CLASSIFICATION_INPUT: input_,
         # This should actually be a plugin!
+        [% if use_ner %]
         const.S_NER_INPUT: [alternative[const.TRANSCRIPT] for alternative in utterance[0]]
+        [% endif %]
     }
 
-
 merge_asr_output = merge_asr_output_plugin(access=lambda w: w.input, mutate=update_input)
+[% endif %]
+
+[% if use_duckling %]
+def update_entities(workflow, entities):
+    workflow.output = (None, entities)
+
+duckling_parser = DucklingParser(access=lambda w: w.output, mutate=update_entities, dimensions=["number"], locale="en_IN")()
+[% endif %]
 
 
 def predict_wrapper():
@@ -37,10 +69,26 @@ def predict_wrapper():
     Ensures that the workflow is loaded just once without creating global variables for it.
     This can also be made into a class if needed.
     """
+    preprocessors = []
+    postprocessors = []
+
+    [% if intent_classification_flavor == 2]
+    postprocessors.append(vote_plugin)
+    [% else %]
+    preprocessors.append(merge_asr_output)
+    [% endif %]
+    [% if use_duckling %]
+    preprocessors.append(duckling_parser)
+    [% endif %]
+
+    {# This should always be last #}
+    [% if use_ner or use_duckling %]
+    postprocessors.append(slot_filler)
+    [% endif %]
+
     workflow = XLMRWorkflow(
-        preprocessors=[merge_asr_output],
-        postprocessors=[slot_filler],
-        ner_dims=["B-product_kind", "I-product_kind"],
+        preprocessors=preprocessors,
+        postprocessors=postprocessors,
     )
 
     def predict(utterance: List[List[Dict[str, Any]]], _):
@@ -52,8 +100,22 @@ def predict_wrapper():
         """
         intent, entities = workflow.run(utterance)
 
+        intent = attr.asdict(intent)
+
+        [% if use_ner or use_duckling %]
+        slots = []
+
+        for slot_name, slot_values in intent[const.SLOTS].items():
+            slot_values[const.NAME] = slot_name
+            slots.append(slot_values)
+
+        intent[const.SLOTS] = slots
+        [% endif %]
+
         return {
-            const.INTENTS: [attr.asdict(intent)],
+            const.VERSION: config.version,
+            const.INTENTS: [intent],
             const.ENTITIES: [attr.asdict(entity) for entity in entities],
         }
+
     return predict

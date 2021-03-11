@@ -37,6 +37,7 @@ To create a project using this template, run:
 ```shell
 pip install dialogy
 dialogy create hello-world dialogy-template-simple-transformers
+make lint
 ```
 
 The above initiates an interactive session.
@@ -65,10 +66,11 @@ The `poetry install` step takes care of dvc installation.
 git init
 dvc init
 dvc remote add -d s3remote s3://bucket-name/path/to/dir
-poetry run dialogy data --version=0.0.0
+poetry run [[python_package_import_name]] data --version=0.0.0
 dvc add data
 ```
 
+[% if use_ner %]
 This will create a data directory with the following structure:
 
 ```shell
@@ -83,9 +85,24 @@ data
         +---metrics
         +---models
 ```
+[% else %]
+This will create a data directory with the following structure:
 
+```shell
+data
++---0.0.0
+    +---classification
+        +---datasets
+        +---metrics
+        +---models
+```
+[% endif %]
+
+[% if use_ner %]
 It is evident that this template concerns itself with only `classification` and `ner` tasks.
-
+[% else %]
+It is evident that this template concerns itself with only `classification` tasks.
+[% endif %]
 You'd typically move your datasets into the datasets directory. The dataset should be split beforehand into `train.csv` and `test.csv`. This template expects these files to be named this way.
 
 The format for classification task `train.csv` is:
@@ -111,6 +128,29 @@ In [1]: df[["data", "labels"]].sample(40)
 | 15437 | {"alternatives": {"transcript": "..."             | query_loan             |
 | 19543 | {"alternatives": {"am_score": -182.39217, "c..."  | stop_payment           |
 
+The columns named `data` and `labels` are necessary for the classification datasets. Other arbitrary columns
+remain unused if given.
+
+A single instance in the `data` column for classification tasks should look like:
+
+```json
+{
+    "alternatives": [[
+        {"transcript": "I need a chequebook",
+            "confidence": 0.9581535,
+            "am_score": -364.68695,
+            "lm_score": 121.946655},
+        {"transcript": "I need a cheque book",
+            "confidence": 0.958522,
+            "am_score": -362.57028,
+            "lm_score": 123.00037}]],
+    "context": "...""
+}
+```
+
+---
+
+[% if need_ner %]
 And an example for the ner task dataset is:
 
 ```python
@@ -130,32 +170,13 @@ In [2]: df[df["labels"] != "O"].sample(10)
 | 91673  | 15458       | i      | O              |
 | 85928  | 14710       | other  | O              |
 
-Either dataset may contain any number of arbitrary columns but:
-
--   The columns named `data` and `labels` are necessary for the classification datasets.
--   Likewise, `sentence_id`, `words`, `labels` are necessary for NER datasets.
-
-A single instance in the `data` column for classification tasks should look like:
-
-```json
-{
-    "alternatives": [[
-        {"transcript": "I need a chequebook",
-            "confidence": 0.9581535,
-            "am_score": -364.68695,
-            "lm_score": 121.946655},
-        {"transcript": "I need a cheque book",
-            "confidence": 0.958522,
-            "am_score": -362.57028,
-            "lm_score": 123.00037}]],
-    "context": "...""
-}
-```
+The columns named `sentence_id`, `words`, `labels` are necessary for NER datasets. Other arbitrary columns
+remain unused if given.
 
 ### 4. Training
 
 Before training, your directory tree should look like:
-
+[% if use_ner %]
 ```shell
 data
 +---0.0.0
@@ -172,18 +193,38 @@ data
         +---metrics
         +---models
 ```
+[% else %]
+```shell
+data
++---0.0.0
+    +---classification
+        +---datasets
+        |   +---train.csv
+        |   +---test.csv
+        +---metrics
+        +---models
+```
+[% endif %]
 
+
+[% if use_ner %]
 These commands help in training the classifier and the NER model.
 Specifying the model name in the command will train only the mentioned model.
-
 ```shell
-poetry run dialogy train [--version=<version>]
-poetry run dialogy train classification [--version=<version>] # trains only classifier.
-poetry run dialogy train ner [--version=<version>] # trains only NER.
+poetry run [[python_package_import_name]] train [--version=<version>]
+poetry run [[python_package_import_name]] train classification [--version=<version>] # trains only classifier.
+poetry run [[python_package_import_name]] train ner [--version=<version>] # trains only NER.
 ```
+[% else %]
+These commands help in training the classifier model.
+```shell
+poetry run [[python_package_import_name]] train [--version=<version>]
+```
+[% endif %]
 
 Once the training is complete, you would notice the models would be populated:
 
+[% if use_ner %]
 ```shell
 data
 +---0.0.0
@@ -219,21 +260,49 @@ data
             +---tokenizer_config.json
             +---training_args.bin
 ```
+[% else %]
+```shell
+data
++---0.0.0
+    +---classification
+        +---datasets
+        |   +---train.csv
+        |   +---test.csv
+        +---metrics
+        +---models
+            +---config.json
+            +---labelencoder.pkl
+            +---eval_results.txt
+            +---model_args.json
+            +---pytorch_model.bin
+            +---sentencepiece.bpe.model
+            +---special_tokens_map.json
+            +---tokenizer_config.json
+            +---training_args.bin
+            +---training_progress_scores.csv
+```
+[% endif %]
 
 ### 5. Evaluation
 
-To evaluate the models just replace the above commands with test!
+To evaluate use:
 
+[% if use_ner %]
 ```shell
-poetry run dialogy test [--version=<version>]
-poetry run dialogy test classification [--version=<version>]
-poetry run dialogy test ner [--version=<version>]
+poetry run [[python_package_import_name]] test [--version=<version>]
+poetry run [[python_package_import_name]] test classification [--version=<version>]
+poetry run [[python_package_import_name]] test ner [--version=<version>]
 ```
-
+[% else %]
+```shell
+poetry run [[python_package_import_name]] test [--version=<version>]
+```
+[% endif %]
 (If the version argument is not provided, a default value is used from the _config/config.yaml_.)
 
 Evaluation scripts save the reports in the `metrics` directory.
 
+[% if use_ner %]
 ```shell
 data
 +---0.0.0
@@ -250,15 +319,26 @@ data
         |   +---report.csv
         >---models # collapsed
 ```
-
-You may see it only in one directory depending on the test command arguments provided.
+[% else %]
+```shell
+data
++---0.0.0
+    +---classification
+        +---datasets
+        |   +---train.csv
+        |   +---test.csv
+        +---metrics
+        |   +---report.csv
+        >---models # collapsed
+```
+[% endif %]
 
 ### 6. Interactive Session
 
 To run your models to see how they perform on live inputs, use the following command:
 
 ```shell
-poetry run dialogy repl
+poetry run [[python_package_import_name]] repl
 ```
 
 This prints a set of expected input formats, **if nothing matches, it assumes the input to be plain-text!**
@@ -276,73 +356,22 @@ The process creates a git tag with the semver so that you can checkout the tag f
 To initiate a release process, perform:
 
 ```shell
-poetry run dialogy release --version=<version>
+poetry run [[python_package_import_name]] release --version=<version>
 ```
 
 ### 8. Serving
 
-This template also installs [`Flask`](https://flask.palletsprojects.com/en/1.1.x/) for serving APIs. Use its standard documentation for setting up APIs and serving applications.
+This template also installs [`Flask`](https://flask.palletsprojects.com/en/1.1.x/) for serving APIs. Use its standard documentation for setting up API endpoints. Use `uwsgi` for production use.
+
+```shell
+uwsgi --http :9002 --enable-threads --single-interpreter --threads 1 --callable=app --module [[python_package_import_name]].src.api.endpoints:app --ini uwsgi.ini
+# You can use any other port, 9002 was only meant as an example.
+```
 
 **Do note, the default Flask server is not meant for production!**. Use [`uwsgi`](https://www.digitalocean.com/community/tutorials/how-to-serve-flask-applications-with-uswgi-and-nginx-on-ubuntu-18-04) instead.
 
 ## Commands
-
-These are the available cli commands:
-
-1.  `poetry run dialogy train [--version=<version>] [--file-format=<file_format>]`
-
-    Routine for training both Classifier and NER sequntially.
-    Provide a version and a model will be trained on a dataset of the same version.
-
-    This script expects data/&lt;version> to be a directory where models, metrics
-    and dataset are present.
-
-2.  `poetry run dialogy test [--version=<version>] [--file-format=<file_format>]`
-
-    Routine for testing both Classifier and NER sequentially.
-    Provide a version to evaluate a trained model on an evaluation dataset.
-
-3.  `poetry run dialogy (train|test) (classification|ner) <version> [--file-format=<file_format>]`
-
-    Same as the previous train and test commands with an exception of only one type of
-    task (classification|ner) is picked.
-
-4.  `poetry run dialogy data [--version=<version>]`
-
-    This command creates a directory named &lt;version> under data.
-    Helpful if only empty directory structures are needed.
-
-5.  `poetry run dialogy clone &lt;from_version> &lt;to_version>`
-
-    This command copies a directory from another under data.
-    Helpful if only directory structures and their data should be copied.
-
-6.  `poetry run dialogy repl [--version=<version>]`
-
-    This command starts up an interactive terminal to dump json or plain text
-    and interact with the trained models.
-
-7.  `poetry run dialogy release <version>`
-
-    This command syncs dvc and git data, produces a tag on the repo and manages remote state.
-
-```shell
-Usage:
-  __init__.py (train|test|repl) [--version=<version>] [--file-format=<file_format>]
-  __init__.py (train|test) (classification|ner) [--version=<version>] [--file-format=<file_format>]
-  __init__.py data --version=<version> [--force]
-  __init__.py clone <from_version> <to_version> [--force]
-  __init__.py release --version=<version>
-  __init__.py (-h | --help)
-
-Options:
-    <from_version>              The source data directory; models, datasets, metrics will be copied from here.
-    <to_version>                The destination data directory; models, datasets, metrics will be copied here.
-    --version=<version>         The version of the dataset, model, metrics to use.
-    --file-format=<file_format> One of "csv" or "sqlite".
-    --force                     Pass this flag to overwrite existing directories.
-    -h --help                   Show this screen.
-```
+The CLI commands can be seen [here](./[[python_package_import_name]]/dev/cli.py.jinja)
 
 ## Config
 
@@ -419,8 +448,6 @@ The best place to setup custom code is the `src` dir. The existing `workflow` wo
 usually be modified to have api level changes. The API itself can be modified via `api/endpoints.py`.
 
 To modify configuration edit `config/config.yaml`.
-
-## Serving
 
 ## Upcoming Features
 

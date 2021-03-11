@@ -27,17 +27,23 @@ from [[python_package_import_name]].utils.logger import log
 from [[python_package_import_name]].utils.config import Config
 
 
-[% raw %]
-def train_intent_classifier(config, eval_split=const.N_EVAL_SPLIT, file_format=const.CSV):
+def train_intent_classifier(
+    config, eval_split=const.N_EVAL_SPLIT, file_format=const.CSV
+):
     log.info("Preparing dataset.")
-    train_df = config.get_dataset(const.CLASSIFICATION, const.TRAIN, file_format=file_format)
+    train_df = config.get_dataset(
+        const.CLASSIFICATION, const.TRAIN, file_format=file_format
+    )
 
     label_encoder = preprocessing.LabelEncoder()
     encoder = label_encoder.fit(train_df[const.LABELS])
     train_df[const.LABELS] = encoder.transform(train_df[const.LABELS])
 
     train_df, eval_df = train_test_split(
-        train_df, test_size=eval_split, random_state=0, stratify=train_df[[const.LABELS]]
+        train_df,
+        test_size=eval_split,
+        random_state=0,
+        stratify=train_df[[const.LABELS]],
     )
 
     model = config.get_model(const.CLASSIFICATION, const.TRAIN)
@@ -58,7 +64,7 @@ def train_intent_classifier(config, eval_split=const.N_EVAL_SPLIT, file_format=c
 
     log.debug("Finished!")
 
-
+[% if use_ner %]
 def train_ner_model(config, file_format=const.CSV):
     log.info("Preparing dataset.")
     train_df = config.get_dataset(const.NER, const.TRAIN, file_format=file_format)
@@ -73,4 +79,5 @@ def train_ner_model(config, file_format=const.CSV):
     config.remove_checkpoints(const.NER)
 
     log.debug("Finished!")
+[% endif %]
 [% endraw %]

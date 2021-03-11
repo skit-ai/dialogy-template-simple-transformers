@@ -96,7 +96,7 @@ def vcs_add() -> None:
     subprocess.call(["git", "add", "CHANGELOG.md"], shell=False)
     subprocess.call(["git", "add", "pyproject.toml"], shell=False)
     subprocess.call(["git", "add", os.path.join("config", "config.yaml")], shell=False)
-    
+
 
 def vcs_tag_and_commit_state(version, changelog_body) -> None:
     """
@@ -135,11 +135,11 @@ def is_dvc_remote_set() -> bool:
     _ = config.read(dvc_config_path)
     sections = config.sections()
 
-    if '\'remote "s3remote"\'' not in sections:
+    if "'remote \"s3remote\"'" not in sections:
         return False
 
     return True
-  
+
 
 def update_changelog(version: str) -> str:
     """
@@ -154,9 +154,13 @@ def update_changelog(version: str) -> str:
         str: Changelog content.
     """
     separator = "-" * 50 + "\n"
-    print_formatted_text(HTML(f"What makes version {version} remarkable? "
-        "\nThis input is <b><ansigreen>markdown friendly</ansigreen></b> and <b><ansigreen>date</ansigreen></b> will be added automatically!\n(Press ESC"
-        " followed by ENTER to submit)\n" + separator))
+    print_formatted_text(
+        HTML(
+            f"What makes version {version} remarkable? "
+            "\nThis input is <b><ansigreen>markdown friendly</ansigreen></b> and <b><ansigreen>date</ansigreen></b> will be added automatically!\n(Press ESC"
+            " followed by ENTER to submit)\n" + separator
+        )
+    )
 
     raw_changelog = prompt("", multiline=True)
 
@@ -192,7 +196,6 @@ def release(version: str) -> None:
         log.error("There are unstaged / uncommitted changes.")
         return None
 
-    
     active_branch = repo.active_branch.name
 
     # Fetch list of tags from the remote, to prevent creating tags that already exist.
@@ -201,14 +204,19 @@ def release(version: str) -> None:
 
     tags = [tag.name for tag in TagReference.list_items(repo)]
     if version in tags:
-        log.error("Version %s already exists. Use `git tag` or `git tag -l %s` to verify.", version, version)
+        log.error(
+            "Version %s already exists. Use `git tag` or `git tag -l %s` to verify.",
+            version,
+            version,
+        )
         return None
 
     if not is_dvc_remote_set():
-        log.error("Looks like dvc remote is not set. We won't be able to push code."
-        "\nRun:\n\ndvc remote add -d s3remote s3://bucket_name/path/to/dir\n\n... to use this command.")
+        log.error(
+            "Looks like dvc remote is not set. We won't be able to push code."
+            "\nRun:\n\ndvc remote add -d s3remote s3://bucket_name/path/to/dir\n\n... to use this command."
+        )
         return None
-
 
     # Remove everything except the current version, meant for release.
     remove_older_data_versions(version)

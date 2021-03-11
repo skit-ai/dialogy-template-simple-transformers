@@ -4,11 +4,15 @@ from typing import Any, List, Dict
 import attr
 from flask import jsonify, request
 from dialogy.types.intent import Intent
+from dialogy.preprocess.text.normalize_utterance import normalize
 
 from [[python_package_import_name]] import constants as const
 from [[python_package_import_name]].src.api import app
 from [[python_package_import_name]].src.controller.prediction import predict_wrapper
 from [[python_package_import_name]].utils.sentry import capture_exception
+
+
+PREDICT_API = predict_wrapper()
 
 
 [% raw %]
@@ -33,38 +37,52 @@ def slu(lang, project_name):
     Produces a json response containing intents and entities.
     """
     if not isinstance(request.json, dict):
-        jsonify({
-            "message": "Invalid request.", 
-            "cause": f"Post body should be a dictionary, received {type(request.json)}."
-        }), 400
+        return (
+            jsonify(
+                {
+                    "message": "Invalid request.",
+                    "cause": f"Post body should be a dictionary, received {type(request.json)}.",
+                }
+            ),
+            400,
+        )
 
-    if not const.ALTERNATIVES in request.json or const.TEXT in request.json:
-        jsonify({
-            "message": "Invalid request.", 
-            "cause": f"Post body should have either of these keys: {const.TEXT}, {const.ALTERNATIVES}."
-        }), 400
+    if not const.ALTERNATIVES in request.json and const.TEXT in request.json:
+        return (
+            jsonify(
+                {
+                    "message": "Invalid request.",
+                    "cause": f"Post body should have either of these keys: {const.TEXT}, {const.ALTERNATIVES}.",
+                }
+            ),
+            400,
+        )
 
     try:
-        utterance: List[List[Dict[str, Any]]] = request.json.get(const.ALTERNATIVES)
+        maybe_utterance: Any = request.json.get(const.ALTERNATIVES)
+        sentences: List[str] = normalize(maybe_utterance)
         context: str = request.json.get(const.CONTEXT)
+        response = PREDICT_API(sentences, context)
 
-        predict = predict_wrapper()
+        return jsonify(status="ok", response=response), 200
+    except TypeError:
+        text = request.json.get(const.TEXT)
+        if not text:
+            return {
+                const.INTENTS: [attr.asdict(Intent(name=const.S_INTENT_ERROR, score=1))]
+            }
 
-        if not utterance:
-            utterance = [[{const.TRANSCRIPT: request.json.get(const.TEXT)}]]
+        context: str = request.json.get(const.CONTEXT)
+        sentences: List[str] = normalize(text)
 
-        if not utterance:
-            return {const.INTENTS: [attr.asdict(Intent(name=const.S_INTENT_ERROR, score=1))]}
+        response = PREDICT_API(sentences, context)
 
-        response = predict(utterance, context)
-
-        return jsonify(status="ok", response=response)
     except Exception as exc:
-        # Update this section to: 
+        # Update this section to:
         # 1. Handle specific errors
         # 2. provide user-friendly messages. The current is developer friendly.
-        capture_exception(index_error, ctx="api", message=request.json)
-        jsonify({"message": str(e), "cause": traceback.format_exc()}), 500
+        capture_exception(exc, ctx="api", message=request.json)
+        return jsonify({"message": str(exc), "cause": traceback.format_exc()}), 500
 
 
 if __name__ == "__main__":

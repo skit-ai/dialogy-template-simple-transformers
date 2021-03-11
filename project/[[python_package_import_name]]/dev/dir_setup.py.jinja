@@ -41,13 +41,19 @@ def create_data_directory(version: str, force: bool = False) -> None:
     semver.VersionInfo.parse(version)
 
     base_module_path = os.path.join(const.DATA, version)
+    [% if use_ner %]
     depth_level_1 = [const.CLASSIFICATION, const.NER]
+    [% else %]
+    depth_level_1 = [const.CLASSIFICATION, const.NER]
+    [% endif %]
     depth_level_2 = [const.DATASETS, const.METRICS, const.MODELS]
 
     for subdir in depth_level_1:
         for childdir in depth_level_2:
             # `exist_ok=False` is the default argument, it raises OSError if the path already exists.
-            os.makedirs(os.path.join(base_module_path, subdir, childdir), exist_ok=force)
+            os.makedirs(
+                os.path.join(base_module_path, subdir, childdir), exist_ok=force
+            )
 
 
 def copy_data_directory(copy_from: str, copy_to: str, force: bool = False) -> None:
