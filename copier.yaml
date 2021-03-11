@@ -27,3 +27,22 @@ python_package_import_name:
   type: str
   help: Your Python package import name (for `import NAME` in Python code)
   default: "[[ project_name|lower|replace('-', '_')|replace(' ', '_') ]]"
+
+intent_classification_flavor:
+  type: str
+  help: |-
+    Type the number against the feature
+    
+    [1] Intent classifier with concat-utterances.
+    [2] Intent classifier with voting over each alternative.
+  default: 1
+
+use_duckling:
+  type: bool
+  help: Do you need Duckling?
+  default: false
+
+use_ner:
+  type: bool
+  help: Do you need simpletransformers NER?
+  default: false
