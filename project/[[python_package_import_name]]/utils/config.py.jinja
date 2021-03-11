@@ -232,7 +232,6 @@ class Config:
                 f"but no model found in {model_args[const.S_OUTPUT_DIR]}"
             ) from os_err
     [% endif %]
-[% raw %]
     def get_labels(self, task) -> List[str]:
         if task == const.CLASSIFICATION:
             encoder = self.load_pickle(
@@ -247,7 +246,7 @@ class Config:
             raise ValueError(
                 f"Expected task to be {const.CLASSIFICATION} or {const.NER} instead, {task} was found"
             )
-
+[% raw %]
     def set_labels(self, task, labels) -> None:
         self._config[const.TASKS][task][const.LABELS] = labels
 
