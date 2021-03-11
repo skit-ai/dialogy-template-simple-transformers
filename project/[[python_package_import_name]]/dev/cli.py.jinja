@@ -198,7 +198,7 @@ def main() -> None:
         else:
             log.warning("Config is not prepared for using ner model.")
     [% else %]
-    elif args[const.TRAIN]:
+    if args[const.TRAIN]:
         if config.use_classifier:
             train_intent_classifier(config, file_format=file_format)
         else:
