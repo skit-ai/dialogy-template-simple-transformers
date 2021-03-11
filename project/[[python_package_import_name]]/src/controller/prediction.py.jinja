@@ -14,6 +14,9 @@ from dialogy.postprocess.text.slot_filler.rule_slot_filler import (
 [% if intent_classification_flavor == 2 %]
 from dialogy.postprocess.text.voting.intent import VotePlugin
 [% endif %]
+[% if intent_classification_flavor == 1 %]
+from dialogy.preprocess.text.merge_asr_output import merge_asr_output_plugin
+[% endif %]
 [% if use_duckling %]
 from dialogy.parser.text.entity.duckling_parser import duckling_parser
 [% endif %]
