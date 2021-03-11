@@ -64,6 +64,7 @@ def train_intent_classifier(
     config.remove_checkpoints(const.CLASSIFICATION)
 
     log.debug("Finished!")
+[% endraw %]
 
 [% if use_ner %]
 def train_ner_model(config, file_format=const.CSV):
@@ -81,4 +82,3 @@ def train_ner_model(config, file_format=const.CSV):
 
     log.debug("Finished!")
 [% endif %]
-[% endraw %]

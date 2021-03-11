@@ -68,6 +68,7 @@ def test_classifier(config, file_format=const.CSV, custom_file=None):
         errors, columns=[const.DATA_ID, const.DATA, const.TRUE_LABEL, const.PRED_LABEL]
     )
     config.save_classification_errors(data_frame)
+[% endraw %]
 
 [% if use_ner %]
 def test_ner(config, file_format=const.CSV, custom_file=None):
@@ -83,4 +84,3 @@ def test_ner(config, file_format=const.CSV, custom_file=None):
     log.info("saving report.")
     config.save_report(const.NER, results)
 [% endif %]
-[% endraw %]

@@ -67,14 +67,14 @@ class Config:
     #
     # Confidence threshold for classification tasks.
     classification_threshold = attr.ib(default=None)
-
+[% endraw %]
     [% if use_ner %]
     # **ner_threshold**
     #
     # Confidence threshold for NER tasks.
     ner_threshold = attr.ib(default=None)
     [% endif %]
-
+[% raw %]
     # **rules**
     #
     # Rules for filling Entities within Intent slots.
@@ -98,7 +98,7 @@ class Config:
         ][const.FORMAT]
         self.rules = self._config[const.RULES]
         self.use_classifier = self._config[const.TASKS][const.CLASSIFICATION][const.USE]
-
+[% endraw %]
         [% if use_ner %]
         self.ner_file_format = self._config[const.TASKS][const.NER][const.FORMAT]
 
@@ -106,7 +106,7 @@ class Config:
         self.use_ner = self._config[const.TASKS][const.NER][const.USE]
         [% endif %]
 
-
+[% raw %]
     def set_version(self, version) -> "Config":
         self.version = version
         self._config[const.VERSION] = version
@@ -123,7 +123,7 @@ class Config:
 
     def get_model_path(self, task) -> str:
         return os.path.join(self.get_model_dir(task), self.version)
-
+[% endraw %]
     def get_dataset(
         self, task, purpose, file_format=const.CSV, custom_file=None
     ) -> Any:
@@ -157,6 +157,7 @@ class Config:
                 " within config/config.yaml?"
             ) from file_missing_error
 
+[% raw %]
         self.set_labels(task, labels)
         return data
 
@@ -202,6 +203,7 @@ class Config:
                 f"config/config.yaml has {const.TASKS}.{purpose}.use = True, "
                 f"but no model found in {model_args[const.S_OUTPUT_DIR]}"
             ) from os_err
+[% endraw %]
 
     [% if use_ner %]
     def get_ner_model(self, purpose, labels) -> Optional[NERModel]:
@@ -230,7 +232,7 @@ class Config:
                 f"but no model found in {model_args[const.S_OUTPUT_DIR]}"
             ) from os_err
     [% endif %]
-
+[% raw %]
     def get_labels(self, task) -> List[str]:
         if task == const.CLASSIFICATION:
             encoder = self.load_pickle(
@@ -258,6 +260,7 @@ class Config:
             index=False,
         )
 
+[% endraw %]
     def get_model(self, task, purpose):
         labels = self.get_labels(task)
         [% if use_ner %]
@@ -274,7 +277,7 @@ class Config:
         [% endif %]
         else:
             raise ValueError(error_message)
-
+[% raw %]
     def save_pickle(self, task, prop, value) -> "Config":
         model_dir = self.get_model_dir(task)
         with open(os.path.join(model_dir, prop), "wb") as handle:
@@ -290,7 +293,7 @@ class Config:
         with open(self.config_path, "w") as handle:
             yaml.dump(self._config, handle, sort_keys=False)
         return self
-
+[% endraw %]
     def save_report(self, task, results) -> "Config":
         if task == const.CLASSIFICATION:
             save_classification_report(
@@ -306,7 +309,7 @@ class Config:
             raise ValueError(
                 f"Expected task to be {const.CLASSIFICATION} or {const.NER} instead, {task} was found"
             )
-
+[% raw %]
     def remove_checkpoints(self, task) -> None:
         model_dir = self.get_model_dir(task)
         items = os.listdir(model_dir)

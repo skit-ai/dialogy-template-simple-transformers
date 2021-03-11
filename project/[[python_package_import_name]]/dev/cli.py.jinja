@@ -139,7 +139,7 @@ def main() -> None:
         config.set_version(version)
     else:
         version = config.version
-
+[% endraw %]
     [% if use_ner %]
     if args[const.CLASSIFICATION]:
         file_format = args["--file-format"] or config.classification_file_format
@@ -216,7 +216,7 @@ def main() -> None:
         else:
             log.warning("Config is not prepared for using classification model.")
     [% endif %]
-
+[% raw %]
     if args[const.DATA]:
         create_data_directory(version, force=force)
 

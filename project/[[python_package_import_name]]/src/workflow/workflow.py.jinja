@@ -66,7 +66,7 @@ class XLMRWorkflow(Workflow):
         self.labelencoder = self.config.load_pickle(
             const.CLASSIFICATION, const.S_INTENT_LABEL_ENCODER
         )
-
+[% endraw %]
     def classify(self, fallback_intent=const.S_INTENT_ERROR) -> Intent:
         [% if intent_classification_flavor == 2%]
         """
@@ -346,7 +346,6 @@ class XLMRWorkflow(Workflow):
 
         return self.entity_consensus(entities)
     [% endif%]
-
     def inference(self):
         intent = self.classify()
         [% if use_ner %]
@@ -357,4 +356,3 @@ class XLMRWorkflow(Workflow):
         
         _, pre_filled_entities = self.output
         self.output = intent, [*pre_filled_entities, *entities]
-[% endraw %]
