@@ -261,6 +261,7 @@ class XLMRWorkflow(Workflow):
         tape = 0
         entity_groups = {}
 
+        [% raw %]
         # An example of `token_list` is:
         #
         # [{'I': 'O'},
@@ -273,6 +274,7 @@ class XLMRWorkflow(Workflow):
         #   {'bangalore': 'B-location'}]
         #
         # Produced by: "I need a flight from delhi to bangalore"
+        [% endraw %]
         for token in token_list:
             # since the output is a `Dict[str, str]`, where the key is the token,
             for key, raw_type in token.items():
@@ -327,7 +329,7 @@ class XLMRWorkflow(Workflow):
         raw_token_lists, _ = self.ner.predict([self.input[S_NER_INPUT]])
 
         entities = []
-
+        [% raw %]
         # An example of `raw_token_lists` is:
         #
         # [[{'I': 'O'},
@@ -340,6 +342,7 @@ class XLMRWorkflow(Workflow):
         #   {'bangalore': 'B-location'}]]
         #
         # Produced by: "I need a flight from delhi to bangalore"
+        [% endraw %]
 
         for i, token_list in enumerate(raw_token_lists):
             entities.append(self.collect(token_list, i, self.input[i]))
