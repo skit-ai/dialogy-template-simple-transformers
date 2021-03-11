@@ -81,7 +81,7 @@ def predict_wrapper():
     preprocessors.append(duckling_parser)
     [% endif %]
 
-    {# This should always be last #}
+    [# This should always be last #]
     [% if use_ner or use_duckling %]
     postprocessors.append(slot_filler)
     [% endif %]
