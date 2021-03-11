@@ -65,7 +65,7 @@ The `poetry install` step takes care of dvc installation.
 git init
 dvc init
 dvc remote add -d s3remote s3://bucket-name/path/to/dir
-poetry run dialogy data --version=0.0.0
+poetry run [[python_package_import_name]] data --version=0.0.0
 dvc add data
 ```
 
@@ -177,9 +177,9 @@ These commands help in training the classifier and the NER model.
 Specifying the model name in the command will train only the mentioned model.
 
 ```shell
-poetry run dialogy train [--version=<version>]
-poetry run dialogy train classification [--version=<version>] # trains only classifier.
-poetry run dialogy train ner [--version=<version>] # trains only NER.
+poetry run [[python_package_import_name]] train [--version=<version>]
+poetry run [[python_package_import_name]] train classification [--version=<version>] # trains only classifier.
+poetry run [[python_package_import_name]] train ner [--version=<version>] # trains only NER.
 ```
 
 Once the training is complete, you would notice the models would be populated:
@@ -225,9 +225,9 @@ data
 To evaluate the models just replace the above commands with test!
 
 ```shell
-poetry run dialogy test [--version=<version>]
-poetry run dialogy test classification [--version=<version>]
-poetry run dialogy test ner [--version=<version>]
+poetry run [[python_package_import_name]] test [--version=<version>]
+poetry run [[python_package_import_name]] test classification [--version=<version>]
+poetry run [[python_package_import_name]] test ner [--version=<version>]
 ```
 
 (If the version argument is not provided, a default value is used from the _config/config.yaml_.)
@@ -258,7 +258,7 @@ You may see it only in one directory depending on the test command arguments pro
 To run your models to see how they perform on live inputs, use the following command:
 
 ```shell
-poetry run dialogy repl
+poetry run [[python_package_import_name]] repl
 ```
 
 This prints a set of expected input formats, **if nothing matches, it assumes the input to be plain-text!**
@@ -276,7 +276,7 @@ The process creates a git tag with the semver so that you can checkout the tag f
 To initiate a release process, perform:
 
 ```shell
-poetry run dialogy release --version=<version>
+poetry run [[python_package_import_name]] release --version=<version>
 ```
 
 ### 8. Serving
@@ -294,7 +294,7 @@ uwsgi --http :9002 --enable-threads --single-interpreter --threads 1 --callable=
 
 These are the available cli commands:
 
-1.  `poetry run dialogy train [--version=<version>] [--file-format=<file_format>]`
+1.  `poetry run [[python_package_import_name]] train [--version=<version>] [--file-format=<file_format>]`
 
     Routine for training both Classifier and NER sequntially.
     Provide a version and a model will be trained on a dataset of the same version.
@@ -302,32 +302,32 @@ These are the available cli commands:
     This script expects data/&lt;version> to be a directory where models, metrics
     and dataset are present.
 
-2.  `poetry run dialogy test [--version=<version>] [--file-format=<file_format>]`
+2.  `poetry run [[python_package_import_name]] test [--version=<version>] [--file-format=<file_format>]`
 
     Routine for testing both Classifier and NER sequentially.
     Provide a version to evaluate a trained model on an evaluation dataset.
 
-3.  `poetry run dialogy (train|test) (classification|ner) <version> [--file-format=<file_format>]`
+3.  `poetry run [[python_package_import_name]] (train|test) (classification|ner) <version> [--file-format=<file_format>]`
 
     Same as the previous train and test commands with an exception of only one type of
     task (classification|ner) is picked.
 
-4.  `poetry run dialogy data [--version=<version>]`
+4.  `poetry run [[python_package_import_name]] data [--version=<version>]`
 
     This command creates a directory named &lt;version> under data.
     Helpful if only empty directory structures are needed.
 
-5.  `poetry run dialogy clone &lt;from_version> &lt;to_version>`
+5.  `poetry run [[python_package_import_name]] clone &lt;from_version> &lt;to_version>`
 
     This command copies a directory from another under data.
     Helpful if only directory structures and their data should be copied.
 
-6.  `poetry run dialogy repl [--version=<version>]`
+6.  `poetry run [[python_package_import_name]] repl [--version=<version>]`
 
     This command starts up an interactive terminal to dump json or plain text
     and interact with the trained models.
 
-7.  `poetry run dialogy release <version>`
+7.  `poetry run [[python_package_import_name]] release <version>`
 
     This command syncs dvc and git data, produces a tag on the repo and manages remote state.
 
