@@ -355,5 +355,9 @@ class XLMRWorkflow(Workflow):
         entities = []
         [% endif %]
         
+        [% if use_duckling %]
         _, pre_filled_entities = self.output
         self.output = intent, [*pre_filled_entities, *entities]
+        [% else %]
+        self.output = intent, entities
+        [% endif %]
