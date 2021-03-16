@@ -105,6 +105,12 @@ class Config:
         self.use_ner = self._config[const.TASKS][const.NER][const.USE]
         [% endif %]
 
+        [% if use_ner %]
+        self.supported_tasks = [const.CLASSIFICATION, const.NER]
+        [% else %]
+        self.supported_tasks = [const.CLASSIFICATION]
+        [% endif %]
+
 
     def set_version(self, version) -> "Config":
         self.version = version
@@ -126,11 +132,7 @@ class Config:
     def get_dataset(
         self, task, purpose, file_format=const.CSV, custom_file=None
     ) -> Any:
-        [% if use_ner %]
-        error_message = f"Expected task to be {const.CLASSIFICATION} or {const.NER} instead, {task} was found"
-        [% else %]
-        error_message = f"Expected task to be {const.CLASSIFICATION} instead, {task} was found"
-        [% endif %]
+        error_message = f"Expected task to be in {self.supported_tasks} instead, {task} was found!"
 
         data_dir = os.path.join(const.DATA, self.version, task)
         dataset_dir = os.path.join(data_dir, const.DATASETS)
@@ -247,7 +249,11 @@ class Config:
             )
 
     def set_labels(self, task, labels) -> None:
+        if task not in :
+            raise ValueError(f"Expected task to be one of {self.supported_tasks}")
+        namespace = const.S_ENTITY_LABELS if task == const.NER else const.S_INTENT_LABEL_ENCODER
         self._config[const.TASKS][task][const.LABELS] = labels
+        self.save_pickle(task, namespace, labels)
 
     def get_alias(self, task) -> List[str]:
         return self._config.get(const.TASKS, {}).get(task, {}).get(const.ALIAS)
@@ -258,14 +264,9 @@ class Config:
             index=False,
         )
 
-
     def get_model(self, task, purpose):
         labels = self.get_labels(task)
-        [% if use_ner %]
-        error_message = f"Expected task to be {const.CLASSIFICATION} or {const.NER} instead, {task} was found"
-        [% else %]
-        error_message = f"Expected task to be {const.CLASSIFICATION} instead, {task} was found"
-        [% endif %]
+        error_message = f"Expected task to be in {self.supported_tasks} instead, {task} was found!"
 
         if task == const.CLASSIFICATION:
             return self.get_classification_model(purpose, labels)
@@ -315,4 +316,3 @@ class Config:
             subdir = os.path.join(model_dir, item)
             if os.path.isdir(subdir):
                 shutil.rmtree(subdir)
-
