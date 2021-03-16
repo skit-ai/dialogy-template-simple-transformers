@@ -9,6 +9,10 @@ import numpy as np
 from dialogy.workflow import Workflow  # type: ignore
 from dialogy.types.intent import Intent
 
+[% if use_ner or use_duckling %]
+from dialogy.types.entity import BaseEntity
+[% endif %]
+
 from [[python_package_import_name]] import constants as const
 from [[python_package_import_name]].utils.logger import log
 from [[python_package_import_name]].utils.config import Config
@@ -66,12 +70,12 @@ class XLMRWorkflow(Workflow):
             const.CLASSIFICATION, const.S_INTENT_LABEL_ENCODER
         )
 
-    def classify(self, fallback_intent=const.S_INTENT_ERROR) -> Intent:
-        [% if intent_classification_flavor == 2%]
+    [% if intent_classification_flavor == 2%]
+    def classify(self, texts: List[str], fallback_intent=const.S_INTENT_ERROR) -> Intent:
         """
         Sentence to Intent classification.
 
-        - `self.input` should be a list of strings.
+        - `texts` should be a list of strings.
         - In case of prediction failures we return an Intent named "_error_".
         - Use postprocessing plugins to pick a single value.
 
@@ -82,19 +86,19 @@ class XLMRWorkflow(Workflow):
             log.warning("You have set classifier.use = false within your yaml!")
             return Intent(name=const.S_INTENT_ERROR, score=1)
 
-        if not isinstance(self.input, list):
+        if not isinstance(texts, list):
             raise TypeError(
                 "Expected input to be of type List[str] but"
                 f" found {type(self.input)} instead in {self.input}."
             )
 
-        if not all(isinstance(item, str) for item in self.input):
+        if not all(isinstance(item, str) for item in texts):
             raise TypeError(
                 "Expected input to be of type List[str] but"
                 f" found {type(self.input)} instead in {self.input}."
             )
 
-        predictions, logits = self.classifier.predict(self.input)
+        predictions, logits = self.classifier.predict(texts)
 
         # This fallback prevents cases where failing to predict
         # would lead to no output.
@@ -112,7 +116,8 @@ class XLMRWorkflow(Workflow):
             intents.append(intent)
 
         return intents
-        [% else %]
+    [% else %]
+    def classify(self, text: str, fallback_intent=const.S_INTENT_ERROR) -> Intent:
         """
         Sentence to Intent classification.
 
@@ -122,10 +127,10 @@ class XLMRWorkflow(Workflow):
         if not self.config.use_classifier:
             return Intent(name=const.S_INTENT_ERROR, score=1)
 
-        predictions, raw_outputs = self.classifier.predict([self.input[const.S_CLASSIFICATION_INPUT]])
+        predictions, raw_outputs = self.classifier.predict([text])
 
         try:
-            # We will expect only one sentence within `self.input`.
+            # We will expect only one sentence within `texts`.
             predicted_intent = self.labelencoder.inverse_transform(predictions)[0]
             raw_output = raw_outputs[0]
 
@@ -305,11 +310,16 @@ class XLMRWorkflow(Workflow):
         Returns:
             List[Any]: List of intents or entities.
         """
-        # Resolving strategy for entities is to flatten.
-        # This should be moved to max voting at-least before release.
-        return [entity for entity_list in entities_list for entity in entity_list]
+        prevalent_entities = []
+        entities_flattened = py_.flatten(entities_list)
+        entity_groups = py_.group_by(entities_flattened, lambda entity: entity.type)
+        for _, entities in entity_groups.items():
+            if len(entities) > observations * threshold:
+                entity = py_.min_by(entities, lambda entity: entity.alternative_index)
+                prevalent_entities.append(entity)
+        return prevalent_entities
 
-    def extract(self) -> List[BaseEntity]:
+    def extract(self, texts: List[str]) -> List[BaseEntity]:
         """
         NER from a given sentence.
 
@@ -324,7 +334,7 @@ class XLMRWorkflow(Workflow):
 
         # The second value is `raw_output` which can be used for estimating confidence
         # scores for each token identified as an entity.
-        raw_token_lists, _ = self.ner.predict([self.input[S_NER_INPUT]])
+        raw_token_lists, _ = self.ner.predict(texts)
 
         entities = []
         [% raw %]
@@ -343,21 +353,28 @@ class XLMRWorkflow(Workflow):
         [% endraw %]        
 
         for i, token_list in enumerate(raw_token_lists):
-            entities.append(self.collect(token_list, i, self.input[i]))
+            entities.append(self.collect(token_list, i, texts[i]))
 
         return self.entity_consensus(entities)
     [% endif%]
     def inference(self):
-        intent = self.classify()
+        classifier_input = self.input[const.S_CLASSIFICATION_INPUT]
+
         [% if use_ner %]
-        entities = self.extract()
+        ner_input = self.input[const.S_NER_INPUT]
+        [% endif %]
+
+        intent = self.classify(classifier_input)
+
+        [% if use_ner %]
+        entities = self.extract(ner_input)
         [% else %]
         entities = []
         [% endif %]
-        
+
         [% if use_duckling %]
         _, pre_filled_entities = self.output
-        self.output = intent, [*pre_filled_entities, *entities]
+        self.output = (intent, [*pre_filled_entities, *entities])
         [% else %]
-        self.output = intent, entities
+        self.output = (intent, entities)
         [% endif %]

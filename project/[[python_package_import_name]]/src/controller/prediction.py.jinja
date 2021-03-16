@@ -54,14 +54,17 @@ def update_input(w: XLMRWorkflow, input_: str) -> None:
         [% endif %]
     }
 
-merge_asr_output = merge_asr_output_plugin(access=lambda w: w.input, mutate=update_input)
+merge_asr_output = merge_asr_output_plugin(access=lambda w: w.input[const.S_CLASSIFICATION_INPUT], mutate=update_input)
 [% endif %]
 
 [% if use_duckling %]
 def update_entities(workflow, entities):
     workflow.output = (None, entities)
 
-duckling_parser = DucklingParser(access=lambda w: w.output, mutate=update_entities, dimensions=["number"], locale="en_IN")()
+duckling_parser = DucklingParser(access=lambda w: (w.input[const.S_CLASSIFICATION_INPUT], w.input[const.S_REFERENCE_TIME]), 
+    mutate=update_entities, 
+    dimensions=["number"], 
+    locale="en_IN")()
 [% endif %]
 
 
@@ -93,15 +96,18 @@ def predict_wrapper():
         preprocessors=preprocessors,
         postprocessors=postprocessors,
     )
-
-    def predict(utterance: List[List[Dict[str, Any]]], _):
+    def predict(utterance: List[str], context: Dict[str, Any], reference_time: Optional[int] = None):
         """
         Produce intent and entities for a given utterance.
 
         The second argument is context. Use it when available, it is
         a good practice to use it for modeling.
         """
-        intent, entities = workflow.run(utterance)
+        [% if intent_classification_flavor == 1 %]
+        intent, entities = workflow.run({S_CLASSIFICATION_INPUT: utterance, const.S_NER_INPUT: utterance, const.S_REFERENCE_TIME: reference_time})
+        [% else %]
+        intent, entities = workflow.run({S_CLASSIFICATION_INPUT: utterance, const.S_REFERENCE_TIME: reference_time})
+        [% endif %]
 
         intent = attr.asdict(intent)
 
