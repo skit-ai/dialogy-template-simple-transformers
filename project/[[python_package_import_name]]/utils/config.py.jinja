@@ -249,7 +249,7 @@ class Config:
             )
 
     def set_labels(self, task, labels) -> None:
-        if task not in :
+        if task not in self.supported_tasks:
             raise ValueError(f"Expected task to be one of {self.supported_tasks}")
         namespace = const.S_ENTITY_LABELS if task == const.NER else const.S_INTENT_LABEL_ENCODER
         self._config[const.TASKS][task][const.LABELS] = labels
