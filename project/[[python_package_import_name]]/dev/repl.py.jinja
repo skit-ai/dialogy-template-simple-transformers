@@ -42,7 +42,7 @@ def make_alts_from_text(text: str) -> Tuple[List[str], Optional[str]]:
         text_ = text
         context_ = None
 
-    text_ = re.sub(r"\s+", " ", re.sub(r"[^a-zA-Z ]+", " ", text_)).lower().strip()
+    text_ = re.sub(r"\s+", " ", re.sub(r"[^a-zA-Z0-9 ]+", " ", text_)).lower().strip()
     return [text_], context_
 
 
