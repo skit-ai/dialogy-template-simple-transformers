@@ -2,7 +2,7 @@
 This module provides a simple interface to provide text features
 and receive Intent and Entities.
 """
-from typing import Any, List, Dict
+from typing import Any, List, Dict, Optional
 
 import attr
 
@@ -44,15 +44,8 @@ vote_plugin = VotePlugin(
     mutate=update_intent,
 )()
 [% else %]
-def update_input(w: XLMRWorkflow, input_: str) -> None:
-    utterance = w.input
-    w.input = {
-        const.S_CLASSIFICATION_INPUT: input_,
-        # This should actually be a plugin!
-        [% if use_ner %]
-        const.S_NER_INPUT: [alternative[const.TRANSCRIPT] for alternative in utterance[0]]
-        [% endif %]
-    }
+def update_input(w: XLMRWorkflow, value: str) -> None:
+    w.input[const.S_CLASSIFICATION_INPUT] = value
 
 merge_asr_output = merge_asr_output_plugin(access=lambda w: w.input[const.S_CLASSIFICATION_INPUT], mutate=update_input)
 [% endif %]
@@ -104,9 +97,9 @@ def predict_wrapper():
         a good practice to use it for modeling.
         """
         [% if intent_classification_flavor == 1 %]
-        intent, entities = workflow.run({S_CLASSIFICATION_INPUT: utterance, const.S_NER_INPUT: utterance, const.S_REFERENCE_TIME: reference_time})
+        intent, entities = workflow.run({const.S_CLASSIFICATION_INPUT: utterance, const.S_NER_INPUT: utterance, const.S_REFERENCE_TIME: reference_time})
         [% else %]
-        intent, entities = workflow.run({S_CLASSIFICATION_INPUT: utterance, const.S_REFERENCE_TIME: reference_time})
+        intent, entities = workflow.run({const.S_CLASSIFICATION_INPUT: utterance, const.S_REFERENCE_TIME: reference_time})
         [% endif %]
 
         intent = attr.asdict(intent)
