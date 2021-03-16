@@ -18,7 +18,7 @@ from dialogy.postprocess.text.voting.intent import VotePlugin
 from dialogy.preprocess.text.merge_asr_output import merge_asr_output_plugin
 [% endif %]
 [% if use_duckling %]
-from dialogy.parser.text.entity.duckling_parser import duckling_parser
+from dialogy.parser.text.entity.duckling_parser import DucklingParser
 [% endif %]
 
 from [[python_package_import_name]] import constants as const
@@ -27,7 +27,7 @@ from [[python_package_import_name]].src.workflow.workflow import XLMRWorkflow
 
 config = Config()
 
-[% if use_ner %]
+[% if use_ner or use_duckling %]
 slot_filler = RuleBasedSlotFillerPlugin(
     rules=config.rules[const.SLOTS], access=lambda w: w.output
 )()
