@@ -61,7 +61,7 @@ def slu(lang, project_name):
     try:
         maybe_utterance: Any = request.json.get(const.ALTERNATIVES)
         sentences: List[str] = normalize(maybe_utterance)
-        context: str = request.json.get(const.CONTEXT)
+        context: str = request.json.get(const.CONTEXT, {})
         response = PREDICT_API(sentences, context)
 
         return jsonify(status="ok", response=response), 200
