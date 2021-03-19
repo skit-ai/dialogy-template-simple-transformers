@@ -350,7 +350,7 @@ class XLMRWorkflow(Workflow):
         #   {'bangalore': 'B-location'}]]
         #
         # Produced by: "I need a flight from delhi to bangalore"
-        [% endraw %]        
+        [% endraw %]
 
         for i, token_list in enumerate(raw_token_lists):
             entities.append(self.collect(token_list, i, texts[i]))
