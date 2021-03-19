@@ -64,15 +64,15 @@ def parse_as(
         if isinstance(content, dict):
             return normalize(content[const.ALTERNATIVES]), content[const.CONTEXT]
         elif isinstance(content, list):
-            return normalize(content), None
+            return normalize(content), {}
         else:
-            return None, None
+            return None, {}
     except json.JSONDecodeError:
-        return None, None
+        return None, {}
     except ValueError:
-        return None, None
+        return None, {}
     except SyntaxError:
-        return None, None
+        return None, {}
 
 
 def repl_prompt(separator="", show_help=True):
