@@ -59,7 +59,7 @@ def train_intent_classifier(
     )
 
     log.info("Saving artifacts.")
-    config.save_pickle(const.CLASSIFICATION, const.S_INTENT_LABEL_ENCODER, encoder)
+    config.save_pickle(const.CLASSIFICATION, const.S_INTENT_LABEL_ENCODER, label_encoder)
     config.save()
     config.remove_checkpoints(const.CLASSIFICATION)
 
