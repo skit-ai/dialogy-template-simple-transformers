@@ -59,24 +59,11 @@ def slu(lang, project_name):
         )
 
     try:
-        maybe_utterance: Any = request.json.get(const.ALTERNATIVES)
+        maybe_utterance: Any = request.json.get(const.ALTERNATIVES) or request.json.get(const.TEXT)
         sentences: List[str] = normalize(maybe_utterance)
         context: str = request.json.get(const.CONTEXT, {})
         response = PREDICT_API(sentences, context)
-
         return jsonify(status="ok", response=response), 200
-    except TypeError:
-        text = request.json.get(const.TEXT)
-        if not text:
-            return {
-                const.INTENTS: [attr.asdict(Intent(name=const.S_INTENT_ERROR, score=1))]
-            }
-
-        context: str = request.json.get(const.CONTEXT)
-        sentences: List[str] = normalize(text)
-
-        response = PREDICT_API(sentences, context)
-
     except Exception as exc:
         # Update this section to:
         # 1. Handle specific errors
