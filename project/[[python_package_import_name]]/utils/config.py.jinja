@@ -158,8 +158,8 @@ class Config:
                 " within config/config.yaml?"
             ) from file_missing_error
 
-
-        self.set_labels(task, labels)
+        if purpose == const.TRAIN:
+            self.set_labels(task, labels)
         return data
 
     def get_model_args(self, task, purpose) -> Dict[str, Any]:
@@ -186,6 +186,13 @@ class Config:
             return None
 
         model_args = self.get_model_args(const.CLASSIFICATION, purpose)
+        kwargs = {
+                    "labels": labels,
+                    "use_cuda": (purpose != const.PROD),
+                    "args": model_args
+                }
+        if purpose != const.TRAIN:
+            del kwargs["labels"]
 
         try:
             return ClassificationModel(
@@ -195,16 +202,13 @@ class Config:
                     if purpose == const.TRAIN
                     else model_args[const.S_BEST_MODEL]
                 ),
-                num_labels=len(labels),
-                use_cuda=(purpose != const.PROD),
-                args=model_args,
+                **kwargs
             )
         except OSError as os_error:
             raise ValueError(
                 f"config/config.yaml has {const.TASKS}.{purpose}.use = True, "
                 f"but no model found in {model_args[const.S_OUTPUT_DIR]}"
             ) from os_err
-
 
     [% if use_ner %]
     def get_ner_model(self, purpose, labels) -> Optional[NERModel]:
@@ -215,6 +219,15 @@ class Config:
             return None
 
         model_args = self.get_model_args(const.NER, purpose)
+
+        kwargs = {
+                    "labels": labels,
+                    "use_cuda": (purpose != const.PROD),
+                    "args": model_args
+                }
+        if purpose != const.TRAIN:
+            del kwargs["labels"]
+
         try:
             return NERModel(
                 const.S_XLMR,
@@ -223,9 +236,7 @@ class Config:
                     if purpose == const.TRAIN
                     else model_args[const.S_OUTPUT_DIR]
                 ),
-                labels=labels,
-                use_cuda=(purpose != const.PROD),
-                args=model_args,
+                **kwargs
             )
         except OSError as os_err:
             raise ValueError(
