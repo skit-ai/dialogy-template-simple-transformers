@@ -185,12 +185,12 @@ class Config:
 
         model_args = self.get_model_args(const.CLASSIFICATION, purpose)
         kwargs = {
-                    "labels": labels,
+                    "num_labels": labels,
                     "use_cuda": (purpose != const.PROD),
                     "args": model_args
                 }
         if purpose != const.TRAIN:
-            del kwargs["labels"]
+            del kwargs["num_labels"]
 
         try:
             return ClassificationModel(
