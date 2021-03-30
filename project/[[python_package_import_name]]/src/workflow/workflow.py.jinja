@@ -110,8 +110,8 @@ class XLMRWorkflow(Workflow):
 
         intents = []
 
-        for intent, score in zip(predicted_intents, confidence_list):
-            intent = Intent(name=intent, score=score)
+        for i, (intent, score) in enumerate(zip(predicted_intents, confidence_list)):
+            intent = Intent(name=intent, score=score, alternative_index=i)
             intent.add_parser(self.__class__)
             intents.append(intent)
 
@@ -373,8 +373,11 @@ class XLMRWorkflow(Workflow):
         [% endif %]
 
         [% if use_duckling %]
-        _, pre_filled_entities = self.output
-        self.output = (intent, [*pre_filled_entities, *entities])
+        if output is not None:
+            _, pre_filled_entities = self.output
+            self.output = (intent, [*pre_filled_entities, *entities])
+        else:
+            self.output = (intent, entities)
         [% else %]
         self.output = (intent, entities)
         [% endif %]
