@@ -96,10 +96,10 @@ The format for classification task `train.csv` is:
 ```python
 In [1]: df[["data", "labels"]].sample(40)
 ```
-
+[[% raw %]]
 |       | data                                              | labels                 |
 | ----- | ------------------------------------------------- | ---------------------- |
-| 7359  | {"alternatives": [[{"transcript": "..."             | status                 |
+| 7359  | {"alternatives": [[{"transcript": "..."           | status                 |
 | 19337 | {"alternatives": [{"am_score": -182.39217, "c..."  | stop_payment           |
 | 903   | {"alternatives": [{"transcript": "...", "confi..." | confirm                |
 | 15473 | {"alternatives": [{"transcript": "..."             | query_loan             |
@@ -113,7 +113,7 @@ In [1]: df[["data", "labels"]].sample(40)
 | 4084  | {"alternatives": [{"am_score": -304.17725, "c..."  | branch_address_readout |
 | 15437 | {"alternatives": [{"transcript": "..."             | query_loan             |
 | 19543 | {"alternatives": [{"am_score": -182.39217, "c..."  | stop_payment           |
-
+[[ % endraw % ]]
 And an example for the ner task dataset is:
 
 ```python
