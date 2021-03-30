@@ -345,3 +345,6 @@ class Config:
             subdir = os.path.join(model_dir, item)
             if os.path.isdir(subdir):
                 shutil.rmtree(subdir)
+
+    def get_supported_langauges(self) -> Dict[str, str]:
+        return self._config["languages"]
