@@ -52,7 +52,10 @@ The questions here help:
 ```shell
 cd [[python_package_import_name]]
 poetry install
+make lint
 ```
+
+**Please look at `"languages"` key in `config.yaml`. Update this with supported languages to prevent hiccups!**
 
 ### 3. Version control
 
@@ -96,20 +99,20 @@ In [1]: df[["data", "labels"]].sample(40)
 
 |       | data                                              | labels                 |
 | ----- | ------------------------------------------------- | ---------------------- |
-| 7359  | {"alternatives": {"transcript": "..."             | status                 |
-| 19337 | {"alternatives": {"am_score": -182.39217, "c..."  | stop_payment           |
-| 903   | {"alternatives": {"transcript": "...", "confi..." | confirm                |
-| 15473 | {"alternatives": {"transcript": "..."             | query_loan             |
-| 18133 | {"alternatives": {"transcript": "..."             | request_statement      |
-| 18954 | {"alternatives": {"am_score": -718.3479, "co..."  | request_statement      |
-| 2047  | {"alternatives": {"am_score": -440.15454, "c..."  | account_status         |
-| 16159 | {"alternatives": {"transcript": "..."             | request_agent          |
-| 13193 | {"alternatives": {"am_score": -702.66943, "c..."  | limit                  |
-| 4359  | {"alternatives": {"am_score": -556.99493, "c..."  | branch_address_readout |
-| 9561  | {"alternatives": {"am_score": -479.57098, "c..."  | ifsc_code_readout      |
-| 4084  | {"alternatives": {"am_score": -304.17725, "c..."  | branch_address_readout |
-| 15437 | {"alternatives": {"transcript": "..."             | query_loan             |
-| 19543 | {"alternatives": {"am_score": -182.39217, "c..."  | stop_payment           |
+| 7359  | {"alternatives": [[{"transcript": "..."             | status                 |
+| 19337 | {"alternatives": [{"am_score": -182.39217, "c..."  | stop_payment           |
+| 903   | {"alternatives": [{"transcript": "...", "confi..." | confirm                |
+| 15473 | {"alternatives": [{"transcript": "..."             | query_loan             |
+| 18133 | {"alternatives": [{"transcript": "..."             | request_statement      |
+| 18954 | {"alternatives": [{"am_score": -718.3479, "co..."  | request_statement      |
+| 2047  | {"alternatives": [{"am_score": -440.15454, "c..."  | account_status         |
+| 16159 | {"alternatives": [{"transcript": "..."             | request_agent          |
+| 13193 | {"alternatives": [{"am_score": -702.66943, "c..."  | limit                  |
+| 4359  | {"alternatives": [{"am_score": -556.99493, "c..."  | branch_address_readout |
+| 9561  | {"alternatives": [{"am_score": -479.57098, "c..."  | ifsc_code_readout      |
+| 4084  | {"alternatives": [{"am_score": -304.17725, "c..."  | branch_address_readout |
+| 15437 | {"alternatives": [{"transcript": "..."             | query_loan             |
+| 19543 | {"alternatives": [{"am_score": -182.39217, "c..."  | stop_payment           |
 
 And an example for the ner task dataset is:
 
@@ -140,11 +143,11 @@ A single instance in the `data` column for classification tasks should look like
 ```json
 {
     "alternatives": [[
-        {"transcript": "I need a chequebook",
+        [{"transcript": "I need a chequebook",
             "confidence": 0.9581535,
             "am_score": -364.68695,
             "lm_score": 121.946655},
-        {"transcript": "I need a cheque book",
+        [{"transcript": "I need a cheque book",
             "confidence": 0.958522,
             "am_score": -362.57028,
             "lm_score": 123.00037}]],
@@ -288,7 +291,15 @@ uwsgi --http :9002 --enable-threads --single-interpreter --threads 1 --callable=
 # You can use any other port, 9002 was only meant as an example.
 ```
 
-**Do note, the default Flask server is not meant for production!**. Use [`uwsgi`](https://www.digitalocean.com/community/tutorials/how-to-serve-flask-applications-with-uswgi-and-nginx-on-ubuntu-18-04) instead.
+or its prettier twin ...
+
+```shell
+poetry run task serve
+```
+
+You can use the above for your kubernetes deployment configs as well!
+
+**Do note, the default Flask server is not meant for production!**. Use [`uwsgi`](https://www.digitalocean.com/community/tutorials/how-to-serve-flask-applications-with-uswgi-and-nginx-on-ubuntu-18-04) instead. Therefore your won't find any support for running this project with development flask server.
 
 ## Commands
 
@@ -381,18 +392,19 @@ tasks:
       test: {}  # refer to description.
 rules:
   slots: # Relationship shows intents that can contain certain entities.
-    intent_a: # contains entity_x and entity_y within slots a-slot-name
-        entity_x: # and other-slot-name respectively.
-            slot_name: "a-slot-name"
-            entity_type: "x-type"
-        entity_y:
-            slot_name: "other-slot-name"
-            entity_type: "y-type"
-    intent_b: # contains only entity_y within another-slot-name.
-        entity_y:
-            slot_name: "another-slot-name"
-            entity_type: "y-type"
-# Other intents don't contain entities so their slots will be empty.
+    intent_a:
+        slot_a: entity_a
+        slot_b: entity_b
+        slot_c: entity_a
+    intent_b:
+        entity_type: "y-type"
+# Other intents don't contain entities so we can omit.
+# ---
+# Add supported languages below.
+languages:
+  en: 
+    name: "English"
+    sheet: "" # This should be a google-sheets spreadsheet id.
 ```
 
 Model args help maintain the configuration of models in a single place, [here](https://simpletransformers.ai/docs/usage/#configuring-a-simple-transformers-model) is a full list, for classification or NER model configuration.

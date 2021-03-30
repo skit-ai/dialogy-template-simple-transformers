@@ -1,4 +1,4 @@
-# [[python_package_import_name]]
+# \[[python_package_import_name]]
 
 Made with Dialogy Template with Simple Transformers
 
@@ -15,9 +15,9 @@ Made with Dialogy Template with Simple Transformers
 | **config**                                | A directory that contains `yaml` files.                                      |
 | **data**                                  | Version controlled by `dvc`.                                                 |
 | **data/0.0.0**                            | A directory that would contain these directories: datasets, metrics, models. |
-| **[[python_package_import_name]]/dev**   | Programs not required in production.                                         |
-| **[[python_package_import_name]]/src**   | Programs required in production.                                             |
-| **[[python_package_import_name]]/utils** | Programs that offer assitance in either dev or src belong here.              |
+| **\[[python_package_import_name]]/dev**   | Programs not required in production.                                         |
+| **\[[python_package_import_name]]/src**   | Programs required in production.                                             |
+| **\[[python_package_import_name]]/utils** | Programs that offer assitance in either dev or src belong here.              |
 | **CHANGELOG.md**                          | Track changes in the code, datasets, etc.                                    |
 | **Dockerfile**                            | Containerize the application for production use.                             |
 | **LICENSE**                               | Depending on your usage choose the correct copy, don't keep the default!     |
@@ -37,7 +37,6 @@ To create a project using this template, run:
 ```shell
 pip install dialogy
 dialogy create hello-world dialogy-template-simple-transformers
-make lint
 ```
 
 The above initiates an interactive session.
@@ -53,7 +52,10 @@ The questions here help:
 ```shell
 cd [[python_package_import_name]]
 poetry install
+make lint
 ```
+
+**Please look at `"languages"` key in `config.yaml`. Update this with supported languages to prevent hiccups!**
 
 ### 3. Version control
 
@@ -70,7 +72,6 @@ poetry run [[python_package_import_name]] data --version=0.0.0
 dvc add data
 ```
 
-[% if use_ner %]
 This will create a data directory with the following structure:
 
 ```shell
@@ -85,24 +86,9 @@ data
         +---metrics
         +---models
 ```
-[% else %]
-This will create a data directory with the following structure:
 
-```shell
-data
-+---0.0.0
-    +---classification
-        +---datasets
-        +---metrics
-        +---models
-```
-[% endif %]
-
-[% if use_ner %]
 It is evident that this template concerns itself with only `classification` and `ner` tasks.
-[% else %]
-It is evident that this template concerns itself with only `classification` tasks.
-[% endif %]
+
 You'd typically move your datasets into the datasets directory. The dataset should be split beforehand into `train.csv` and `test.csv`. This template expects these files to be named this way.
 
 The format for classification task `train.csv` is:
@@ -113,44 +99,21 @@ In [1]: df[["data", "labels"]].sample(40)
 
 |       | data                                              | labels                 |
 | ----- | ------------------------------------------------- | ---------------------- |
-| 7359  | {"alternatives": {"transcript": "..."             | status                 |
-| 19337 | {"alternatives": {"am_score": -182.39217, "c..."  | stop_payment           |
-| 903   | {"alternatives": {"transcript": "...", "confi..." | confirm                |
-| 15473 | {"alternatives": {"transcript": "..."             | query_loan             |
-| 18133 | {"alternatives": {"transcript": "..."             | request_statement      |
-| 18954 | {"alternatives": {"am_score": -718.3479, "co..."  | request_statement      |
-| 2047  | {"alternatives": {"am_score": -440.15454, "c..."  | account_status         |
-| 16159 | {"alternatives": {"transcript": "..."             | request_agent          |
-| 13193 | {"alternatives": {"am_score": -702.66943, "c..."  | limit                  |
-| 4359  | {"alternatives": {"am_score": -556.99493, "c..."  | branch_address_readout |
-| 9561  | {"alternatives": {"am_score": -479.57098, "c..."  | ifsc_code_readout      |
-| 4084  | {"alternatives": {"am_score": -304.17725, "c..."  | branch_address_readout |
-| 15437 | {"alternatives": {"transcript": "..."             | query_loan             |
-| 19543 | {"alternatives": {"am_score": -182.39217, "c..."  | stop_payment           |
+| 7359  | {"alternatives": [[{"transcript": "..."             | status                 |
+| 19337 | {"alternatives": [{"am_score": -182.39217, "c..."  | stop_payment           |
+| 903   | {"alternatives": [{"transcript": "...", "confi..." | confirm                |
+| 15473 | {"alternatives": [{"transcript": "..."             | query_loan             |
+| 18133 | {"alternatives": [{"transcript": "..."             | request_statement      |
+| 18954 | {"alternatives": [{"am_score": -718.3479, "co..."  | request_statement      |
+| 2047  | {"alternatives": [{"am_score": -440.15454, "c..."  | account_status         |
+| 16159 | {"alternatives": [{"transcript": "..."             | request_agent          |
+| 13193 | {"alternatives": [{"am_score": -702.66943, "c..."  | limit                  |
+| 4359  | {"alternatives": [{"am_score": -556.99493, "c..."  | branch_address_readout |
+| 9561  | {"alternatives": [{"am_score": -479.57098, "c..."  | ifsc_code_readout      |
+| 4084  | {"alternatives": [{"am_score": -304.17725, "c..."  | branch_address_readout |
+| 15437 | {"alternatives": [{"transcript": "..."             | query_loan             |
+| 19543 | {"alternatives": [{"am_score": -182.39217, "c..."  | stop_payment           |
 
-The columns named `data` and `labels` are necessary for the classification datasets. Other arbitrary columns
-remain unused if given.
-
-A single instance in the `data` column for classification tasks should look like:
-
-```json
-{
-    "alternatives": [[
-        {"transcript": "I need a chequebook",
-            "confidence": 0.9581535,
-            "am_score": -364.68695,
-            "lm_score": 121.946655},
-        {"transcript": "I need a cheque book",
-            "confidence": 0.958522,
-            "am_score": -362.57028,
-            "lm_score": 123.00037}]],
-    "context": "...""
-}
-```
-
----
-
-[% if need_ner %]
 And an example for the ner task dataset is:
 
 ```python
@@ -170,14 +133,32 @@ In [2]: df[df["labels"] != "O"].sample(10)
 | 91673  | 15458       | i      | O              |
 | 85928  | 14710       | other  | O              |
 
-The columns named `sentence_id`, `words`, `labels` are necessary for NER datasets. Other arbitrary columns
-remain unused if given.
-[% endif %]
+Either dataset may contain any number of arbitrary columns but:
+
+-   The columns named `data` and `labels` are necessary for the classification datasets.
+-   Likewise, `sentence_id`, `words`, `labels` are necessary for NER datasets.
+
+A single instance in the `data` column for classification tasks should look like:
+
+```json
+{
+    "alternatives": [[
+        [{"transcript": "I need a chequebook",
+            "confidence": 0.9581535,
+            "am_score": -364.68695,
+            "lm_score": 121.946655},
+        [{"transcript": "I need a cheque book",
+            "confidence": 0.958522,
+            "am_score": -362.57028,
+            "lm_score": 123.00037}]],
+    "context": "...""
+}
+```
 
 ### 4. Training
 
 Before training, your directory tree should look like:
-[% if use_ner %]
+
 ```shell
 data
 +---0.0.0
@@ -194,38 +175,18 @@ data
         +---metrics
         +---models
 ```
-[% else %]
-```shell
-data
-+---0.0.0
-    +---classification
-        +---datasets
-        |   +---train.csv
-        |   +---test.csv
-        +---metrics
-        +---models
-```
-[% endif %]
 
-
-[% if use_ner %]
 These commands help in training the classifier and the NER model.
 Specifying the model name in the command will train only the mentioned model.
+
 ```shell
 poetry run [[python_package_import_name]] train [--version=<version>]
 poetry run [[python_package_import_name]] train classification [--version=<version>] # trains only classifier.
 poetry run [[python_package_import_name]] train ner [--version=<version>] # trains only NER.
 ```
-[% else %]
-These commands help in training the classifier model.
-```shell
-poetry run [[python_package_import_name]] train [--version=<version>]
-```
-[% endif %]
 
 Once the training is complete, you would notice the models would be populated:
 
-[% if use_ner %]
 ```shell
 data
 +---0.0.0
@@ -261,49 +222,21 @@ data
             +---tokenizer_config.json
             +---training_args.bin
 ```
-[% else %]
-```shell
-data
-+---0.0.0
-    +---classification
-        +---datasets
-        |   +---train.csv
-        |   +---test.csv
-        +---metrics
-        +---models
-            +---config.json
-            +---labelencoder.pkl
-            +---eval_results.txt
-            +---model_args.json
-            +---pytorch_model.bin
-            +---sentencepiece.bpe.model
-            +---special_tokens_map.json
-            +---tokenizer_config.json
-            +---training_args.bin
-            +---training_progress_scores.csv
-```
-[% endif %]
 
 ### 5. Evaluation
 
-To evaluate use:
+To evaluate the models just replace the above commands with test!
 
-[% if use_ner %]
 ```shell
 poetry run [[python_package_import_name]] test [--version=<version>]
 poetry run [[python_package_import_name]] test classification [--version=<version>]
 poetry run [[python_package_import_name]] test ner [--version=<version>]
 ```
-[% else %]
-```shell
-poetry run [[python_package_import_name]] test [--version=<version>]
-```
-[% endif %]
+
 (If the version argument is not provided, a default value is used from the _config/config.yaml_.)
 
 Evaluation scripts save the reports in the `metrics` directory.
 
-[% if use_ner %]
 ```shell
 data
 +---0.0.0
@@ -320,19 +253,8 @@ data
         |   +---report.csv
         >---models # collapsed
 ```
-[% else %]
-```shell
-data
-+---0.0.0
-    +---classification
-        +---datasets
-        |   +---train.csv
-        |   +---test.csv
-        +---metrics
-        |   +---report.csv
-        >---models # collapsed
-```
-[% endif %]
+
+You may see it only in one directory depending on the test command arguments provided.
 
 ### 6. Interactive Session
 
@@ -369,10 +291,74 @@ uwsgi --http :9002 --enable-threads --single-interpreter --threads 1 --callable=
 # You can use any other port, 9002 was only meant as an example.
 ```
 
-**Do note, the default Flask server is not meant for production!**. Use [`uwsgi`](https://www.digitalocean.com/community/tutorials/how-to-serve-flask-applications-with-uswgi-and-nginx-on-ubuntu-18-04) instead.
+or its prettier twin ...
+
+```shell
+poetry run task serve
+```
+
+You can use the above for your kubernetes deployment configs as well!
+
+**Do note, the default Flask server is not meant for production!**. Use [`uwsgi`](https://www.digitalocean.com/community/tutorials/how-to-serve-flask-applications-with-uswgi-and-nginx-on-ubuntu-18-04) instead. Therefore your won't find any support for running this project with development flask server.
 
 ## Commands
-The CLI commands can be seen [here](./[[python_package_import_name]]/dev/cli.py.jinja)
+
+These are the available cli commands:
+
+1.  `poetry run [[python_package_import_name]] train [--version=<version>] [--file-format=<file_format>]`
+
+    Routine for training both Classifier and NER sequntially.
+    Provide a version and a model will be trained on a dataset of the same version.
+
+    This script expects data/&lt;version> to be a directory where models, metrics
+    and dataset are present.
+
+2.  `poetry run [[python_package_import_name]] test [--version=<version>] [--file-format=<file_format>]`
+
+    Routine for testing both Classifier and NER sequentially.
+    Provide a version to evaluate a trained model on an evaluation dataset.
+
+3.  `poetry run [[python_package_import_name]] (train|test) (classification|ner) <version> [--file-format=<file_format>]`
+
+    Same as the previous train and test commands with an exception of only one type of
+    task (classification|ner) is picked.
+
+4.  `poetry run [[python_package_import_name]] data [--version=<version>]`
+
+    This command creates a directory named &lt;version> under data.
+    Helpful if only empty directory structures are needed.
+
+5.  `poetry run [[python_package_import_name]] clone &lt;from_version> &lt;to_version>`
+
+    This command copies a directory from another under data.
+    Helpful if only directory structures and their data should be copied.
+
+6.  `poetry run [[python_package_import_name]] repl [--version=<version>]`
+
+    This command starts up an interactive terminal to dump json or plain text
+    and interact with the trained models.
+
+7.  `poetry run [[python_package_import_name]] release <version>`
+
+    This command syncs dvc and git data, produces a tag on the repo and manages remote state.
+
+```shell
+Usage:
+  __init__.py (train|test|repl) [--version=<version>] [--file-format=<file_format>]
+  __init__.py (train|test) (classification|ner) [--version=<version>] [--file-format=<file_format>]
+  __init__.py data --version=<version> [--force]
+  __init__.py clone <from_version> <to_version> [--force]
+  __init__.py release --version=<version>
+  __init__.py (-h | --help)
+
+Options:
+    <from_version>              The source data directory; models, datasets, metrics will be copied from here.
+    <to_version>                The destination data directory; models, datasets, metrics will be copied here.
+    --version=<version>         The version of the dataset, model, metrics to use.
+    --file-format=<file_format> One of "csv" or "sqlite".
+    --force                     Pass this flag to overwrite existing directories.
+    -h --help                   Show this screen.
+```
 
 ## Config
 
@@ -406,18 +392,19 @@ tasks:
       test: {}  # refer to description.
 rules:
   slots: # Relationship shows intents that can contain certain entities.
-    intent_a: # contains entity_x and entity_y within slots a-slot-name
-        entity_x: # and other-slot-name respectively.
-            slot_name: "a-slot-name"
-            entity_type: "x-type"
-        entity_y:
-            slot_name: "other-slot-name"
-            entity_type: "y-type"
-    intent_b: # contains only entity_y within another-slot-name.
-        entity_y:
-            slot_name: "another-slot-name"
-            entity_type: "y-type"
-# Other intents don't contain entities so their slots will be empty.
+    intent_a:
+        slot_a: entity_a
+        slot_b: entity_b
+        slot_c: entity_a
+    intent_b:
+        entity_type: "y-type"
+# Other intents don't contain entities so we can omit.
+# ---
+# Add supported languages below.
+languages:
+  en: 
+    name: "English"
+    sheet: "" # This should be a google-sheets spreadsheet id.
 ```
 
 Model args help maintain the configuration of models in a single place, [here](https://simpletransformers.ai/docs/usage/#configuring-a-simple-transformers-model) is a full list, for classification or NER model configuration.
