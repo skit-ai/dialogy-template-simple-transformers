@@ -6,7 +6,7 @@ from typing import Any, List, Dict, Optional
 
 import attr
 
-[% if use_ner %]
+[% if use_ner or use_duckling %]
 from dialogy.postprocess.text.slot_filler.rule_slot_filler import (
     RuleBasedSlotFillerPlugin,
 )
