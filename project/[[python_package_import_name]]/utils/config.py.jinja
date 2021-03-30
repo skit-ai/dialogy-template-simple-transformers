@@ -158,8 +158,6 @@ class Config:
                 " within config/config.yaml?"
             ) from file_missing_error
 
-        if purpose == const.TRAIN:
-            self.set_labels(task, labels)
         return data
 
     def get_model_args(self, task, purpose) -> Dict[str, Any]:
