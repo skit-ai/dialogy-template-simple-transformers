@@ -1,18 +1,20 @@
 import traceback
-from typing import Any, List, Dict
+from typing import Any, Dict, List
 
 import attr
-from flask import jsonify, request
-from dialogy.types.intent import Intent
 from dialogy.preprocess.text.normalize_utterance import normalize
+from dialogy.types.intent import Intent
+from flask import jsonify, request
 
-from [[python_package_import_name]] import constants as const
-from [[python_package_import_name]].src.api import app
-from [[python_package_import_name]].src.controller.prediction import predict_wrapper
-from [[python_package_import_name]].utils.sentry import capture_exception
+from axis import constants as const
+from axis.src.api import app
+from axis.utils.config import Config
+from axis.src.controller.prediction import predict_wrapper
+from axis.utils.sentry import capture_exception
 
 
 PREDICT_API = predict_wrapper()
+CONFIG = Config()
 
 
 [% raw %]
@@ -30,12 +32,24 @@ def health_check():
 
 
 @app.route("/predict/<lang>/<project_name>/", methods=["POST"])
-def slu(lang, project_name):
+def slu(lang: str, project_name: str):
     """
     Get SLU predictions.
 
     Produces a json response containing intents and entities.
     """
+    supported_languages = list(CONFIG.get_supported_langauges().keys())
+    if lang not in supported_languages:
+        return (
+            jsonify(
+                {
+                    "message": "Invalid request.",
+                    "cause": f"Language is not supported. Support available only for {supported_languages}.",
+                }
+            ),
+            400,
+        )
+
     if not isinstance(request.json, dict):
         return (
             jsonify(
@@ -47,7 +61,7 @@ def slu(lang, project_name):
             400,
         )
 
-    if not const.ALTERNATIVES in request.json and const.TEXT in request.json:
+    if not (const.ALTERNATIVES in request.json or const.TEXT in request.json):
         return (
             jsonify(
                 {
@@ -59,11 +73,18 @@ def slu(lang, project_name):
         )
 
     try:
-        maybe_utterance: Any = request.json.get(const.ALTERNATIVES) or request.json.get(const.TEXT)
+        maybe_utterance: Any = request.json.get(const.ALTERNATIVES) or request.json.get(
+            const.TEXT
+        )
         sentences: List[str] = normalize(maybe_utterance)
-        context: str = request.json.get(const.CONTEXT, {})
-        response = PREDICT_API(sentences, context)
+        context: str = request.json.get(const.CONTEXT) or {}
+        intents_info: List[Dict[str, Any]] = (
+            request.json.get(const.S_INTENTS_INFO) or []
+        )
+        response = PREDICT_API(sentences, context, intents_info=intents_info)
+
         return jsonify(status="ok", response=response), 200
+
     except Exception as exc:
         # Update this section to:
         # 1. Handle specific errors
