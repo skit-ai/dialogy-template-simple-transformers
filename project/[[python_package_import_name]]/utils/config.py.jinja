@@ -143,7 +143,7 @@ class Config:
 
         try:
             if task == const.CLASSIFICATION:
-                data, labels = prepare(
+                data, _ = prepare(
                     dataset_file, alias, n_cores=self.n_cores, file_format=file_format
                 )
             [% if use_ner %]
