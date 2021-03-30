@@ -3,8 +3,8 @@ python_version = 3.8.5
 
 lint:
 	@echo -e "Running linter"
-	@black [[ python_package_import_name ]]
 	@isort [[ python_package_import_name ]]
+	@black [[ python_package_import_name ]]
 
 test: lint ## Run the tests.
 	@pytest --cov=src --cov-report html --cov-report term:skip-covered tests/
