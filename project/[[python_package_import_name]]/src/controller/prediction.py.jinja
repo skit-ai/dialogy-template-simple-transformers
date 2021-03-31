@@ -98,8 +98,10 @@ def predict_wrapper():
         The second argument is context. Use it when available, it is
         a good practice to use it for modeling.
         """
-        [% if use_ner or use_duckling %]
+        [% if use_duckling %]
         intent, entities = workflow.run({const.S_CLASSIFICATION_INPUT: utterance, const.S_NER_INPUT: utterance, const.S_REFERENCE_TIME: reference_time})
+        [% if use_ner %]
+        intent, entities = workflow.run({const.S_CLASSIFICATION_INPUT: utterance, const.S_NER_INPUT: utterance})
         [% else %]
         intent, entities = workflow.run({const.S_CLASSIFICATION_INPUT: utterance})
         [% endif %]

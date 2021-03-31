@@ -261,30 +261,6 @@ class Config:
         if task not in self.supported_tasks:
             raise ValueError(f"Expected task to be one of {self.supported_tasks}")
         namespace = const.S_ENTITY_LABELS if task == const.NER else const.S_INTENT_LABEL_ENCODER
-        [% if use_ner %]
-        if task == const.CLASSIFICATION:
-            # we are anticipating instance of LabelEncoder.
-            self._config[const.TASKS][task][const.LABELS] = labels.classes_
-            self.save_pickle(task, namespace, labels)
-        elif task == const.NER:
-            # Here we are expecting a list.
-            self._config[const.TASKS][task][const.LABELS] = labels
-            self.save_pickle(task, namespace, labels)
-        else:
-            raise ValueError(
-                f"Expected task to be {const.CLASSIFICATION} or {const.NER} instead, {task} was found"
-            )
-        [% else %]
-        if task == const.CLASSIFICATION:
-            # we are anticipating instance of LabelEncoder.
-            self._config[const.TASKS][task][const.LABELS] = labels.classes_
-            self.save_pickle(task, namespace, labels.classes_)
-        else:
-            raise ValueError(
-                f"Expected task to be {const.CLASSIFICATION} instead, {task} was found"
-            )
-        [% endif %]
-
         self.save_pickle(task, namespace, labels)
 
     def get_alias(self, task) -> List[str]:
