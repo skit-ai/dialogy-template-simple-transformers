@@ -175,7 +175,12 @@ class XLMRWorkflow(Workflow):
         Returns:
             BaseEntity: An entity object.
         """
-        entity_class = self.entity_type_map[entity_type]
+        try:
+            entity_class = self.entity_type_map[entity_type]
+        except KeyError as key_error:
+            raise KeyError("You need to configure entity "
+                            f"classes for entity {entity_type}. "
+                            "Refer to https://github.com/Vernacular-ai/dialogy/blob/master/dialogy/types/entity/base_entity.py")
         value = "_".join(entity_values)
         start = min(entity_starts)
         end = max(entity_ends)
