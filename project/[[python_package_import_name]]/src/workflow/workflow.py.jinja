@@ -335,6 +335,8 @@ class XLMRWorkflow(Workflow):
         # The second value is `raw_output` which can be used for estimating confidence
         # scores for each token identified as an entity.
         raw_token_lists, _ = self.ner.predict(texts)
+        log.debug("raw_token_lists")
+        log.debug(raw_token_lists)
 
         entities = []
         [% raw %]
