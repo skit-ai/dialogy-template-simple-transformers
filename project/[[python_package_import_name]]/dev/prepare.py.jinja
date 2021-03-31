@@ -20,7 +20,13 @@ def preprocess(df):
     for _, row in tqdm(df.iterrows(), total=len(df)):
         label = row[const.LABELS]
         [% if intent_classification_flavor == 1 %]
-        data = json.loads(row[const.DATA])[const.ALTERNATIVES]
+        data = json.loads(row[const.DATA])
+        try:
+            alternatives = data[const.ALTERNATIVES]
+        except KeyError as key_error:
+            raise KeyError('Your data doesn\'t match the expected format!'
+            ' your data column should have {"alternatives": [[{"transcript": "..."}]]})'
+            f' \ninstead looks like {data}')
         data = merge_asr_output(data)
         texts.append(data)
         [% endif %]
