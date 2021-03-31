@@ -34,7 +34,7 @@ intent_classification_flavor:
     Type the number against the feature
     
     [1] Intent classifier with concat-utterances.
-    [2] Intent classifier with voting over each alternative.
+    [2] Intent classifier with voting over each alternative. (beta only, don't use this in production)
   default: 1
 
 use_duckling:
