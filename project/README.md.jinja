@@ -100,10 +100,10 @@ The format for classification task `train.csv` is:
 ```python
 In [1]: df[["data", "labels"]].sample(40)
 ```
-
+[% raw %]
 |       | data                                              | labels                 |
 | ----- | ------------------------------------------------- | ---------------------- |
-| 7359  | {"alternatives": [[{"transcript": "..."             | status                 |
+| 7359  | {"alternatives": [[{"transcript": "..."           | status                 |
 | 19337 | {"alternatives": [{"am_score": -182.39217, "c..."  | stop_payment           |
 | 903   | {"alternatives": [{"transcript": "...", "confi..." | confirm                |
 | 15473 | {"alternatives": [{"transcript": "..."             | query_loan             |
@@ -117,6 +117,7 @@ In [1]: df[["data", "labels"]].sample(40)
 | 4084  | {"alternatives": [{"am_score": -304.17725, "c..."  | branch_address_readout |
 | 15437 | {"alternatives": [{"transcript": "..."             | query_loan             |
 | 19543 | {"alternatives": [{"am_score": -182.39217, "c..."  | stop_payment           |
+[% endraw %]
 
 And an example for the ner task dataset is:
 
@@ -144,6 +145,7 @@ Either dataset may contain any number of arbitrary columns but:
 
 A single instance in the `data` column for classification tasks should look like:
 
+[% raw %]
 ```json
 {
     "alternatives": [[
@@ -158,6 +160,7 @@ A single instance in the `data` column for classification tasks should look like
     "context": "...""
 }
 ```
+[% endraw %]
 
 ### 4. Training
 
