@@ -100,11 +100,9 @@ def predict_wrapper():
         """
         [% if use_duckling %]
         intent, entities = workflow.run({const.S_CLASSIFICATION_INPUT: utterance, const.S_NER_INPUT: utterance, const.S_REFERENCE_TIME: reference_time})
-        [% endif %]
-        [% if use_ner %]
+        [% elif use_ner %]
         intent, entities = workflow.run({const.S_CLASSIFICATION_INPUT: utterance, const.S_NER_INPUT: utterance})
-        [% endif %]
-        [% if not (use_ner and use_duckling) %]
+        [% else %]
         intent, entities = workflow.run({const.S_CLASSIFICATION_INPUT: utterance})
         [% endif %]
 
