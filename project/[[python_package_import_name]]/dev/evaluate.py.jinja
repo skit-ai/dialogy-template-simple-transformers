@@ -56,14 +56,15 @@ def test_classifier(config, file_format=const.CSV, custom_file=None):
 
     errors = []
     for i, (pred_label, true_label) in enumerate(zip(pred_labels, true_labels)):
-        errors.append(
-            {
-                const.DATA_ID: test_data_frame[const.DATA_ID].iloc[i],
-                const.DATA: test_data_frame[const.TEXT].iloc[i],
-                const.TRUE_LABEL: true_label,
-                const.PRED_LABEL: pred_label,
-            }
-        )
+        if pred_label != true_label:
+            errors.append(
+                {
+                    const.DATA_ID: test_data_frame[const.DATA_ID].iloc[i],
+                    const.DATA: test_data_frame[const.TEXT].iloc[i],
+                    const.TRUE_LABEL: true_label,
+                    const.PRED_LABEL: pred_label,
+                }
+            )
     data_frame = pd.DataFrame(
         errors, columns=[const.DATA_ID, const.DATA, const.TRUE_LABEL, const.PRED_LABEL]
     )
