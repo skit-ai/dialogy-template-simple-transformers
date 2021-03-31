@@ -111,7 +111,7 @@ def repl() -> None:
     log.info("Loading models... this takes around 20s.")
     predict = predict_wrapper()
     session = PromptSession(history=FileHistory('.repl_history'))
-    prompt = session.prompt()
+    prompt = session.prompt
     auto_suggest=AutoSuggestFromHistory()
 
     try:

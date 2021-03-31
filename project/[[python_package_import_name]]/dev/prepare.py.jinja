@@ -2,7 +2,10 @@ import json
 
 import pandas as pd
 from tqdm import tqdm
+
+[% if intent_classification_flavor == 1 %]
 from dialogy.preprocess.text.merge_asr_output import merge_asr_output  # type: ignore
+[% endif %]
 
 from [[python_package_import_name]] import constants as const  # type: ignore
 from [[python_package_import_name]].dev.io.reader.csv import read_multiclass_dataset_csv, map_labels_in_df, get_unique_labels  # type: ignore
@@ -16,7 +19,14 @@ def preprocess(df):
     data_id = []
     for _, row in tqdm(df.iterrows(), total=len(df)):
         label = row[const.LABELS]
+        [% if intent_classification_flavor == 1 %]
+        data = json.loads(row[const.DATA])[const.ALTERNATIVES]
+        data = merge_asr_output(data)
+        texts.append(data)
+        [% endif %]
+        [% if intent_classification_flavor == 2 %]
         texts.append(row[const.DATA])
+        [% endif %]
         labels.append(label)
         data_id.append(row[const.DATA_ID])
     return pd.DataFrame(

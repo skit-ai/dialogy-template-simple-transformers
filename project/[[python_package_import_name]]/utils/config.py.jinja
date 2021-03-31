@@ -185,7 +185,7 @@ class Config:
 
         model_args = self.get_model_args(const.CLASSIFICATION, purpose)
         kwargs = {
-                    "num_labels": labels,
+                    "num_labels": len(labels),
                     "use_cuda": (purpose != const.PROD),
                     "args": model_args
                 }
