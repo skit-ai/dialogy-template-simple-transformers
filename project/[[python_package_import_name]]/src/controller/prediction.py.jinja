@@ -68,22 +68,24 @@ def predict_wrapper():
     Ensures that the workflow is loaded just once without creating global variables for it.
     This can also be made into a class if needed.
     """
-    preprocessors = []
-    postprocessors = []
-
-    [% if intent_classification_flavor == 2 %]
-    postprocessors.append(vote_plugin)
-    [% else %]
-    preprocessors.append(merge_asr_output)
-    [% endif %]
-    [% if use_duckling %]
-    preprocessors.append(duckling_parser)
-    [% endif %]
-
-    [# This should always be last #]
-    [% if use_ner or use_duckling %]
-    postprocessors.append(slot_filler)
-    [% endif %]
+    preprocessors = [
+        [% if intent_classification_flavor == 1 %]
+        merge_asr_output,
+        [% endif %] 
+        [% if use_duckling %]
+        duckling_parser,
+        [% endif %]
+    ]
+    postprocessors = [
+        [% if intent_classification_flavor == 2 %]
+        vote_plugin,
+        [% endif %] 
+        [% if use_ner or use_duckling %]
+        slot_filler 
+        # slot_filler should always be the last plugin.
+        # If you add entities afterwards, they wont fill intent slots.
+        [% endif %]
+    ]
 
     workflow = XLMRWorkflow(
         preprocessors=preprocessors,
