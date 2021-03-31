@@ -53,6 +53,9 @@ The questions here help:
 cd [[python_package_import_name]]
 poetry install
 make lint
+git init
+git add .
+git commit -m "add: initial commit."
 ```
 
 **Please look at `"languages"` key in `config.yaml`. Update this with supported languages to prevent hiccups!**
@@ -62,10 +65,11 @@ make lint
 We use [`dvc`](https://dvc.org/doc/install) for dataset and model versioning. 
 s3 is the preferred remote to save project level data that are not fit for tracking via git.
 
-The `poetry install` step takes care of dvc installation.
+The `poetry install` step takes care of dvc installation. You need to create a project on github, gitlab, bitbucket, etc.
+set the remote.
 
 ```shell
-git init
+git remote add origin <origin>
 dvc init
 dvc remote add -d s3remote s3://bucket-name/path/to/dir
 poetry run [[python_package_import_name]] data --version=0.0.0
