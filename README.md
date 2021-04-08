@@ -156,7 +156,8 @@ A single instance in the `data` column for classification tasks should look like
         [{"transcript": "I need a cheque book",
             "confidence": 0.958522,
             "am_score": -362.57028,
-            "lm_score": 123.00037}]],
+            "lm_score": 123.00037}]]
+    ]],
     "context": "...""
 }
 ```
