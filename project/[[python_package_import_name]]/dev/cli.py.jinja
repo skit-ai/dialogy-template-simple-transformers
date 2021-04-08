@@ -1,0 +1,233 @@
+[% if use_ner %]
+"""
+This module offers the cli utility to interact with this project.
+
+1. poetry run dialogy train [--version=<version>] [--file-format=<file_format>]
+
+    Routine for training both Classifier and NER sequntially.
+    Provide a version and a model will be trained on a dataset of the same version.
+
+    This script expects data/<version> to be a directory where models, metrics
+    and dataset are present.
+
+2. poetry run dialogy test [--version=<version>] [--file-format=<file_format>] [--file=<test_file>]
+
+    Routine for testing both Classifier and NER sequentially.
+    Provide a version to evaluate a trained model on an evaluation dataset.
+
+3. poetry run dialogy (train|test) (classification|ner) <version>  [--file-format=<file_format>]
+
+    Same as the previous train and test commands with an exception of only one type of
+    task (classification|ner) is picked.
+
+4. poetry run dialogy data [--version=<version>]
+
+    This command creates a directory named <version> under data.
+    Helpful if only empty directory structures are needed.
+
+5. poetry run dialogy clone <from_version> <to_version>
+
+    This command copies a directory from another under data.
+    Helpful if only directory structures and their data should be copied.
+
+6. poetry run dialogy repl [--version=<version>]
+
+    This command starts up an interactive terminal to dump json or plain text
+    and interact with the trained models.
+
+7. poetry run dialogy release <version>
+
+    This command syncs dvc and git data, produces a tag on the repo and manages remote state.
+
+
+Usage:
+  __init__.py (train|test) [--version=<version>] [--file-format=<file_format>]
+  __init__.py (train|test) (classification|ner) [--version=<version>] [--file-format=<file_format>] [--file=<test_file>]
+  __init__.py data --version=<version> [--force]
+  __init__.py clone <from_version> <to_version> [--force]
+  __init__.py release --version=<version>
+  __init__.py repl
+  __init__.py (-h | --help)
+
+Options:
+    <from_version>              The source data directory; models, datasets, metrics will be copied from here.
+    <to_version>                The destination data directory; models, datasets, metrics will be copied here.
+    --version=<version>         The version of the dataset, model, metrics to use.
+    --file-format=<file_format> One of "csv" or "sqlite".
+    --file=<test_file>          A file to be tested separately.
+    --force                     Pass this flag to overwrite existing directories.
+    -h --help                   Show this screen.
+"""
+[% else %]
+"""
+This module offers the cli utility to interact with this project.
+
+1. poetry run dialogy (train|test) <version>  [--file-format=<file_format>]
+
+    train and test commands with an exception of only one type of
+    task is picked.
+
+2. poetry run dialogy data [--version=<version>]
+
+    This command creates a directory named <version> under data.
+    Helpful if only empty directory structures are needed.
+
+3. poetry run dialogy clone <from_version> <to_version>
+
+    This command copies a directory from another under data.
+    Helpful if only directory structures and their data should be copied.
+
+4. poetry run dialogy repl [--version=<version>]
+
+    This command starts up an interactive terminal to dump json or plain text
+    and interact with the trained models.
+
+5. poetry run dialogy release <version>
+
+    This command syncs dvc and git data, produces a tag on the repo and manages remote state.
+
+
+Usage:
+  __init__.py (train|test) [--version=<version>] [--file-format=<file_format>] [--file=<test_file>]
+  __init__.py data --version=<version> [--force]
+  __init__.py clone <from_version> <to_version> [--force]
+  __init__.py release --version=<version>
+  __init__.py repl
+  __init__.py (-h | --help)
+
+Options:
+    <from_version>              The source data directory; models, datasets, metrics will be copied from here.
+    <to_version>                The destination data directory; models, datasets, metrics will be copied here.
+    --version=<version>         The version of the dataset, model, metrics to use.
+    --file-format=<file_format> One of "csv" or "sqlite".
+    --file=<test_file>          A file to be tested separately.
+    --force                     Pass this flag to overwrite existing directories.
+    -h --help                   Show this screen.
+"""
+[% endif %]
+from docopt import docopt
+import semver
+
+from [[python_package_import_name]] import constants as const
+from [[python_package_import_name]].utils.logger import log
+from [[python_package_import_name]].dev.dir_setup import copy_data_directory, create_data_directory
+from [[python_package_import_name]].dev.release import release
+from [[python_package_import_name]].dev.repl import repl
+[% if use_ner %]
+from [[python_package_import_name]].dev.train import train_intent_classifier, train_ner_model
+[% else %]
+from [[python_package_import_name]].dev.train import train_intent_classifier
+[% endif %]
+[% if use_ner %]
+from [[python_package_import_name]].dev.evaluate import test_classifier, test_ner
+[% else %]
+from [[python_package_import_name]].dev.evaluate import test_classifier
+[% endif %]
+from [[python_package_import_name]].utils.config import Config
+
+
+[% raw %]
+def main() -> None:
+    args = docopt(__doc__)
+    version = args["--version"]
+    force = args["--force"]
+
+    config = Config()
+
+    if version:
+        semver.VersionInfo.parse(version)
+        config.set_version(version)
+    else:
+        version = config.version
+[% endraw %]
+    [% if use_ner %]
+    if args.get(const.CLASSIFICATION):
+        file_format = args["--file-format"] or config.classification_file_format
+    elif args[const.NER]:
+        file_format = args["--file-format"] or config.ner_file_format
+    else:
+        file_format = const.CSV
+    [% else %]
+    file_format = args["--file-format"] or config.classification_file_format
+    [% endif %]
+
+    [% if use_ner %]
+    if args[const.TRAIN] and args.get(const.CLASSIFICATION):
+        if config.use_classifier:
+            train_intent_classifier(config, file_format=file_format)
+        else:
+            log.warning("Config is not prepared for using classification model.")
+
+    elif args[const.TRAIN] and args.get(const.NER):
+        if config.use_ner:
+            train_ner_model(config, file_format=file_format)
+        else:
+            log.warning("Config is not prepared for using ner model.")
+
+    elif args[const.TRAIN]:
+        if config.use_classifier:
+            train_intent_classifier(config, file_format=file_format)
+        else:
+            log.warning("Config is not prepared for using classification model.")
+
+        if config.use_ner:
+            train_ner_model(config, file_format=file_format)
+        else:
+            log.warning("Config is not prepared for using ner model.")
+
+    if args[const.TEST] and args.get(const.CLASSIFICATION):
+        if config.use_classifier:
+            test_classifier(config, file_format=file_format, custom_file=args["--file"])
+        else:
+            log.warning("Config is not prepared for using classification model.")
+
+    elif args[const.TEST] and args.get(const.NER):
+        if config.use_ner:
+            test_ner(config, file_format=file_format, custom_file=args["--file"])
+        else:
+            log.warning("Config is not prepared for using ner model.")
+
+    elif args[const.TEST]:
+        if config.use_classifier:
+            test_classifier(config, file_format=file_format, custom_file=args["--file"])
+        else:
+            log.warning("Config is not prepared for using classification model.")
+
+        if config.use_ner:
+            test_ner(config, file_format=file_format, custom_file=args["--file"])
+        else:
+            log.warning("Config is not prepared for using ner model.")
+    [% else %]
+    if args[const.TRAIN]:
+        if config.use_classifier:
+            train_intent_classifier(config, file_format=file_format)
+        else:
+            log.warning("Config is not prepared for using classification model.")
+
+    if args[const.TEST] and args.get(const.CLASSIFICATION):
+        if config.use_classifier:
+            test_classifier(config, file_format=file_format, custom_file=args["--file"])
+        else:
+            log.warning("Config is not prepared for using classification model.")
+
+    elif args.get(const.TEST):
+        if config.use_classifier:
+            test_classifier(config, file_format=file_format, custom_file=args["--file"])
+        else:
+            log.warning("Config is not prepared for using classification model.")
+    [% endif %]
+[% raw %]
+    if args[const.DATA]:
+        create_data_directory(version, force=force)
+
+    if args[const.CLONE]:
+        copy_data_directory(
+            copy_from=args["<from_version>"], copy_to=args["<to_version>"], force=force
+        )
+
+    if args[const.REPL]:
+        repl()
+
+    if args[const.RELEASE]:
+        release(version)
+[% endraw %]
