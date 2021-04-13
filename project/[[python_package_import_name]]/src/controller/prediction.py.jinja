@@ -106,6 +106,7 @@ def predict_wrapper():
         [% else %]
         intent, entities = workflow.run({const.S_CLASSIFICATION_INPUT: utterance})
         [% endif %]
+        workflow.output=None
 
         intent = attr.asdict(intent)
 
