@@ -20,7 +20,7 @@ RUN poetry install --no-dev && \
     rm -rf /root/.cache && pip3 uninstall --yes poetry
 
 COPY ./[[python_package_import_name]] ./[[python_package_import_name]]
-COPY ./data/models ./data/models
+COPY ./data/${VERSION}/models ./data/${VERSION}/models
 COPY ./uwsgi ./uwsgi
 COPY ./config ./config
 
