@@ -112,11 +112,11 @@ ENV/
 env.bak/
 venv.bak/
 
-# Spyder project settings
+# Spyder slu settings
 .spyderproject
 .spyproject
 
-# Rope project settings
+# Rope slu settings
 .ropeproject
 
 # mkdocs documentation
@@ -145,7 +145,6 @@ poetry.lock
 /data
 runs
 cache_dir
-htmlcov/
 notebooks
 wandb/
 *.bak
