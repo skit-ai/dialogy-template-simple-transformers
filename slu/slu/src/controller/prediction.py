@@ -38,7 +38,8 @@ duckling_parser = DucklingParser(
     access=lambda w: (w.input[const.S_CLASSIFICATION_INPUT], w.input[const.S_REFERENCE_TIME]),
     mutate=update_entities, 
     dimensions=["number"], 
-    locale="en_IN"
+    locale="en_IN",
+    timezone="Asia/Kolkata"
 )()
 
 
