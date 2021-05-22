@@ -1,0 +1,97 @@
+"""
+This module provides a simple interface to provide text features
+and receive Intent and Entities.
+"""
+from typing import Any, List, Dict, Optional
+
+import attr
+from dialogy.preprocess.text.normalize_utterance import normalize
+from dialogy.postprocess.text.slot_filler.rule_slot_filler import (
+    RuleBasedSlotFillerPlugin,
+)
+from dialogy.preprocess.text.merge_asr_output import merge_asr_output_plugin
+from dialogy.parser.text.entity.duckling_parser import DucklingParser
+
+from slu import constants as const
+from slu.utils.config import Config
+from slu.src.workflow.workflow import XLMRWorkflow
+
+config = Config()
+
+slot_filler = RuleBasedSlotFillerPlugin(
+    rules=config.rules[const.SLOTS], access=lambda w: w.output
+)()
+
+
+def update_input(w: XLMRWorkflow, value: str) -> None:
+    w.input[const.S_CLASSIFICATION_INPUT] = value
+
+
+merge_asr_output = merge_asr_output_plugin(access=lambda w: w.input[const.S_CLASSIFICATION_INPUT], mutate=update_input)
+
+
+def update_entities(workflow, entities):
+    workflow.output = (None, entities)
+
+
+duckling_parser = DucklingParser(
+    access=lambda w: (w.input[const.S_CLASSIFICATION_INPUT], w.input[const.S_REFERENCE_TIME]),
+    mutate=update_entities, 
+    dimensions=["number"], 
+    locale="en_IN"
+)()
+
+
+def predict_wrapper():
+    """
+    Create a closure for the predict function.
+
+    Ensures that the workflow is loaded just once without creating global variables for it.
+    This can also be made into a class if needed.
+    """
+    preprocessors = [
+        merge_asr_output,
+        duckling_parser,
+    ]
+    postprocessors = [
+        vote_plugin,
+        slot_filler
+        # slot_filler should always be the last plugin.
+        # If you add entities afterwards, they wont fill intent slots.
+    ]
+
+    workflow = XLMRWorkflow(
+        preprocessors=preprocessors,
+        postprocessors=postprocessors,
+    )
+
+    def predict(utterance: List[str], context: Dict[str, Any], reference_time: Optional[int] = None):
+        """
+        Produce intent and entities for a given utterance.
+
+        The second argument is context. Use it when available, it is
+        a good practice to use it for modeling.
+        """
+        utterance = normalize(utterance)
+        intent, entities = workflow.run({
+            const.S_CLASSIFICATION_INPUT: utterance,
+            const.S_NER_INPUT: utterance,
+            const.S_REFERENCE_TIME: reference_time
+        })
+
+        intent = attr.asdict(intent)
+        slots = []
+
+        for slot_name, slot_values in intent[const.SLOTS].items():
+            slot_values[const.NAME] = slot_name
+            slots.append(slot_values)
+
+        intent[const.SLOTS] = slots
+
+        return {
+            const.VERSION: config.version,
+            const.INTENTS: [intent],
+            const.ENTITIES: [attr.asdict(entity) for entity in entities],
+        }
+
+    return predict
