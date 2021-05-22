@@ -18,7 +18,7 @@ import pathlib
 import pytest
 import json
 
-from slusrc.controller.prediction import predict_wrapper
+from slu.src.controller.prediction import predict_wrapper
 from slu import constants as const
 
 
