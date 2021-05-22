@@ -14,7 +14,8 @@ from dialogy.parser.text.entity.duckling_parser import DucklingParser
 
 from slu import constants as const
 from slu.utils.config import Config
-from slu.src.workflow.workflow import XLMRWorkflow
+from slu.src.workflow import XLMRWorkflow
+
 
 config = Config()
 
@@ -54,8 +55,8 @@ def predict_wrapper():
         merge_asr_output,
         duckling_parser,
     ]
+
     postprocessors = [
-        vote_plugin,
         slot_filler
         # slot_filler should always be the last plugin.
         # If you add entities afterwards, they wont fill intent slots.
@@ -66,7 +67,11 @@ def predict_wrapper():
         postprocessors=postprocessors,
     )
 
-    def predict(utterance: List[str], context: Dict[str, Any], reference_time: Optional[int] = None):
+    def predict(
+            utterance: List[str],
+            context: Dict[str, Any],
+            intents_info: Optional[List[Dict[str, Any]]] = None,
+            reference_time: Optional[int] = None):
         """
         Produce intent and entities for a given utterance.
 
@@ -74,8 +79,11 @@ def predict_wrapper():
         a good practice to use it for modeling.
         """
         utterance = normalize(utterance)
+
         intent, entities = workflow.run({
             const.S_CLASSIFICATION_INPUT: utterance,
+            const.S_CONTEXT: context,
+            const.S_INTENTS_INFO: intents_info,
             const.S_NER_INPUT: utterance,
             const.S_REFERENCE_TIME: reference_time
         })
