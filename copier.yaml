@@ -1,14 +1,14 @@
-_subdirectory: project
+_subdirectory: slu
 _templates_suffix: .jinja
 
 # Prompts
 project_name:
   type: str
-  help: Your project name
+  help: Your slu name
 
 project_description:
   type: str
-  help: Your project description
+  help: Your slu description
   default: "SLU service for [[ project_name|lower|replace('-', '_')|replace(' ', '_') ]]"
 
 author_fullname:
