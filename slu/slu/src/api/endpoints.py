@@ -1,9 +1,8 @@
 import traceback
 from typing import Any, Dict, List
+from datetime import datetime
 
-import attr
 from dialogy.preprocess.text.normalize_utterance import normalize
-from dialogy.types.intent import Intent
 from flask import jsonify, request
 
 from slu import constants as const
@@ -75,12 +74,19 @@ def slu(lang: str, project_name: str):
         maybe_utterance: Any = request.json.get(const.ALTERNATIVES) or request.json.get(
             const.TEXT
         )
+
         sentences: List[str] = normalize(maybe_utterance)
         context: str = request.json.get(const.CONTEXT) or {}
         intents_info: List[Dict[str, Any]] = (
             request.json.get(const.S_INTENTS_INFO) or []
         )
-        response = PREDICT_API(sentences, context, intents_info=intents_info)
+
+        response = PREDICT_API(
+            sentences,
+            context,
+            intents_info=intents_info,
+            reference_time=int(datetime.now().timestamp() * 1000)
+        )
 
         return jsonify(status="ok", response=response), 200
 
