@@ -1,7 +1,7 @@
 import sqlite3
+
 import pandas as pd
 from tqdm import tqdm
-
 
 DEFAULT_QUERY = "SELECT {cols} FROM data"
 DEFAULT_COLS = ["*"]

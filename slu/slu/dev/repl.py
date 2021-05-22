@@ -1,22 +1,21 @@
 """
 This module offers an interactive repl to run a Workflow.
 """
-import re
-import json
 import ast
+import json
+import re
 import time
 from pprint import pprint
-from typing import List, Dict, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 from dialogy.preprocess.text.normalize_utterance import normalize
-
 from prompt_toolkit import PromptSession
-from prompt_toolkit.history import FileHistory
 from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
+from prompt_toolkit.history import FileHistory
 
+from slu import constants as const
 from slu.src.controller.prediction import predict_wrapper
 from slu.utils.logger import log
-from slu import constants as const
 
 
 def make_alts_from_text(text: str) -> Tuple[List[str], Optional[str]]:
@@ -24,11 +23,11 @@ def make_alts_from_text(text: str) -> Tuple[List[str], Optional[str]]:
     Create test example from raw string.
 
     To test context pass the value with text like:
-    
+
     ```python
     "I need fruit juice" | COF1
     ```
-    
+
     Args:
         text (str): Raw string test input.
 
@@ -48,9 +47,7 @@ def make_alts_from_text(text: str) -> Tuple[List[str], Optional[str]]:
     return [text_], context_
 
 
-def parse_as(
-    text: str, func
-) -> Tuple[Optional[List[str]], Optional[str]]:
+def parse_as(text: str, func) -> Tuple[Optional[List[str]], Optional[str]]:
     """
     Parse text as Dict either expecting json, or python object.
 
@@ -110,19 +107,23 @@ def repl() -> None:
     show_help = True
     log.info("Loading models... this takes around 20s.")
     predict = predict_wrapper()
-    session = PromptSession(history=FileHistory('.repl_history'))
+    session = PromptSession(history=FileHistory(".repl_history"))
     prompt = session.prompt
-    auto_suggest=AutoSuggestFromHistory()
+    auto_suggest = AutoSuggestFromHistory()
 
     try:
         while True:
             raw = prompt(
-                repl_prompt(separator=separator, show_help=show_help), multiline=True, auto_suggest=auto_suggest
+                repl_prompt(separator=separator, show_help=show_help),
+                multiline=True,
+                auto_suggest=auto_suggest,
             )
 
             if raw == "--help":
                 raw = prompt(
-                    repl_prompt(separator=separator, show_help=True), multiline=True, auto_suggest=auto_suggest
+                    repl_prompt(separator=separator, show_help=True),
+                    multiline=True,
+                    auto_suggest=auto_suggest,
                 )
 
             show_help = False

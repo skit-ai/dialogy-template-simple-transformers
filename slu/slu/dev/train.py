@@ -15,16 +15,17 @@ Options:
     -h --help     Show this screen.
     --version     Show version.
 """
-import semver
 import shutil
+
+import semver
 from docopt import docopt
 from sklearn import preprocessing  # type: ignore
 from sklearn.metrics import accuracy_score  # type: ignore
 from sklearn.model_selection import train_test_split  # type: ignore
 
 from slu import constants as const
-from slu.utils.logger import log
 from slu.utils.config import Config
+from slu.utils.logger import log
 
 
 def train_intent_classifier(

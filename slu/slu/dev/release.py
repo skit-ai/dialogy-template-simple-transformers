@@ -21,22 +21,21 @@ To ensure this works correctly, we need to check:
 4. A tag with the same version doesn't already exist.
 """
 import os
-import subprocess
 import shutil
+import subprocess
+from configparser import ConfigParser
 from datetime import datetime
 from glob import glob
-from configparser import ConfigParser
 
 import semver
 import toml
 from git import Repo
 from git.refs.tag import TagReference
-from prompt_toolkit import print_formatted_text, HTML
-from prompt_toolkit import prompt
+from prompt_toolkit import HTML, print_formatted_text, prompt
 
 from slu import constants as const
-from slu.utils.logger import log
 from slu.utils.config import Config
+from slu.utils.logger import log
 
 
 def update_project_version_toml(version: str) -> None:
@@ -237,4 +236,3 @@ def release(version: str) -> None:
     vcs_tag_and_commit_state(version, changelog_body)
     vcs_push_remote(version, active_branch)
     # -----------------------------------------------------
-

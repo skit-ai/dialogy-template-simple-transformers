@@ -2,20 +2,20 @@
 This module provides a simple interface to provide text features
 and receive Intent and Entities.
 """
-from typing import Any, List, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 import attr
-from dialogy.preprocess.text.normalize_utterance import normalize
+from dialogy.parser.text.entity.duckling_parser import DucklingParser
 from dialogy.postprocess.text.slot_filler.rule_slot_filler import (
     RuleBasedSlotFillerPlugin,
 )
+from dialogy.types import BaseEntity
 from dialogy.preprocess.text.merge_asr_output import merge_asr_output_plugin
-from dialogy.parser.text.entity.duckling_parser import DucklingParser
+from dialogy.preprocess.text.normalize_utterance import normalize
 
 from slu import constants as const
-from slu.utils.config import Config
 from slu.src.workflow import XLMRWorkflow
-
+from slu.utils.config import Config
 
 config = Config()
 
@@ -28,19 +28,24 @@ def update_input(w: XLMRWorkflow, value: str) -> None:
     w.input[const.S_CLASSIFICATION_INPUT] = value
 
 
-merge_asr_output = merge_asr_output_plugin(access=lambda w: w.input[const.S_CLASSIFICATION_INPUT], mutate=update_input)
+merge_asr_output = merge_asr_output_plugin(
+    access=lambda w: w.input[const.S_CLASSIFICATION_INPUT], mutate=update_input
+)
 
 
-def update_entities(workflow, entities):
-    workflow.output = (None, entities)
+def update_entities(workflow: XLMRWorkflow, entities: List[BaseEntity]):
+    workflow.output[const.ENTITIES] = entities
 
 
 duckling_parser = DucklingParser(
-    access=lambda w: (w.input[const.S_CLASSIFICATION_INPUT], w.input[const.S_REFERENCE_TIME]),
-    mutate=update_entities, 
-    dimensions=["number"], 
+    access=lambda w: (
+        w.input[const.S_CLASSIFICATION_INPUT],
+        w.input[const.S_REFERENCE_TIME],
+    ),
+    mutate=update_entities,
+    dimensions=["number"],
     locale="en_IN",
-    timezone="Asia/Kolkata"
+    timezone="Asia/Kolkata",
 )()
 
 
@@ -68,10 +73,11 @@ def predict_wrapper():
     )
 
     def predict(
-            utterance: List[str],
-            context: Dict[str, Any],
-            intents_info: Optional[List[Dict[str, Any]]] = None,
-            reference_time: Optional[int] = None):
+        utterance: List[str],
+        context: Dict[str, Any],
+        intents_info: Optional[List[Dict[str, Any]]] = None,
+        reference_time: Optional[int] = None,
+    ):
         """
         Produce intent and entities for a given utterance.
 
@@ -80,13 +86,15 @@ def predict_wrapper():
         """
         utterance = normalize(utterance)
 
-        intent, entities = workflow.run({
-            const.S_CLASSIFICATION_INPUT: utterance,
-            const.S_CONTEXT: context,
-            const.S_INTENTS_INFO: intents_info,
-            const.S_NER_INPUT: utterance,
-            const.S_REFERENCE_TIME: reference_time
-        })
+        intent, entities = workflow.run(
+            {
+                const.S_CLASSIFICATION_INPUT: utterance,
+                const.S_CONTEXT: context,
+                const.S_INTENTS_INFO: intents_info,
+                const.S_NER_INPUT: utterance,
+                const.S_REFERENCE_TIME: reference_time,
+            }
+        )
 
         intent = attr.asdict(intent)
         slots = []

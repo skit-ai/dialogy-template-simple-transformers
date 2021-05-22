@@ -1,11 +1,11 @@
 import os
+
 import sentry_sdk
+from copier import copy
 from flask import Flask
 from sentry_sdk.integrations.flask import FlaskIntegration
-from copier import copy
 
 from slu import constants as const
-
 
 if os.environ.get(const.ENVIRONMENT) == const.PRODUCTION:
     sentry_sdk.init(

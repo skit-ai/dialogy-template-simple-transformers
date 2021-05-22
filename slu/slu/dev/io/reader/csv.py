@@ -1,9 +1,9 @@
 import os
-from tqdm import tqdm  # type: ignore
-import pandas as pd  # type: ignore
 
-from sklearn.metrics import classification_report
+import pandas as pd  # type: ignore
 from seqeval.metrics import classification_report as multi_label_report
+from sklearn.metrics import classification_report
+from tqdm import tqdm  # type: ignore
 
 from slu import constants as const
 

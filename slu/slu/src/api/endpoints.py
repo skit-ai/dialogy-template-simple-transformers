@@ -1,15 +1,16 @@
 import traceback
-from typing import Any, Dict, List
 from datetime import datetime
+from typing import Any, Dict, List
 
 from dialogy.preprocess.text.normalize_utterance import normalize
 from flask import jsonify, request
 
 from slu import constants as const
 from slu.src.api import app
-from slu.utils.config import Config
 from slu.src.controller.prediction import predict_wrapper
+from slu.utils.config import Config
 from slu.utils.sentry import capture_exception
+from slu.utils import errors
 
 
 PREDICT_API = predict_wrapper()
@@ -38,37 +39,13 @@ def slu(lang: str, project_name: str):
     """
     supported_languages = list(CONFIG.get_supported_langauges().keys())
     if lang not in supported_languages:
-        return (
-            jsonify(
-                {
-                    "message": "Invalid request.",
-                    "cause": f"Language is not supported. Support available only for {supported_languages}.",
-                }
-            ),
-            400,
-        )
+        return errors.invalid_language(supported_languages)
 
     if not isinstance(request.json, dict):
-        return (
-            jsonify(
-                {
-                    "message": "Invalid request.",
-                    "cause": f"Post body should be a dictionary, received {type(request.json)}.",
-                }
-            ),
-            400,
-        )
+        return errors.invalid_request(request.json)
 
     if not (const.ALTERNATIVES in request.json or const.TEXT in request.json):
-        return (
-            jsonify(
-                {
-                    "message": "Invalid request.",
-                    "cause": f"Post body should have either of these keys: {const.TEXT}, {const.ALTERNATIVES}.",
-                }
-            ),
-            400,
-        )
+        return errors.invalid_input(request.json)
 
     try:
         maybe_utterance: Any = request.json.get(const.ALTERNATIVES) or request.json.get(
@@ -85,7 +62,7 @@ def slu(lang: str, project_name: str):
             sentences,
             context,
             intents_info=intents_info,
-            reference_time=int(datetime.now().timestamp() * 1000)
+            reference_time=int(datetime.now().timestamp() * 1000),
         )
 
         return jsonify(status="ok", response=response), 200

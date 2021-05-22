@@ -1,6 +1,7 @@
+from multiprocessing import Pool
+
 import numpy as np
 import pandas as pd  # type: ignore
-from multiprocessing import Pool
 
 from slu import constants as const
 

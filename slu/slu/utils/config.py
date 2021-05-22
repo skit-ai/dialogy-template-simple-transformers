@@ -4,21 +4,21 @@
 import os
 import pickle
 import shutil
-from typing import Dict, List, Any, Optional
+from typing import Any, Dict, List, Optional
 
-import semver
 import attr
+import semver
 import yaml
 from simpletransformers.classification import ClassificationModel  # type: ignore
 from simpletransformers.ner import NERModel
 
 from slu import constants as const
-from slu.dev.prepare import prepare
 from slu.dev.io.reader.csv import (
     read_ner_dataset_csv,
     save_classification_report,
     save_ner_report,
 )
+from slu.dev.prepare import prepare
 from slu.utils.logger import log
 
 
@@ -119,9 +119,11 @@ class Config:
         return os.path.join(self.get_model_dir(task), self.version)
 
     def get_dataset(
-            self, task, purpose, file_format=const.CSV, custom_file=None
+        self, task, purpose, file_format=const.CSV, custom_file=None
     ) -> Any:
-        error_message = f"Expected task to be in {self.supported_tasks} instead, {task} was found!"
+        error_message = (
+            f"Expected task to be in {self.supported_tasks} instead, {task} was found!"
+        )
 
         data_dir = os.path.join(const.DATA, self.version, task)
         dataset_dir = os.path.join(data_dir, const.DATASETS)
@@ -156,13 +158,13 @@ class Config:
 
         if purpose == const.TRAIN:
             model_args[const.S_EVAL_DURING_TRAINING_STEPS] = (
-                    n_epochs * eval_batch_size + const.k
+                n_epochs * eval_batch_size + const.k
             )
 
         return model_args
 
     def get_classification_model(
-            self, purpose, labels
+        self, purpose, labels
     ) -> Optional[ClassificationModel]:
         if not self.use_classifier:
             log.warning(
@@ -174,7 +176,7 @@ class Config:
         kwargs = {
             "num_labels": len(labels),
             "use_cuda": (purpose != const.PROD),
-            "args": model_args
+            "args": model_args,
         }
         if purpose != const.TRAIN:
             del kwargs["num_labels"]
@@ -187,7 +189,7 @@ class Config:
                     if purpose == const.TRAIN
                     else model_args[const.S_BEST_MODEL]
                 ),
-                **kwargs
+                **kwargs,
             )
         except OSError as os_error:
             raise ValueError(
@@ -207,7 +209,7 @@ class Config:
         kwargs = {
             "labels": labels,
             "use_cuda": (purpose != const.PROD),
-            "args": model_args
+            "args": model_args,
         }
         if purpose != const.TRAIN:
             del kwargs["labels"]
@@ -220,7 +222,7 @@ class Config:
                     if purpose == const.TRAIN
                     else model_args[const.S_OUTPUT_DIR]
                 ),
-                **kwargs
+                **kwargs,
             )
         except OSError as os_err:
             raise ValueError(
@@ -244,7 +246,9 @@ class Config:
     def set_labels(self, task, labels) -> None:
         if task not in self.supported_tasks:
             raise ValueError(f"Expected task to be one of {self.supported_tasks}")
-        namespace = const.S_ENTITY_LABELS if task == const.NER else const.S_INTENT_LABEL_ENCODER
+        namespace = (
+            const.S_ENTITY_LABELS if task == const.NER else const.S_INTENT_LABEL_ENCODER
+        )
         self.save_pickle(task, namespace, labels)
 
     def get_alias(self, task) -> List[str]:
@@ -258,7 +262,9 @@ class Config:
 
     def get_model(self, task, purpose):
         labels = self.get_labels(task)
-        error_message = f"Expected task to be in {self.supported_tasks} instead, {task} was found!"
+        error_message = (
+            f"Expected task to be in {self.supported_tasks} instead, {task} was found!"
+        )
 
         if task == const.CLASSIFICATION:
             return self.get_classification_model(purpose, labels)
