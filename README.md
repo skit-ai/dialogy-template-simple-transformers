@@ -1,4 +1,4 @@
-# \[[python_package_import_name]]
+# \slu
 
 Made with Dialogy Template with Simple Transformers
 
@@ -15,9 +15,9 @@ Made with Dialogy Template with Simple Transformers
 | **config**                                | A directory that contains `yaml` files.                                      |
 | **data**                                  | Version controlled by `dvc`.                                                 |
 | **data/0.0.0**                            | A directory that would contain these directories: datasets, metrics, models. |
-| **\[[python_package_import_name]]/dev**   | Programs not required in production.                                         |
-| **\[[python_package_import_name]]/src**   | Programs required in production.                                             |
-| **\[[python_package_import_name]]/utils** | Programs that offer assitance in either dev or src belong here.              |
+| **\slu/dev**   | Programs not required in production.                                         |
+| **\slu/src**   | Programs required in production.                                             |
+| **\slu/utils** | Programs that offer assitance in either dev or src belong here.              |
 | **CHANGELOG.md**                          | Track changes in the code, datasets, etc.                                    |
 | **Dockerfile**                            | Containerize the application for production use.                             |
 | **LICENSE**                               | Depending on your usage choose the correct copy, don't keep the default!     |
@@ -50,7 +50,7 @@ The questions here help:
 ### 2. Install Dependencies
 
 ```shell
-cd [[python_package_import_name]]
+cd slu
 poetry install
 make lint
 git init
@@ -72,7 +72,7 @@ set the remote.
 git remote add origin <origin>
 dvc init
 dvc remote add -d s3remote s3://bucket-name/path/to/dir
-poetry run [[python_package_import_name]] data --version=0.0.0
+poetry run slu data --version=0.0.0
 dvc add data
 ```
 
@@ -100,7 +100,7 @@ The format for classification task `train.csv` is:
 ```python
 In [1]: df[["data", "labels"]].sample(40)
 ```
-[% raw %]
+
 |       | data                                              | labels                 |
 | ----- | ------------------------------------------------- | ---------------------- |
 | 7359  | {"alternatives": [[{"transcript": "..."           | status                 |
@@ -117,7 +117,7 @@ In [1]: df[["data", "labels"]].sample(40)
 | 4084  | {"alternatives": [{"am_score": -304.17725, "c..."  | branch_address_readout |
 | 15437 | {"alternatives": [{"transcript": "..."             | query_loan             |
 | 19543 | {"alternatives": [{"am_score": -182.39217, "c..."  | stop_payment           |
-[% endraw %]
+
 
 And an example for the ner task dataset is:
 
@@ -145,7 +145,7 @@ Either dataset may contain any number of arbitrary columns but:
 
 A single instance in the `data` column for classification tasks should look like:
 
-[% raw %]
+
 ```json
 {
     "alternatives": [[
@@ -161,7 +161,7 @@ A single instance in the `data` column for classification tasks should look like
     "context": "...""
 }
 ```
-[% endraw %]
+
 
 ### 4. Training
 
@@ -188,9 +188,9 @@ These commands help in training the classifier and the NER model.
 Specifying the model name in the command will train only the mentioned model.
 
 ```shell
-poetry run [[python_package_import_name]] train [--version=<version>]
-poetry run [[python_package_import_name]] train classification [--version=<version>] # trains only classifier.
-poetry run [[python_package_import_name]] train ner [--version=<version>] # trains only NER.
+poetry run slu train [--version=<version>]
+poetry run slu train classification [--version=<version>] # trains only classifier.
+poetry run slu train ner [--version=<version>] # trains only NER.
 ```
 
 Once the training is complete, you would notice the models would be populated:
@@ -236,9 +236,9 @@ data
 To evaluate the models just replace the above commands with test!
 
 ```shell
-poetry run [[python_package_import_name]] test [--version=<version>]
-poetry run [[python_package_import_name]] test classification [--version=<version>]
-poetry run [[python_package_import_name]] test ner [--version=<version>]
+poetry run slu test [--version=<version>]
+poetry run slu test classification [--version=<version>]
+poetry run slu test ner [--version=<version>]
 ```
 
 (If the version argument is not provided, a default value is used from the _config/config.yaml_.)
@@ -269,7 +269,7 @@ You may see it only in one directory depending on the test command arguments pro
 To run your models to see how they perform on live inputs, use the following command:
 
 ```shell
-poetry run [[python_package_import_name]] repl
+poetry run slu repl
 ```
 
 This prints a set of expected input formats, **if nothing matches, it assumes the input to be plain-text!**
@@ -287,7 +287,7 @@ The process creates a git tag with the semver so that you can checkout the tag f
 To initiate a release process, perform:
 
 ```shell
-poetry run [[python_package_import_name]] release --version=<version>
+poetry run slu release --version=<version>
 ```
 
 ### 8. Serving
@@ -295,7 +295,7 @@ poetry run [[python_package_import_name]] release --version=<version>
 This template also installs [`Flask`](https://flask.palletsprojects.com/en/1.1.x/) for serving APIs. Use its standard documentation for setting up API endpoints. Use `uwsgi` for production use.
 
 ```shell
-uwsgi --http :9002 --enable-threads --single-interpreter --threads 1 --callable=app --module [[python_package_import_name]].src.api.endpoints:app --ini uwsgi.ini
+uwsgi --http :9002 --enable-threads --single-interpreter --threads 1 --callable=app --module slu.src.api.endpoints:app --ini uwsgi.ini
 # You can use any other port, 9002 was only meant as an example.
 ```
 
@@ -332,7 +332,7 @@ We also ship scaffolding for parameterized pytests. Add `test_cases.json` and fi
 
 These are the available cli commands:
 
-1.  `poetry run [[python_package_import_name]] train [--version=<version>] [--file-format=<file_format>]`
+1.  `poetry run slu train [--version=<version>] [--file-format=<file_format>]`
 
     Routine for training both Classifier and NER sequntially.
     Provide a version and a model will be trained on a dataset of the same version.
@@ -340,32 +340,32 @@ These are the available cli commands:
     This script expects data/&lt;version> to be a directory where models, metrics
     and dataset are present.
 
-2.  `poetry run [[python_package_import_name]] test [--version=<version>] [--file-format=<file_format>]`
+2.  `poetry run slu test [--version=<version>] [--file-format=<file_format>]`
 
     Routine for testing both Classifier and NER sequentially.
     Provide a version to evaluate a trained model on an evaluation dataset.
 
-3.  `poetry run [[python_package_import_name]] (train|test) (classification|ner) <version> [--file-format=<file_format>]`
+3.  `poetry run slu (train|test) (classification|ner) <version> [--file-format=<file_format>]`
 
     Same as the previous train and test commands with an exception of only one type of
     task (classification|ner) is picked.
 
-4.  `poetry run [[python_package_import_name]] data [--version=<version>]`
+4.  `poetry run slu data [--version=<version>]`
 
     This command creates a directory named &lt;version> under data.
     Helpful if only empty directory structures are needed.
 
-5.  `poetry run [[python_package_import_name]] clone &lt;from_version> &lt;to_version>`
+5.  `poetry run slu clone &lt;from_version> &lt;to_version>`
 
     This command copies a directory from another under data.
     Helpful if only directory structures and their data should be copied.
 
-6.  `poetry run [[python_package_import_name]] repl [--version=<version>]`
+6.  `poetry run slu repl [--version=<version>]`
 
     This command starts up an interactive terminal to dump json or plain text
     and interact with the trained models.
 
-7.  `poetry run [[python_package_import_name]] release <version>`
+7.  `poetry run slu release <version>`
 
     This command syncs dvc and git data, produces a tag on the repo and manages remote state.
 
@@ -390,7 +390,7 @@ Options:
 ## Config
 
 ```yaml
-project_name: [[python_package_import_name]]
+project_name: slu
 version: 0.0.0 # Default version
 cores: 8 # no of cpu cores to use for pre-processing.
 tasks:
@@ -454,7 +454,7 @@ These are the APIs which are being used. Some of these are not needed in product
 2.  Predict - This is the main production API.
 
     ```python
-    @app.route("/predict/<lang>/[[python_package_import_name]]/", methods=["POST"])
+    @app.route("/predict/<lang>/slu/", methods=["POST"])
     ```
 
 ## Customization
