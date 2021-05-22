@@ -138,6 +138,7 @@ cython_debug/
 
 # IDEs
 .vscode/
+.idea/
 
 # poetry
 poetry.lock
