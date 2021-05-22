@@ -17,13 +17,12 @@ from functools import partial
 import numpy as np
 import pandas as pd
 from docopt import docopt
-from sklearn.metrics import accuracy_score, classification_report
 from seqeval.metrics import classification_report as multi_label_report
+from sklearn.metrics import accuracy_score, classification_report
 
-from slu.utils.logger import log
 from slu import constants as const
 from slu.utils.config import Config
-
+from slu.utils.logger import log
 
 
 def test_classifier(config, file_format=const.CSV, custom_file=None):

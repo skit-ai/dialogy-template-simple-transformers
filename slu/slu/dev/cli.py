@@ -57,17 +57,17 @@ Options:
     --force                     Pass this flag to overwrite existing directories.
     -h --help                   Show this screen.
 """
-from docopt import docopt
 import semver
+from docopt import docopt
 
 from slu import constants as const
-from slu.utils.logger import log
 from slu.dev.dir_setup import copy_data_directory, create_data_directory
+from slu.dev.evaluate import test_classifier, test_ner
 from slu.dev.release import release
 from slu.dev.repl import repl
 from slu.dev.train import train_intent_classifier, train_ner_model
-from slu.dev.evaluate import test_classifier, test_ner
 from slu.utils.config import Config
+from slu.utils.logger import log
 
 
 def main() -> None:

@@ -6,14 +6,14 @@ Imports:
 from typing import Any, Dict, List
 
 import numpy as np
-from dialogy.workflow import Workflow  # type: ignore
-from dialogy.types.intent import Intent
-
+import pydash as py_
 from dialogy.types.entity import BaseEntity
+from dialogy.types.intent import Intent
+from dialogy.workflow import Workflow  # type: ignore
 
 from slu import constants as const
-from slu.utils.logger import log
 from slu.utils.config import Config
+from slu.utils.logger import log
 from slu.utils.sentry import capture_exception
 
 
@@ -30,10 +30,10 @@ class XLMRWorkflow(Workflow):
     """
 
     def __init__(
-            self,
-            preprocessors: Any,
-            postprocessors: Any,
-            debug: bool = False,
+        self,
+        preprocessors: Any,
+        postprocessors: Any,
+        debug: bool = False,
     ):
         """
         A workflow instance allows inference of an intent and a set of pre-configured entities.
@@ -42,6 +42,8 @@ class XLMRWorkflow(Workflow):
         super().__init__(
             preprocessors=preprocessors, postprocessors=postprocessors, debug=debug
         )
+        self.input = {}
+        self.output = {}
 
         # Read config/config.yaml and setup slu-level utils.
         self.config = Config()
@@ -101,12 +103,13 @@ class XLMRWorkflow(Workflow):
         return Intent(name=predicted_intent, score=confidence)
 
     def make_entity(
-            self, entity_type: str,
-            entity_values: List[Any],
-            entity_starts: List[int],
-            entity_ends: List[int],
-            index: int,
-            text: str
+        self,
+        entity_type: str,
+        entity_values: List[Any],
+        entity_starts: List[int],
+        entity_ends: List[int],
+        index: int,
+        text: str,
     ) -> BaseEntity:
         """
         Build entity from raw BIO labels and text tokens.
@@ -142,12 +145,14 @@ class XLMRWorkflow(Workflow):
             entity.set_value(value)  # type: ignore
             return entity
         except KeyError as key_error:
-            raise KeyError("You need to configure entity "
-                           f"classes for entity {entity_type}. "
-                           "Refer to https://github.com/Vernacular-ai/dialogy/blob/master/dialogy/types/entity/base_entity.py")
+            raise KeyError(
+                "You need to configure entity "
+                f"classes for entity {entity_type}. "
+                "Refer to https://github.com/Vernacular-ai/dialogy/blob/master/dialogy/types/entity/base_entity.py"
+            )
 
     def combine_entity_groups(
-            self, entity_groups: Dict[str, BaseEntity], index: int, text: str
+        self, entity_groups: Dict[str, BaseEntity], index: int, text: str
     ) -> List[BaseEntity]:
         """
         Combine entities originating from compatible raw BIO entities.
@@ -201,7 +206,7 @@ class XLMRWorkflow(Workflow):
         return entities
 
     def collect(
-            self, token_list: List[Dict], index: int, text: str
+        self, token_list: List[Dict], index: int, text: str
     ) -> List[BaseEntity]:
         """
         Collect tokens where entity label is not O (viz outside in BIO tag format).
@@ -252,23 +257,30 @@ class XLMRWorkflow(Workflow):
 
         return self.combine_entity_groups(entity_groups, index, text)
 
-    def entity_consensus(self, entities_list: List[Any]) -> List[Any]:
+    def entity_consensus(self, entities_list: List[Any], threshold: int = 1) -> List[Any]:
         """
         Resolve output from multiple sources.
 
         Args:
-            items_list (List[Any]): List of list of intents or entities.
+            items_list (List[Any]):
             type_ (str): One of intent or entities.
 
         Returns:
             List[Any]: List of intents or entities.
+
+        :param entities_list:  List of list of entities.
+        :type entities_list: List[BaseEntity]
+        :param threshold: We count entities only if they are present over threshold
+        :type threshold:
+        :return:
+        :rtype:
         """
         prevalent_entities = []
-        entities_flattened = py_.flatten(entities_list)
-        entity_groups = py_.group_by(entities_flattened, lambda entity: entity.type)
+        flattened_entities = py_.flatten(entities_list)
+        entity_groups = py_.group_by(flattened_entities, lambda e: e.type)
         for _, entities in entity_groups.items():
-            if len(entities) > observations * threshold:
-                entity = py_.min_by(entities, lambda entity: entity.alternative_index)
+            if len(entities) > threshold:
+                entity = py_.min_by(entities, lambda e: e.alternative_index)
                 prevalent_entities.append(entity)
         return prevalent_entities
 
@@ -322,3 +334,7 @@ class XLMRWorkflow(Workflow):
             self.output = (intent, [*pre_filled_entities, *ner_entities])
         else:
             self.output = (intent, ner_entities)
+
+    def flush(self) -> None:
+        self.input = {}
+        self.output = {}

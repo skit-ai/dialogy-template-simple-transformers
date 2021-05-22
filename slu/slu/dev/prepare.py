@@ -1,14 +1,14 @@
 import json
 
 import pandas as pd
+from dialogy.preprocess.text.merge_asr_output import merge_asr_output  # type: ignore
 from tqdm import tqdm
 
-from dialogy.preprocess.text.merge_asr_output import merge_asr_output  # type: ignore
-
 from slu import constants as const  # type: ignore
-from slu.dev.io.reader.csv import read_multiclass_dataset_csv, map_labels_in_df, get_unique_labels  # type: ignore
-from slu.dev.io.reader.sqlite import read_multiclass_dataset_sqlite  # type: ignore
 from slu.dev.io.mp import parallel_proc  # type: ignore
+from slu.dev.io.reader.csv import get_unique_labels  # type: ignore
+from slu.dev.io.reader.csv import map_labels_in_df, read_multiclass_dataset_csv
+from slu.dev.io.reader.sqlite import read_multiclass_dataset_sqlite  # type: ignore
 
 
 def preprocess(df):
@@ -21,10 +21,12 @@ def preprocess(df):
         try:
             alternatives = data[const.ALTERNATIVES]
         except KeyError as key_error:
-            raise KeyError('Your data doesn\'t match the expected format!'
-            """ your data column should have {"alternatives": [[{"transcript": "..."}]]})"""
-            f' \ninstead looks like {data}')
-        data = merge_asr_output(data)
+            raise KeyError(
+                "Your data doesn't match the expected format!"
+                ' your data column should have {"alternatives": [[{"transcript": "..."}]]})'
+                f" \ninstead looks like {data}"
+            )
+        data = merge_asr_output(data["alternatives"])
         texts.append(data)
         labels.append(label)
         data_id.append(row[const.DATA_ID])
