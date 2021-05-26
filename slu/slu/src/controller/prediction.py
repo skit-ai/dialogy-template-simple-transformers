@@ -41,6 +41,7 @@ duckling_parser = DucklingParser(
     access=lambda w: (
         w.input[const.S_CLASSIFICATION_INPUT],
         w.input[const.S_REFERENCE_TIME],
+        w.input[const.S_LOCALE]
     ),
     mutate=update_entities,
     dimensions=["number"],
@@ -77,6 +78,7 @@ def predict_wrapper():
         context: Dict[str, Any],
         intents_info: Optional[List[Dict[str, Any]]] = None,
         reference_time: Optional[int] = None,
+        locale: Optional[str] = None
     ):
         """
         Produce intent and entities for a given utterance.
@@ -93,10 +95,11 @@ def predict_wrapper():
                 const.S_INTENTS_INFO: intents_info,
                 const.S_NER_INPUT: utterance,
                 const.S_REFERENCE_TIME: reference_time,
+                const.S_LOCALE: locale
             }
         )
 
-        intent = attr.asdict(intent)
+        intent = intent.json()
         slots = []
 
         for slot_name, slot_values in intent[const.SLOTS].items():
@@ -108,7 +111,7 @@ def predict_wrapper():
         return {
             const.VERSION: config.version,
             const.INTENTS: [intent],
-            const.ENTITIES: [attr.asdict(entity) for entity in entities],
+            const.ENTITIES: [entity.json() for entity in entities],
         }
 
     return predict

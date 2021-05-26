@@ -90,5 +90,10 @@ S_CONTEXT = "context"
 S_ERRORS = "errors.csv"
 S_INTENTS_INFO = "intents_info"
 S_REFERENCE_TIME = "reference_time"
+S_LOCALE = "locale"
 
 V_SUPPORTED_DATA_FORMATS = [CSV, SQLITE]
+LANG_TO_LOCALES = {
+    "en": "en_IN", # This should be set via config
+    "hi": "hi_IN"
+}

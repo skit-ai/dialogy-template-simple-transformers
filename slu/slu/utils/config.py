@@ -91,6 +91,7 @@ class Config:
         self.classification_file_format = self._config[const.TASKS][
             const.CLASSIFICATION
         ][const.FORMAT]
+
         self.rules = self._config[const.RULES]
         self.use_classifier = self._config[const.TASKS][const.CLASSIFICATION][const.USE]
 
@@ -99,7 +100,11 @@ class Config:
         self.ner_threshold = self._config[const.TASKS][const.NER][const.THRESHOLD]
         self.use_ner = self._config[const.TASKS][const.NER][const.USE]
 
-        self.supported_tasks = [const.CLASSIFICATION, const.NER]
+        self.supported_tasks = []
+        if self.use_classifier:
+            self.supported_tasks.append(const.CLASSIFICATION)
+        if self.use_ner:
+            self.supported_tasks.append(const.NER)
 
     def set_version(self, version) -> "Config":
         self.version = version

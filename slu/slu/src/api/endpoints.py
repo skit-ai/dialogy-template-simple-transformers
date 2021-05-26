@@ -63,6 +63,7 @@ def slu(lang: str, project_name: str):
             context,
             intents_info=intents_info,
             reference_time=int(datetime.now().timestamp() * 1000),
+            locale=const.LANG_TO_LOCALES[lang]
         )
 
         return jsonify(status="ok", response=response), 200
