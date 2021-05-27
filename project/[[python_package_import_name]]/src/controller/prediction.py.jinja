@@ -91,7 +91,7 @@ def predict_wrapper():
         preprocessors=preprocessors,
         postprocessors=postprocessors,
     )
-    def predict(utterance: List[str], context: Dict[str, Any], reference_time: Optional[int] = None):
+    def predict(utterance: List[str], context: Dict[str, Any], locale: str, intents_info: Optional[List[Dict[str, Any]]=None, reference_time: Optional[int] = None):
         """
         Produce intent and entities for a given utterance.
 
@@ -100,7 +100,7 @@ def predict_wrapper():
         """
         utterance = normalize(utterance)
         [% if use_duckling %]
-        intent, entities = workflow.run({const.S_CLASSIFICATION_INPUT: utterance, const.S_NER_INPUT: utterance, const.S_REFERENCE_TIME: reference_time})
+        intent, entities = workflow.run({const.S_CLASSIFICATION_INPUT: utterance, const.S_REFERENCE_TIME: reference_time, const.S_CONTEXT: context, const.LOCALE: locale })
         [% elif use_ner %]
         intent, entities = workflow.run({const.S_CLASSIFICATION_INPUT: utterance, const.S_NER_INPUT: utterance})
         [% else %]

@@ -76,12 +76,13 @@ def slu(lang: str, project_name: str):
         maybe_utterance: Any = request.json.get(const.ALTERNATIVES) or request.json.get(
             const.TEXT
         )
+        locale = lang + "_IN"
         sentences: List[str] = normalize(maybe_utterance)
         context: str = request.json.get(const.CONTEXT) or {}
         intents_info: List[Dict[str, Any]] = (
             request.json.get(const.S_INTENTS_INFO) or []
         )
-        response = PREDICT_API(sentences, context, intents_info=intents_info)
+        response = PREDICT_API(sentences, context, locale, intents_info=intents_info)
 
         return jsonify(status="ok", response=response), 200
 
