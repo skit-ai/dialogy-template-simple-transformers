@@ -4,12 +4,11 @@ and receive Intent and Entities.
 """
 from typing import Any, Dict, List, Optional
 
-import attr
 from dialogy.parser.text.entity.duckling_parser import DucklingParser
 from dialogy.postprocess.text.slot_filler.rule_slot_filler import (
     RuleBasedSlotFillerPlugin,
 )
-from dialogy.types import BaseEntity
+from dialogy.types.entity import BaseEntity
 from dialogy.preprocess.text.merge_asr_output import merge_asr_output_plugin
 from dialogy.preprocess.text.normalize_utterance import normalize
 
