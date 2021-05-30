@@ -1,4 +1,4 @@
-# \slu
+# SLU
 
 Made with Dialogy Template with Simple Transformers
 
@@ -15,9 +15,9 @@ Made with Dialogy Template with Simple Transformers
 | **config**                                | A directory that contains `yaml` files.                                      |
 | **data**                                  | Version controlled by `dvc`.                                                 |
 | **data/0.0.0**                            | A directory that would contain these directories: datasets, metrics, models. |
-| **\slu/dev**   | Programs not required in production.                                         |
-| **\slu/src**   | Programs required in production.                                             |
-| **\slu/utils** | Programs that offer assitance in either dev or src belong here.              |
+| **slu/dev**   | Programs not required in production.                                         |
+| **slu/src**   | Programs required in production.                                             |
+| **slu/utils** | Programs that offer assitance in either dev or src belong here.              |
 | **CHANGELOG.md**                          | Track changes in the code, datasets, etc.                                    |
 | **Dockerfile**                            | Containerize the application for production use.                             |
 | **LICENSE**                               | Depending on your usage choose the correct copy, don't keep the default!     |
@@ -158,7 +158,7 @@ A single instance in the `data` column for classification tasks should look like
             "am_score": -362.57028,
             "lm_score": 123.00037}]]
     ]],
-    "context": "...""
+    "context": "..."
 }
 ```
 

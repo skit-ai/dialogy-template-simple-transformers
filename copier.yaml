@@ -1,46 +1,5 @@
-_subdirectory: project
+_subdirectory: slu
 _templates_suffix: .jinja
-
-# Prompts
-project_name:
-  type: str
-  help: Your project name
-
-project_description:
-  type: str
-  help: Your project description
-  default: "SLU service for [[ project_name|lower|replace('-', '_')|replace(' ', '_') ]]"
-
-author_fullname:
-  type: str
-  help: Your full name
-
-author_email:
-  type: str
-  help: Your email
-
-author_username:
-  type: str
-  help: Your username (e.g. on GitHub)
-
-python_package_import_name:
-  type: str
-  help: Your Python package import name (for `import NAME` in Python code)
-  default: "[[ project_name|lower|replace('-', '_')|replace(' ', '_') ]]"
-
-intent_classification_flavor:
-  type: int
-  help: |-
-    Type the number against the feature
-    
-    [1] Intent classifier with concat-utterances.
-    [2] Intent classifier with voting over each alternative. (beta only, don't use this in production)
-  default: 1
-
-use_duckling:
-  type: bool
-  help: Do you need Duckling?
-  default: false
 
 use_ner:
   type: bool

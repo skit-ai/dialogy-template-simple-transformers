@@ -1,0 +1,87 @@
+project_name: slu
+version: 0.0.0
+cores: 8
+tasks:
+  classification:
+    use: true
+    format: "csv"
+    threshold: 0.1
+    alias: {}
+    model_args:
+      train:
+        output_dir: null
+        best_model_dir: null
+        evaluate_during_training_steps: 1080
+        early_stopping_consider_epochs: true
+        early_stopping_delta: 0.01
+        early_stopping_metric: eval_loss
+        early_stopping_metric_minimize: true
+        early_stopping_patience: 3
+        eval_batch_size: 8
+        evaluate_during_training: true
+        fp16: false
+        num_train_epochs: 10
+        overwrite_output_dir: true
+        reprocess_input_data: true
+        save_eval_checkpoints: false
+        save_model_every_epoch: false
+        save_steps: -1
+        use_early_stopping: true
+      prod:
+        output_dir: null
+        best_model_dir: null
+        reprocess_input_data: true
+        no_cache: true
+        use_multiprocessing: false # Setting this to true hurts performance!
+        eval_batch_size: 1 # same as the number of inputs going into the model.
+        max_seq_length: 128 # reduce this to boost performance.
+        thread_count: 1
+        silent: true
+        dynamic_quantize: true
+      test:
+        output_dir: null
+        best_model_dir: null
+        reprocess_input_data: true
+  [% if use_ner %]
+  ner:
+    use: true
+    format: "csv"
+    threshold: 0.6
+    model_args:
+      train:
+        output_dir: null
+        best_model_dir: null
+        evaluate_during_training_steps: 1080
+        evaluate_during_training: false
+        eval_batch_size: 8
+        save_model_every_epoch: false
+        save_eval_checkpoints: false
+        reprocess_input_data: true
+        num_train_epochs: 10
+        overwrite_output_dir: true
+        fp16: false
+        classification_report: true
+      test:
+        output_dir: null
+        best_model_dir: null
+        classification_report: true
+      prod:
+        output_dir: null
+        best_model_dir: null
+        output_dir: null
+        best_model_dir: null
+        use_multiprocessing: false # Setting this to true hurts performance!
+        eval_batch_size: 1 # same as the number of inputs going into the model.
+        max_seq_length: 128 # reduce this to boost performance.
+        reprocess_input_data: true
+        no_cache: true
+        thread_count: 1
+        silent: true
+        dynamic_quantize: true
+  [% endif %]
+rules:
+  slots: {}
+languages:
+  en:
+    name: "English"
+    sheet: ""
