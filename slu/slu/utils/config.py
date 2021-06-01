@@ -1,6 +1,7 @@
 """
 [summary]
 """
+import abc
 import os
 import pickle
 import shutil
@@ -20,6 +21,51 @@ from slu.dev.io.reader.csv import (
 )
 from slu.dev.prepare import prepare
 from slu.utils.logger import log
+
+
+
+class ConfigDataProviderInterface(metaclass=abc.ABCMeta):
+
+    @abc.abstractmethod
+    def give_config_data(self):
+        return
+
+
+class YAMLLocalConfigDataProvider(ConfigDataProviderInterface):
+
+    def __init__(self, config_path:Optional[str]=None) -> None:
+        super().__init__()
+        self.config = None
+        self.config_path = config_path if config_path else os.path.join("config", "config.yaml")
+
+
+
+    def give_config_data(self) -> Dict:
+
+        if self.config is None:
+            with open(self.config_path, "r") as handle:
+                self.config = yaml.load(handle, Loader=yaml.FullLoader)
+        return self.config
+
+
+class JSONAPIConfigDataProvider(ConfigDataProviderInterface):
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.config = None
+
+    def _get_config_from_api(self):
+        pass
+
+    def update_config(self, config_dict):
+        self.config = config_dict
+
+    def give_config_data(self) -> Dict:
+        if self.config is None:
+            self._get_config_from_api()
+        return self.config
+
+
 
 
 @attr.s
@@ -75,12 +121,16 @@ class Config:
     # Rules for filling Entities within Intent slots.
     rules = attr.ib(default=None)
 
+    # **config_data_provider**
+    #
+    # dictionary source if we are getting config from API.
+    config_data_provider : ConfigDataProviderInterface = attr.ib(default=YAMLLocalConfigDataProvider())
+
     def __attrs_post_init__(self) -> None:
         """
         Update default values of attributes from `conifg.yaml`.
         """
-        with open(self.config_path, "r") as handle:
-            self._config = yaml.load(handle, Loader=yaml.FullLoader)
+        self._config = self.config_data_provider.give_config_data()
         semver.VersionInfo.parse(self._config.get(const.VERSION))
         self.version = self._config.get(const.VERSION)
         self.n_cores = self._config.get(const.CORES)
@@ -92,7 +142,8 @@ class Config:
             const.CLASSIFICATION
         ][const.FORMAT]
 
-        self.rules = self._config[const.RULES]
+        # self.rules = self._config[const.RULES]
+        self.rules = self._config["postprocess"][0]["params"]["rules"]
         self.use_classifier = self._config[const.TASKS][const.CLASSIFICATION][const.USE]
 
         self.ner_file_format = self._config[const.TASKS][const.NER][const.FORMAT]
@@ -196,7 +247,7 @@ class Config:
                 ),
                 **kwargs,
             )
-        except OSError as os_error:
+        except OSError as os_err:
             raise ValueError(
                 f"config/config.yaml has {const.TASKS}.{purpose}.use = True, "
                 f"but no model found in {model_args[const.S_OUTPUT_DIR]}"
