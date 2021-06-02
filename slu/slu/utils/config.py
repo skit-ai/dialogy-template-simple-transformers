@@ -1,12 +1,16 @@
 """
 [summary]
 """
+import abc
 import os
 import pickle
 import shutil
+import traceback
 from typing import Any, Dict, List, Optional
 
+
 import attr
+import requests
 import semver
 import yaml
 from simpletransformers.classification import ClassificationModel  # type: ignore
@@ -20,6 +24,61 @@ from slu.dev.io.reader.csv import (
 )
 from slu.dev.prepare import prepare
 from slu.utils.logger import log
+
+
+
+class ConfigDataProviderInterface(metaclass=abc.ABCMeta):
+
+    @abc.abstractmethod
+    def give_config_data(self):
+        return
+
+
+class YAMLLocalConfigDataProvider(ConfigDataProviderInterface):
+
+    def __init__(self, config_path:Optional[str]=None) -> None:
+        super().__init__()
+        self.config = None
+        self.config_path = config_path if config_path else os.path.join("config", "config.yaml")
+
+
+
+    def give_config_data(self) -> Dict:
+
+        if self.config is None:
+            with open(self.config_path, "r") as handle:
+                self.config = yaml.load(handle, Loader=yaml.FullLoader)
+        return self.config
+
+
+class JSONAPIConfigDataProvider(ConfigDataProviderInterface):
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.config = None
+
+    def _get_config_from_api(self):
+        url = os.getenv("BUILDER_BACKEND_URL")
+        for _ in range(5):
+            try:
+                response = requests.get(url, timeout=10)
+                if response.status_code == 200:
+                    break
+                log.warning(f"Call to Builder backend failed. Trying again")
+            except Exception:
+                log.error(traceback.format_exc())
+        self.config = response.json()
+
+
+    def update_config(self, config_dict):
+        self.config = config_dict
+
+    def give_config_data(self) -> Dict:
+        if self.config is None:
+            self._get_config_from_api()
+        return self.config
+
+
 
 
 @attr.s
@@ -75,12 +134,16 @@ class Config:
     # Rules for filling Entities within Intent slots.
     rules = attr.ib(default=None)
 
+    # **config_data_provider**
+    #
+    # dictionary source if we are getting config from API.
+    config_data_provider : ConfigDataProviderInterface = attr.ib(default=YAMLLocalConfigDataProvider())
+
     def __attrs_post_init__(self) -> None:
         """
         Update default values of attributes from `conifg.yaml`.
         """
-        with open(self.config_path, "r") as handle:
-            self._config = yaml.load(handle, Loader=yaml.FullLoader)
+        self._config = self.config_data_provider.give_config_data()
         semver.VersionInfo.parse(self._config.get(const.VERSION))
         self.version = self._config.get(const.VERSION)
         self.n_cores = self._config.get(const.CORES)
@@ -196,7 +259,7 @@ class Config:
                 ),
                 **kwargs,
             )
-        except OSError as os_error:
+        except OSError as os_err:
             raise ValueError(
                 f"config/config.yaml has {const.TASKS}.{purpose}.use = True, "
                 f"but no model found in {model_args[const.S_OUTPUT_DIR]}"
