@@ -148,3 +148,8 @@ cache_dir
 notebooks
 wandb/
 *.bak
+
+
+# configs
+slu/config/*.json
+slu/config/*.yaml

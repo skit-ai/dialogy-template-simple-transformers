@@ -62,6 +62,12 @@ TRUE_LABEL = "true_label"
 PRED_LABEL = "pred_label"
 VALUE = "value"
 VALUES = "values"
+POSTPROCESS = "postprocess"
+PLUGIN = "plugin"
+PARAMS = "params"
+RULE_BASED_PLUGIN = "RuleBasedSlotFillerPlugin"
+
+
 
 S_TRAIN_DATA = "train.csv"
 S_TEST_DATA = "test.csv"
