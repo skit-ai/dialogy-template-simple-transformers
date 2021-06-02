@@ -5,9 +5,12 @@ import abc
 import os
 import pickle
 import shutil
+import traceback
 from typing import Any, Dict, List, Optional
 
+
 import attr
+import requests
 import semver
 import yaml
 from simpletransformers.classification import ClassificationModel  # type: ignore
@@ -55,7 +58,17 @@ class JSONAPIConfigDataProvider(ConfigDataProviderInterface):
         self.config = None
 
     def _get_config_from_api(self):
-        pass
+        url = os.getenv("BUILDER_BACKEND_URL")
+        for _ in range(5):
+            try:
+                response = requests.get(url, timeout=10)
+                if response.status_code == 200:
+                    break
+                log.warning(f"Call to Builder backend failed. Trying again")
+            except Exception:
+                log.error(traceback.format_exc())
+        self.config = response.json()
+
 
     def update_config(self, config_dict):
         self.config = config_dict
@@ -142,8 +155,7 @@ class Config:
             const.CLASSIFICATION
         ][const.FORMAT]
 
-        # self.rules = self._config[const.RULES]
-        self.rules = self._config["postprocess"][0]["params"]["rules"]
+        self.rules = self._config[const.RULES]
         self.use_classifier = self._config[const.TASKS][const.CLASSIFICATION][const.USE]
 
         self.ner_file_format = self._config[const.TASKS][const.NER][const.FORMAT]
