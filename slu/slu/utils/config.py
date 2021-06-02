@@ -137,7 +137,10 @@ class Config:
     # **config_data_provider**
     #
     # dictionary source if we are getting config from API.
-    config_data_provider : ConfigDataProviderInterface = attr.ib(default=YAMLLocalConfigDataProvider())
+    config_data_provider : ConfigDataProviderInterface = attr.ib()
+    @config_data_provider.default
+    def _default_legacy_yaml_local_config_data_provider(self):
+        return YAMLLocalConfigDataProvider(config_path=self.config_path)
 
     def __attrs_post_init__(self) -> None:
         """
@@ -155,7 +158,16 @@ class Config:
             const.CLASSIFICATION
         ][const.FORMAT]
 
-        self.rules = self._config[const.RULES]
+        self.postprocess = self._config.get(const.POSTPROCESS, None)
+        if self.postprocess:
+            for postprocess_plugin in self.postprocess:
+                if postprocess_plugin[const.PLUGIN] == const.RULE_BASED_PLUGIN:
+                    self.rules = postprocess_plugin[const.PARAMS][const.RULES]
+                    break
+
+        if self.rules is None:
+            self.rules = self._config[const.RULES]
+
         self.use_classifier = self._config[const.TASKS][const.CLASSIFICATION][const.USE]
 
         self.ner_file_format = self._config[const.TASKS][const.NER][const.FORMAT]

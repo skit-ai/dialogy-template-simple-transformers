@@ -14,6 +14,19 @@ def test_config_yaml():
     assert config._config == loaded_config
 
 
+def test_legacy_config_yaml():
+
+    import yaml
+    from slu.utils.config import Config
+
+    with open("config/old_config.yaml") as handler:
+        loaded_config = yaml.load(handler, Loader=yaml.FullLoader)
+
+    config = Config(config_path="config/old_config.yaml")
+
+    assert config._config == loaded_config
+
+
 def test_update_config_json():
 
 
