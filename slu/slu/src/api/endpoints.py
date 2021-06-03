@@ -39,7 +39,6 @@ def slu(lang: str, client_name: str, model_name: str):
     Produces a json response containing intents and entities.
     """
 
-
     MODEL_CONFIG = CLIENT_CONFIGS.get(model_name, None)
 
     if MODEL_CONFIG is None:

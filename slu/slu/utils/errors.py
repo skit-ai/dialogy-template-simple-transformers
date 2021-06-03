@@ -39,13 +39,13 @@ def invalid_input(req):
         400,
     )
 
-def invalid_project_name(project_name):
+def missing_project_name(project_name):
     return (
         jsonify(
             {
-                "message": "Invalid request.",
-                "cause": f"config for project_name: {project_name} is not found."
+                "message": "Project not found.",
+                "cause": f"config for project_name: {project_name} is not present."
             }
         ),
-        400,
+        404,
     )
