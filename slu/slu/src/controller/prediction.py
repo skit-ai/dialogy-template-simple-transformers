@@ -97,6 +97,7 @@ def predict_wrapper():
                 const.S_LOCALE: locale
             }
         )
+        workflow.flush()
 
         intent = intent.json()
         slots = []
