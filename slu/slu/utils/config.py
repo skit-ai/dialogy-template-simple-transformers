@@ -53,29 +53,11 @@ class YAMLLocalConfigDataProvider(ConfigDataProviderInterface):
 
 class JSONAPIConfigDataProvider(ConfigDataProviderInterface):
 
-    def __init__(self) -> None:
+    def __init__(self, config_dict:Optional[Dict]= None) -> None:
         super().__init__()
-        self.config = None
-
-    def _get_config_from_api(self):
-        url = os.getenv("BUILDER_BACKEND_URL")
-        for _ in range(5):
-            try:
-                response = requests.get(url, timeout=10)
-                if response.status_code == 200:
-                    break
-                log.warning(f"Call to Builder backend failed. Trying again")
-            except Exception:
-                log.error(traceback.format_exc())
-        self.config = response.json()
-
-
-    def update_config(self, config_dict):
         self.config = config_dict
 
     def give_config_data(self) -> Dict:
-        if self.config is None:
-            self._get_config_from_api()
         return self.config
 
 
@@ -393,3 +375,47 @@ class Config:
 
     def get_supported_langauges(self) -> Dict[str, str]:
         return self._config["languages"]
+
+
+class OnStartupConfigDataProvider:
+
+    def __init__(self) -> None:
+        self.project_config_maps = None
+
+    
+    def _is_valid_config_schema(self, config_dict):
+        #TODO: validate the incoming JSON
+        return True
+
+
+    def _parse_json(self, project_configs_response: List[Dict[str, Dict]]):
+
+        # if project_configs_response is of List[Dict[str, Dict]]
+        for project_config_map in project_configs_response:
+            for project_name, project_config in project_config_map.items():
+                if self._is_valid_config_schema(project_config):
+                    self.project_config_maps[project_name] = project_config
+
+        # # if project_configs_response is of Dict[Dict[str, Dict]]
+        # for project_name, project_config in project_configs_response.items():
+        #     if self._is_valid_config_schema(project_config):
+        #         self.project_config_maps[project_name] = project_config
+
+
+    def _get_configs_from_api(self):
+        url = os.getenv("BUILDER_BACKEND_URL")
+        for _ in range(5):
+            try:
+                response = requests.get(url, timeout=10)
+                if response.status_code == 200:
+                    return response.json()
+                log.warning(f"Call to Builder backend failed. Trying again")
+            except Exception:
+                log.error(traceback.format_exc())
+
+
+    def give_config_data(self) -> Dict[str, Config]:
+        if self.project_config_maps is None:
+            project_configs_response = self._get_configs_from_api()
+            self._parse_json(project_configs_response)
+        return self.project_config_maps

@@ -37,11 +37,10 @@ def test_update_config_json():
     with open("config/config.json") as handler:
         actual_config = json.load(handler)
 
-    json_config_data_provider = JSONAPIConfigDataProvider()
-    json_config_data_provider.update_config(config_dict=actual_config)
+    json_config_data_provider = JSONAPIConfigDataProvider(actual_config)
+    config = Config(config_data_provider=json_config_data_provider)
     provider_config = json_config_data_provider.give_config_data()
 
-    config = Config(config_data_provider=json_config_data_provider)
     assert actual_config == provider_config
     assert provider_config == config._config
 
