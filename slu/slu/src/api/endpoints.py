@@ -17,6 +17,7 @@ PREDICT_API = predict_wrapper()
 startup_client_config_provider = OnStartupClientConfigDataProvider()
 CLIENT_CONFIGS = startup_client_config_provider.give_config_data()
 
+
 @app.route("/", methods=["GET"])
 def health_check():
     """
@@ -38,9 +39,14 @@ def slu(lang: str, client_name: str, model_name: str):
     Produces a json response containing intents and entities.
     """
 
+
     MODEL_CONFIG = CLIENT_CONFIGS.get(model_name, None)
 
+    if MODEL_CONFIG is None:
+        return errors.invalid_project_name(model_name), 404
+
     supported_languages = list(MODEL_CONFIG.get_supported_langauges().keys())
+
     if lang not in supported_languages:
         return errors.invalid_language(supported_languages)
 
@@ -77,6 +83,27 @@ def slu(lang: str, client_name: str, model_name: str):
         # 2. provide user-friendly messages. The current is developer friendly.
         capture_exception(exc, ctx="api", message=request.json)
         return jsonify({"message": str(exc), "cause": traceback.format_exc()}), 500
+
+
+
+@app.route("/update/<project_name>/", methods=["POST"])
+def slu(project_name: str):
+    """
+    Update SLU config.
+    """
+    PROJECT_CONFIG = PROJECT_CONFIG_MAP.get(project_name, None)
+
+    if not isinstance(request.json, dict):
+        return errors.invalid_request(request.json)
+
+    json_config_data_provider = JSONAPIConfigDataProvider(config=request.json)
+    config = Config(config_data_provider=json_config_data_provider)
+    PROJECT_CONFIG[project_name] = config
+
+    return jsonify(
+        status="ok",
+        response={"message": f"{project_name} has been updated."},
+    )
 
 
 if __name__ == "__main__":
