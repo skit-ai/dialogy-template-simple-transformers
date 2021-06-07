@@ -51,20 +51,33 @@ def test_api_config_json():
     import os
     import json
 
-    from slu.utils.config import Config, JSONAPIConfigDataProvider
+    from slu.utils.config import Config, OnStartupClientConfigDataProvider
+    from slu import constants as const
     
     with open("config/config.json") as handler:
-        actual_config = json.load(handler)
+        axis_config = json.load(handler)
+
+    with open("config/oyo.json") as handler:
+        oyo_config = json.load(handler)
+
+    body_resp = [axis_config, oyo_config]
+
+    BUILDER_BACKEND_URL = "http://builder.vernacular.ai"
+    url = BUILDER_BACKEND_URL + const.CLIENTS_CONFIGS_ROUTE
 
     httpretty.register_uri(
         httpretty.GET,
-        os.getenv("BUILDER_BACKEND_URL"),
-        body=json.dumps(actual_config)
+        url,
+        body=json.dumps(body_resp)
     )
 
-    json_config_data_provider = JSONAPIConfigDataProvider()
-    config = Config(config_data_provider=json_config_data_provider)
-    assert actual_config == config._config
+    client_configs = {
+        "booking.inform-assist-1": axis_config,
+        "booking.inform-assist-2": oyo_config
+    }
+
+    startup_config_data_provider = OnStartupClientConfigDataProvider()
+    assert client_configs == startup_config_data_provider.give_config_data()
 
 
 

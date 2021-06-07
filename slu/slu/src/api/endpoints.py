@@ -8,14 +8,14 @@ from flask import jsonify, request
 from slu import constants as const
 from slu.src.api import app
 from slu.src.controller.prediction import predict_wrapper
-from slu.utils.config import Config
+from slu.utils.config import Config, OnStartupClientConfigDataProvider
 from slu.utils.sentry import capture_exception
 from slu.utils import errors
 
 
 PREDICT_API = predict_wrapper()
-CONFIG = Config()
-
+startup_client_config_provider = OnStartupClientConfigDataProvider()
+CLIENT_CONFIGS = startup_client_config_provider.give_config_data()
 
 @app.route("/", methods=["GET"])
 def health_check():
@@ -30,14 +30,17 @@ def health_check():
     )
 
 
-@app.route("/predict/<lang>/<project_name>/", methods=["POST"])
-def slu(lang: str, project_name: str):
+@app.route("/predict/<lang>/<client_name>/<model_name>/", methods=["POST"])
+def slu(lang: str, client_name: str, model_name: str):
     """
     Get SLU predictions.
 
     Produces a json response containing intents and entities.
     """
-    supported_languages = list(CONFIG.get_supported_langauges().keys())
+
+    MODEL_CONFIG = CLIENT_CONFIGS.get(model_name, None)
+
+    supported_languages = list(MODEL_CONFIG.get_supported_langauges().keys())
     if lang not in supported_languages:
         return errors.invalid_language(supported_languages)
 

@@ -12,6 +12,7 @@ N_EPOCHS = 10
 k = 1000
 
 NAME = "name"
+MODEL_NAME = "model_name"
 CORES = "cores"
 DATA_ID = "data_id"
 DATA = "data"
@@ -103,3 +104,5 @@ LANG_TO_LOCALES = {
     "en": "en_IN", # This should be set via config
     "hi": "hi_IN"
 }
+
+CLIENTS_CONFIGS_ROUTE = "/clients/configs/"

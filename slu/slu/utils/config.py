@@ -377,10 +377,10 @@ class Config:
         return self._config["languages"]
 
 
-class OnStartupConfigDataProvider:
+class OnStartupClientConfigDataProvider:
 
     def __init__(self) -> None:
-        self.project_config_maps = None
+        self.client_configs = {}
 
     
     def _is_valid_config_schema(self, config_dict):
@@ -388,22 +388,23 @@ class OnStartupConfigDataProvider:
         return True
 
 
-    def _parse_json(self, project_configs_response: List[Dict[str, Dict]]):
+    def _parse_json(self, configs_response: List[Dict[str, Dict]]):
 
-        # if project_configs_response is of List[Dict[str, Dict]]
-        for project_config_map in project_configs_response:
-            for project_name, project_config in project_config_map.items():
-                if self._is_valid_config_schema(project_config):
-                    self.project_config_maps[project_name] = project_config
-
-        # # if project_configs_response is of Dict[Dict[str, Dict]]
-        # for project_name, project_config in project_configs_response.items():
-        #     if self._is_valid_config_schema(project_config):
-        #         self.project_config_maps[project_name] = project_config
+        # if project_configs_response is of List[Dict]
+        for config_map in configs_response:
+            model_name = config_map.get(const.MODEL_NAME)
+            if self._is_valid_config_schema(config_map):
+                self.client_configs[model_name] = config_map
 
 
     def _get_configs_from_api(self):
-        url = os.getenv("BUILDER_BACKEND_URL")
+
+        BUILDER_BACKEND_URL = os.getenv("BUILDER_BACKEND_URL")
+        if BUILDER_BACKEND_URL is None:
+            raise ValueError(
+                f"missing BUILDER_BACKEND_URL env variable, please set it appropriately."
+            )
+        url = BUILDER_BACKEND_URL + const.CLIENTS_CONFIGS_ROUTE
         for _ in range(5):
             try:
                 response = requests.get(url, timeout=10)
@@ -412,10 +413,11 @@ class OnStartupConfigDataProvider:
                 log.warning(f"Call to Builder backend failed. Trying again")
             except Exception:
                 log.error(traceback.format_exc())
+        raise RuntimeError(f"couldn't establish connection with {url} collect configs")
 
 
     def give_config_data(self) -> Dict[str, Config]:
-        if self.project_config_maps is None:
-            project_configs_response = self._get_configs_from_api()
-            self._parse_json(project_configs_response)
-        return self.project_config_maps
+        if not self.client_configs:
+            configs_response = self._get_configs_from_api()
+            self._parse_json(configs_response)
+        return self.client_configs
