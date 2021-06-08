@@ -8,7 +8,7 @@ from flask import jsonify, request
 from slu import constants as const
 from slu.src.api import app
 from slu.src.controller.prediction import predict_wrapper
-from slu.utils.config import Config, OnStartupClientConfigDataProvider
+from slu.utils.config import Config, OnStartupClientConfigDataProvider, JSONAPIConfigDataProvider
 from slu.utils.sentry import capture_exception
 from slu.utils import errors
 
@@ -44,10 +44,8 @@ def slu(lang: str, client_name: str, model_name: str):
     if MODEL_CONFIG is None:
         return errors.invalid_project_name(model_name), 404
 
-    supported_languages = list(MODEL_CONFIG.get_supported_langauges().keys())
-
-    if lang not in supported_languages:
-        return errors.invalid_language(supported_languages)
+    if lang not in MODEL_CONFIG.get_supported_langauges():
+        return errors.invalid_language(lang)
 
     if not isinstance(request.json, dict):
         return errors.invalid_request(request.json)
@@ -85,23 +83,22 @@ def slu(lang: str, client_name: str, model_name: str):
 
 
 
-@app.route("/update/<project_name>/", methods=["POST"])
-def slu(project_name: str):
+@app.route("/update/<client_name>/<model_name>/", methods=["POST"])
+def slu(client_name: str, model_name: str):
     """
     Update SLU config.
     """
-    PROJECT_CONFIG = PROJECT_CONFIG_MAP.get(project_name, None)
 
     if not isinstance(request.json, dict):
         return errors.invalid_request(request.json)
 
     json_config_data_provider = JSONAPIConfigDataProvider(config=request.json)
     config = Config(config_data_provider=json_config_data_provider)
-    PROJECT_CONFIG[project_name] = config
+    CLIENT_CONFIGS[model_name] = config
 
     return jsonify(
         status="ok",
-        response={"message": f"{project_name} has been updated."},
+        response={"message": f"{model_name} has been updated."},
     )
 
 
