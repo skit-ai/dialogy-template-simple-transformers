@@ -8,7 +8,7 @@ from flask import jsonify, request
 from slu import constants as const
 from slu.src.api import app
 from slu.src.controller.prediction import predict_wrapper
-from slu.utils.config import Config, OnStartupClientConfigDataProvider
+from slu.utils.config import Config, OnStartupClientConfigDataProvider, JSONAPIConfigDataProvider
 from slu.utils.sentry import capture_exception
 from slu.utils import errors
 
@@ -16,6 +16,7 @@ from slu.utils import errors
 PREDICT_API = predict_wrapper()
 startup_client_config_provider = OnStartupClientConfigDataProvider()
 CLIENT_CONFIGS = startup_client_config_provider.give_config_data()
+
 
 @app.route("/", methods=["GET"])
 def health_check():
@@ -40,9 +41,11 @@ def slu(lang: str, client_name: str, model_name: str):
 
     MODEL_CONFIG = CLIENT_CONFIGS.get(model_name, None)
 
-    supported_languages = list(MODEL_CONFIG.get_supported_langauges().keys())
-    if lang not in supported_languages:
-        return errors.invalid_language(supported_languages)
+    if MODEL_CONFIG is None:
+        return errors.invalid_project_name(model_name), 404
+
+    if lang not in MODEL_CONFIG.get_supported_langauges():
+        return errors.invalid_language(lang)
 
     if not isinstance(request.json, dict):
         return errors.invalid_request(request.json)
@@ -77,6 +80,26 @@ def slu(lang: str, client_name: str, model_name: str):
         # 2. provide user-friendly messages. The current is developer friendly.
         capture_exception(exc, ctx="api", message=request.json)
         return jsonify({"message": str(exc), "cause": traceback.format_exc()}), 500
+
+
+
+@app.route("/update/<client_name>/<model_name>/", methods=["POST"])
+def slu(client_name: str, model_name: str):
+    """
+    Update SLU config.
+    """
+
+    if not isinstance(request.json, dict):
+        return errors.invalid_request(request.json)
+
+    json_config_data_provider = JSONAPIConfigDataProvider(config=request.json)
+    config = Config(config_data_provider=json_config_data_provider)
+    CLIENT_CONFIGS[model_name] = config
+
+    return jsonify(
+        status="ok",
+        response={"message": f"{model_name} has been updated."},
+    )
 
 
 if __name__ == "__main__":

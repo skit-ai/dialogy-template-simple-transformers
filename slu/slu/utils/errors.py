@@ -3,12 +3,12 @@ from flask import jsonify, request
 from slu import constants as const
 
 
-def invalid_language(supported_languages):
+def invalid_language(lang):
     return (
             jsonify(
                 {
                     "message": "Invalid request.",
-                    "cause": f"Language is not supported. Support available only for {supported_languages}.",
+                    "cause": f"Language '{lang}' is not supported.",
                 }
             ),
             400,
@@ -37,4 +37,15 @@ def invalid_input(req):
             }
         ),
         400,
+    )
+
+def missing_project_name(project_name):
+    return (
+        jsonify(
+            {
+                "message": "Project not found.",
+                "cause": f"config for project_name: {project_name} is not present."
+            }
+        ),
+        404,
     )
