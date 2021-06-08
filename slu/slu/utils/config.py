@@ -13,8 +13,10 @@ import attr
 import requests
 import semver
 import yaml
+from requests.adapters import HTTPAdapter
 from simpletransformers.classification import ClassificationModel  # type: ignore
 from simpletransformers.ner import NERModel
+from urllib3.util import Retry
 
 from slu import constants as const
 from slu.dev.io.reader.csv import (
@@ -53,29 +55,11 @@ class YAMLLocalConfigDataProvider(ConfigDataProviderInterface):
 
 class JSONAPIConfigDataProvider(ConfigDataProviderInterface):
 
-    def __init__(self) -> None:
+    def __init__(self, config_dict:Optional[Dict]= None) -> None:
         super().__init__()
-        self.config = None
-
-    def _get_config_from_api(self):
-        url = os.getenv("BUILDER_BACKEND_URL")
-        for _ in range(5):
-            try:
-                response = requests.get(url, timeout=10)
-                if response.status_code == 200:
-                    break
-                log.warning(f"Call to Builder backend failed. Trying again")
-            except Exception:
-                log.error(traceback.format_exc())
-        self.config = response.json()
-
-
-    def update_config(self, config_dict):
         self.config = config_dict
 
     def give_config_data(self) -> Dict:
-        if self.config is None:
-            self._get_config_from_api()
         return self.config
 
 
@@ -393,3 +377,59 @@ class Config:
 
     def get_supported_langauges(self) -> Dict[str, str]:
         return self._config["languages"]
+
+
+class OnStartupClientConfigDataProvider:
+
+    def __init__(self) -> None:
+        self.client_configs = {}
+
+    
+    def _is_valid_config_schema(self, config_dict):
+        #TODO: validate the incoming JSON
+        return True
+
+
+    def _parse_json(self, configs_response: List[Dict[str, Dict]]):
+
+        # if project_configs_response is of List[Dict]
+        for config_map in configs_response:
+            model_name = config_map.get(const.MODEL_NAME)
+            if self._is_valid_config_schema(config_map):
+                self.client_configs[model_name] = config_map
+
+
+    def _get_configs_from_api(self):
+
+        BUILDER_BACKEND_URL = os.getenv("BUILDER_BACKEND_URL")
+        if BUILDER_BACKEND_URL is None:
+            raise ValueError(
+                f"missing BUILDER_BACKEND_URL env variable, please set it appropriately."
+            )
+        url = BUILDER_BACKEND_URL + const.CLIENTS_CONFIGS_ROUTE
+
+        session = requests.Session()
+        retry = Retry(
+            total=const.REQUEST_MAX_RETRIES,
+            connect=const.REQUEST_MAX_RETRIES,
+            read=const.REQUEST_MAX_RETRIES,
+            backoff_factor=0.3,
+            status_forcelist=(500, 502, 504)
+        )
+        http_adapter = HTTPAdapter(max_retries=retry)
+        session.mount("http://", http_adapter)
+        session.mount("https://", http_adapter)
+
+        response = session.get(url, timeout=10)
+
+        if response.ok:
+            return response.json()
+        
+        raise RuntimeError(f"couldn't establish connection with {url} while trying to collect configs")
+
+
+    def give_config_data(self) -> Dict[str, Config]:
+        if not self.client_configs:
+            configs_response = self._get_configs_from_api()
+            self._parse_json(configs_response)
+        return self.client_configs
