@@ -13,8 +13,10 @@ import attr
 import requests
 import semver
 import yaml
+from requests.adapters import HTTPAdapter
 from simpletransformers.classification import ClassificationModel  # type: ignore
 from simpletransformers.ner import NERModel
+from urllib3.util import Retry
 
 from slu import constants as const
 from slu.dev.io.reader.csv import (
@@ -405,15 +407,25 @@ class OnStartupClientConfigDataProvider:
                 f"missing BUILDER_BACKEND_URL env variable, please set it appropriately."
             )
         url = BUILDER_BACKEND_URL + const.CLIENTS_CONFIGS_ROUTE
-        for _ in range(5):
-            try:
-                response = requests.get(url, timeout=10)
-                if response.status_code == 200:
-                    return response.json()
-                log.warning(f"Call to Builder backend failed. Trying again")
-            except Exception:
-                log.error(traceback.format_exc())
-        raise RuntimeError(f"couldn't establish connection with {url} collect configs")
+
+        session = requests.Session()
+        retry = Retry(
+            total=const.REQUEST_MAX_RETRIES,
+            connect=const.REQUEST_MAX_RETRIES,
+            read=const.REQUEST_MAX_RETRIES,
+            backoff_factor=0.3,
+            status_forcelist=(500, 502, 504)
+        )
+        http_adapter = HTTPAdapter(max_retries=retry)
+        session.mount("http://", http_adapter)
+        session.mount("https://", http_adapter)
+
+        response = session.get(url, timeout=10)
+
+        if response.ok:
+            return response.json()
+        
+        raise RuntimeError(f"couldn't establish connection with {url} while trying to collect configs")
 
 
     def give_config_data(self) -> Dict[str, Config]:
