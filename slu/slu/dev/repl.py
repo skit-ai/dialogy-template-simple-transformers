@@ -138,7 +138,11 @@ def repl() -> None:
             log.info("context: %s ", context)
 
             start = time.time()
-            response = predict(utterance, context)
+            response = predict(utterance, context) response = predict(
+                utterances,
+                context,
+                reference_time=int(datetime.now().timestamp() * 1000)
+            )
             end = time.time() - start
             log.info("response")
             pprint(response)
