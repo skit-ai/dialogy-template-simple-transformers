@@ -26,7 +26,7 @@ from slu.dev.io.reader.csv import (
 )
 from slu.dev.prepare import prepare
 from slu.utils.logger import log
-
+from slu.utils.decorators import checks_usage
 
 
 class ConfigDataProviderInterface(metaclass=abc.ABCMeta):
@@ -170,18 +170,23 @@ class Config:
         self._config[const.VERSION] = version
         return self
 
+    @checks_usage
     def get_data_dir(self, task) -> str:
         return os.path.join(const.DATA, self.version, task)
 
+    @checks_usage
     def get_metrics_dir(self, task) -> str:
         return os.path.join(self.get_data_dir(task), const.METRICS)
 
+    @checks_usage
     def get_model_dir(self, task) -> str:
         return os.path.join(self.get_data_dir(task), const.MODELS)
 
+    @checks_usage
     def get_model_path(self, task) -> str:
         return os.path.join(self.get_model_dir(task), self.version)
 
+    @checks_usage
     def get_dataset(
         self, task, purpose, file_format=const.CSV, custom_file=None
     ) -> Any:
@@ -213,6 +218,7 @@ class Config:
 
         return data
 
+    @checks_usage
     def get_model_args(self, task, purpose) -> Dict[str, Any]:
         model_args = self._config[const.TASKS][task][const.S_MODEL_ARGS][purpose]
         model_args[const.S_OUTPUT_DIR] = self.get_model_dir(task)
@@ -294,6 +300,7 @@ class Config:
                 f"but no model found in {model_args[const.S_OUTPUT_DIR]}"
             ) from os_err
 
+    @checks_usage
     def get_labels(self, task) -> List[str]:
         if task == const.CLASSIFICATION:
             encoder = self.load_pickle(
@@ -307,6 +314,7 @@ class Config:
                 f"Expected task to be {const.CLASSIFICATION} or {const.NER} instead, {task} was found"
             )
 
+    @checks_usage
     def set_labels(self, task, labels) -> None:
         if task not in self.supported_tasks:
             raise ValueError(f"Expected task to be one of {self.supported_tasks}")
@@ -315,6 +323,7 @@ class Config:
         )
         self.save_pickle(task, namespace, labels)
 
+    @checks_usage
     def get_alias(self, task) -> List[str]:
         return self._config.get(const.TASKS, {}).get(task, {}).get(const.ALIAS)
 
@@ -324,6 +333,7 @@ class Config:
             index=False,
         )
 
+    @checks_usage
     def get_model(self, task, purpose):
         labels = self.get_labels(task)
         error_message = (
@@ -337,12 +347,14 @@ class Config:
         else:
             raise ValueError(error_message)
 
+    @checks_usage
     def save_pickle(self, task, prop, value) -> "Config":
         model_dir = self.get_model_dir(task)
         with open(os.path.join(model_dir, prop), "wb") as handle:
             pickle.dump(value, handle)
         return self
 
+    @checks_usage
     def load_pickle(self, task, prop):
         model_dir = self.get_model_dir(task)
         with open(os.path.join(model_dir, prop), "rb") as handle:
@@ -353,6 +365,7 @@ class Config:
             yaml.dump(self._config, handle, sort_keys=False)
         return self
 
+    @checks_usage
     def save_report(self, task, results) -> "Config":
         if task == const.CLASSIFICATION:
             save_classification_report(
@@ -367,6 +380,7 @@ class Config:
                 f"Expected task to be {const.CLASSIFICATION} or {const.NER} instead, {task} was found"
             )
 
+    @checks_usage
     def remove_checkpoints(self, task) -> None:
         model_dir = self.get_model_dir(task)
         items = os.listdir(model_dir)
