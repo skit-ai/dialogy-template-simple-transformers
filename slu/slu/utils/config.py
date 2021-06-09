@@ -152,6 +152,16 @@ class Config:
         if self.rules is None:
             self.rules = self._config[const.RULES]
 
+        self.preprocess = self._config.get(const.PREPROCESS, None)
+        self.use_duckling = False
+
+        if self.preprocess:
+            for preprocess_plugin in self.preprocess:
+                if preprocess_plugin[const.PLUGIN] == const.DUCKLING_BASED_PLUGIN:
+                    self.use_duckling = postprocess_plugin[const.USE]
+                    self.duckling_params = postprocess_plugin[const.PARAMS]
+                    break
+
         self.use_classifier = self._config[const.TASKS][const.CLASSIFICATION][const.USE]
 
         self.ner_file_format = self._config[const.TASKS][const.NER][const.FORMAT]

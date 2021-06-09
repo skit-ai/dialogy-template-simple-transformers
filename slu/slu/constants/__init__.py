@@ -63,10 +63,12 @@ TRUE_LABEL = "true_label"
 PRED_LABEL = "pred_label"
 VALUE = "value"
 VALUES = "values"
+PREPROCESS = "preprocess"
 POSTPROCESS = "postprocess"
 PLUGIN = "plugin"
 PARAMS = "params"
 RULE_BASED_PLUGIN = "RuleBasedSlotFillerPlugin"
+DUCKLING_BASED_PLUGIN = "DucklingPlugin"
 
 
 
