@@ -64,10 +64,14 @@ PRED_LABEL = "pred_label"
 VALUE = "value"
 VALUES = "values"
 POSTPROCESS = "postprocess"
+PREPROCESS = "preprocess"
 PLUGIN = "plugin"
 PARAMS = "params"
 RULE_BASED_PLUGIN = "RuleBasedSlotFillerPlugin"
-
+LIST_ENTITY_PLUGIN = "ListEntityPlugin"
+CANDIDATES = "candidates"
+STYLE = "style"
+ENTITY_MAP = "entity_map"
 
 
 S_TRAIN_DATA = "train.csv"
