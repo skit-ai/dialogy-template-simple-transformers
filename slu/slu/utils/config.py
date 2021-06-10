@@ -5,9 +5,7 @@ import abc
 import os
 import pickle
 import shutil
-import traceback
-from typing import Any, Dict, List, Optional
-
+from typing import Any, Dict, List, Optional, Union
 
 import attr
 import requests
@@ -377,6 +375,56 @@ class Config:
 
     def get_supported_langauges(self) -> Dict[str, str]:
         return self._config["languages"]
+
+    def find_plugin_metadata(self, config_property: str, plugin_name: str) -> Optional[Dict[str, Any]]:
+        """
+        Access a plugin metadata within _config.
+
+        :param config_property: Expected property within _config.
+        :type config_property: str
+        :param plugin_name: [description]
+        :type plugin_name: str
+        :return: Value of the sub-property within _config.
+        :rtype: Any
+        """
+        metadata_for_plugins = self._config.get(config_property)
+        for plugin_metadata in metadata_for_plugins:
+            if plugin_metadata.get(const.PLUGIN) == plugin_name:
+                return plugin_metadata
+        return None
+
+    def update_plugin_metadata(self, plugin_metadata: Optional[Dict[str, Any]], param_name: str, value: Any) -> None:
+        """
+        Update plugin selected params.
+
+        :param plugin_metadata: Metadata object that instantiates a plugin.
+        :type plugin_metadata: Optional[Dict[str, Any]]
+        :param param_name: The parameter to update.
+        :type param_name: str
+        :param value: An expected value for the pugin parameter.
+        :type value: Any
+        """
+        if plugin_metadata:
+            plugin_metadata[const.PARAMS][const.CANDIDATES] = value
+        else:
+            metadata = {
+                const.PLUGIN: const.LIST_ENTITY_PLUGIN,
+                const.PARAMS: {
+                    const.STYLE: "regex",
+                    const.CANDIDATES: value,
+                    const.ENTITY_MAP: {}
+                }
+            }
+            self._config[const.PREPROCESS].append(metadata)
+
+    def json(self) -> Dict[str, Any]:
+        """
+        Represent the class as json
+
+        :return: The class instance as json
+        :rtype: Dict[str, Any]
+        """
+        return attr.asdict(self)
 
 
 class OnStartupClientConfigDataProvider:
