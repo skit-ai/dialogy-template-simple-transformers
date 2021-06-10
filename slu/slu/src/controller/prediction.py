@@ -32,9 +32,9 @@ merge_asr_output = merge_asr_output_plugin(
 )
 
 
-def update_entities(workflow: XLMRWorkflow, extra_entities: List[BaseEntity]):
-    intents, entities = workflow.output
-    workflow.output = (intents, entities + extra_entities)
+def update_entities(workflow: XLMRWorkflow, entities: List[BaseEntity]):
+    intents, collected_entities = workflow.output
+    workflow.output = (intents, collected_entities + entities)
 
 
 duckling_parser = DucklingParser(
