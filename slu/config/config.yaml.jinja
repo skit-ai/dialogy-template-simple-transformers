@@ -83,3 +83,15 @@ languages:
   en:
     name: "English"
     sheet: ""
+preprocess:
+  - plugin: "DucklingPlugin"
+    params:
+      [% if use_duckling %]
+      use: true
+      [% elif not use_duckling %]
+      use: false
+      [% endif %]
+      locale: "en-IN"
+      timezone: "Asia/Kolkata"
+      dimensions:
+        - "time"

@@ -5,3 +5,8 @@ use_ner:
   type: bool
   help: Do you need simpletransformers NER?
   default: false
+
+use_duckling:
+  type: bool
+  help: Do you need Duckling?
+  default: false

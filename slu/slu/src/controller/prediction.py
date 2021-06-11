@@ -32,8 +32,9 @@ merge_asr_output = merge_asr_output_plugin(
 )
 
 
-def update_entities(workflow: XLMRWorkflow, entities: List[BaseEntity]):
-    workflow.output[const.ENTITIES] = entities
+def update_entities(workflow: XLMRWorkflow, extra_entities: List[BaseEntity]):
+    intents, entities = workflow.output
+    workflow.output = (intents, entities + extra_entities)
 
 
 duckling_parser = DucklingParser(
@@ -43,9 +44,7 @@ duckling_parser = DucklingParser(
         w.input[const.S_LOCALE]
     ),
     mutate=update_entities,
-    dimensions=["number"],
-    locale="en_IN",
-    timezone="Asia/Kolkata",
+    **config.duckling_params,
 )()
 
 
@@ -58,8 +57,10 @@ def predict_wrapper():
     """
     preprocessors = [
         merge_asr_output,
-        duckling_parser,
     ]
+
+    if config.use_duckling:
+        preprocessors.append(duckling_parser)
 
     postprocessors = [
         slot_filler
