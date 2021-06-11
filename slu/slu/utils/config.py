@@ -5,9 +5,7 @@ import abc
 import os
 import pickle
 import shutil
-import traceback
-from typing import Any, Dict, List, Optional
-
+from typing import Any, Dict, List, Optional, Union
 
 import attr
 import requests
@@ -26,7 +24,7 @@ from slu.dev.io.reader.csv import (
 )
 from slu.dev.prepare import prepare
 from slu.utils.logger import log
-
+from slu.utils.decorators import checks_usage
 
 
 class ConfigDataProviderInterface(metaclass=abc.ABCMeta):
@@ -152,6 +150,16 @@ class Config:
         if self.rules is None:
             self.rules = self._config[const.RULES]
 
+        self.preprocess = self._config.get(const.PREPROCESS, None)
+        self.use_duckling = False
+
+        if self.preprocess:
+            for preprocess_plugin in self.preprocess:
+                if preprocess_plugin[const.PLUGIN] == const.DUCKLING_BASED_PLUGIN:
+                    self.use_duckling = postprocess_plugin[const.USE]
+                    self.duckling_params = postprocess_plugin[const.PARAMS]
+                    break
+
         self.use_classifier = self._config[const.TASKS][const.CLASSIFICATION][const.USE]
 
         self.ner_file_format = self._config[const.TASKS][const.NER][const.FORMAT]
@@ -170,18 +178,23 @@ class Config:
         self._config[const.VERSION] = version
         return self
 
+    @checks_usage
     def get_data_dir(self, task) -> str:
         return os.path.join(const.DATA, self.version, task)
 
+    @checks_usage
     def get_metrics_dir(self, task) -> str:
         return os.path.join(self.get_data_dir(task), const.METRICS)
 
+    @checks_usage
     def get_model_dir(self, task) -> str:
         return os.path.join(self.get_data_dir(task), const.MODELS)
 
+    @checks_usage
     def get_model_path(self, task) -> str:
         return os.path.join(self.get_model_dir(task), self.version)
 
+    @checks_usage
     def get_dataset(
         self, task, purpose, file_format=const.CSV, custom_file=None
     ) -> Any:
@@ -213,6 +226,7 @@ class Config:
 
         return data
 
+    @checks_usage
     def get_model_args(self, task, purpose) -> Dict[str, Any]:
         model_args = self._config[const.TASKS][task][const.S_MODEL_ARGS][purpose]
         model_args[const.S_OUTPUT_DIR] = self.get_model_dir(task)
@@ -294,6 +308,7 @@ class Config:
                 f"but no model found in {model_args[const.S_OUTPUT_DIR]}"
             ) from os_err
 
+    @checks_usage
     def get_labels(self, task) -> List[str]:
         if task == const.CLASSIFICATION:
             encoder = self.load_pickle(
@@ -307,6 +322,7 @@ class Config:
                 f"Expected task to be {const.CLASSIFICATION} or {const.NER} instead, {task} was found"
             )
 
+    @checks_usage
     def set_labels(self, task, labels) -> None:
         if task not in self.supported_tasks:
             raise ValueError(f"Expected task to be one of {self.supported_tasks}")
@@ -315,6 +331,7 @@ class Config:
         )
         self.save_pickle(task, namespace, labels)
 
+    @checks_usage
     def get_alias(self, task) -> List[str]:
         return self._config.get(const.TASKS, {}).get(task, {}).get(const.ALIAS)
 
@@ -324,6 +341,7 @@ class Config:
             index=False,
         )
 
+    @checks_usage
     def get_model(self, task, purpose):
         labels = self.get_labels(task)
         error_message = (
@@ -337,12 +355,14 @@ class Config:
         else:
             raise ValueError(error_message)
 
+    @checks_usage
     def save_pickle(self, task, prop, value) -> "Config":
         model_dir = self.get_model_dir(task)
         with open(os.path.join(model_dir, prop), "wb") as handle:
             pickle.dump(value, handle)
         return self
 
+    @checks_usage
     def load_pickle(self, task, prop):
         model_dir = self.get_model_dir(task)
         with open(os.path.join(model_dir, prop), "rb") as handle:
@@ -353,6 +373,7 @@ class Config:
             yaml.dump(self._config, handle, sort_keys=False)
         return self
 
+    @checks_usage
     def save_report(self, task, results) -> "Config":
         if task == const.CLASSIFICATION:
             save_classification_report(
@@ -367,6 +388,7 @@ class Config:
                 f"Expected task to be {const.CLASSIFICATION} or {const.NER} instead, {task} was found"
             )
 
+    @checks_usage
     def remove_checkpoints(self, task) -> None:
         model_dir = self.get_model_dir(task)
         items = os.listdir(model_dir)
@@ -377,6 +399,56 @@ class Config:
 
     def get_supported_langauges(self) -> Dict[str, str]:
         return self._config["languages"]
+
+    def find_plugin_metadata(self, config_property: str, plugin_name: str) -> Optional[Dict[str, Any]]:
+        """
+        Access a plugin metadata within _config.
+
+        :param config_property: Expected property within _config.
+        :type config_property: str
+        :param plugin_name: [description]
+        :type plugin_name: str
+        :return: Value of the sub-property within _config.
+        :rtype: Any
+        """
+        metadata_for_plugins = self._config.get(config_property)
+        for plugin_metadata in metadata_for_plugins:
+            if plugin_metadata.get(const.PLUGIN) == plugin_name:
+                return plugin_metadata
+        return None
+
+    def update_plugin_metadata(self, plugin_metadata: Optional[Dict[str, Any]], param_name: str, value: Any) -> None:
+        """
+        Update plugin selected params.
+
+        :param plugin_metadata: Metadata object that instantiates a plugin.
+        :type plugin_metadata: Optional[Dict[str, Any]]
+        :param param_name: The parameter to update.
+        :type param_name: str
+        :param value: An expected value for the pugin parameter.
+        :type value: Any
+        """
+        if plugin_metadata:
+            plugin_metadata[const.PARAMS][const.CANDIDATES] = value
+        else:
+            metadata = {
+                const.PLUGIN: const.LIST_ENTITY_PLUGIN,
+                const.PARAMS: {
+                    const.STYLE: "regex",
+                    const.CANDIDATES: value,
+                    const.ENTITY_MAP: {}
+                }
+            }
+            self._config[const.PREPROCESS].append(metadata)
+
+    def json(self) -> Dict[str, Any]:
+        """
+        Represent the class as json
+
+        :return: The class instance as json
+        :rtype: Dict[str, Any]
+        """
+        return attr.asdict(self)
 
 
 class OnStartupClientConfigDataProvider:

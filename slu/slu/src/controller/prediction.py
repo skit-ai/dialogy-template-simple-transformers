@@ -44,9 +44,7 @@ duckling_parser = DucklingParser(
         w.input[const.S_LOCALE]
     ),
     mutate=update_entities,
-    dimensions=["number"],
-    locale="en_IN",
-    timezone="Asia/Kolkata",
+    **config.duckling_params,
 )()
 
 
@@ -59,8 +57,10 @@ def predict_wrapper():
     """
     preprocessors = [
         merge_asr_output,
-        duckling_parser,
     ]
+
+    if config.use_duckling:
+        preprocessors.append(duckling_parser)
 
     postprocessors = [
         slot_filler
