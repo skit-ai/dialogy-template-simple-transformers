@@ -43,7 +43,7 @@ class XLMRWorkflow(Workflow):
             preprocessors=preprocessors, postprocessors=postprocessors, debug=debug
         )
         self.input = {}
-        self.output = {}
+        self.output = (None, [])
 
         # Read config/config.yaml and setup slu-level utils.
         self.config = Config()
@@ -337,4 +337,4 @@ class XLMRWorkflow(Workflow):
 
     def flush(self) -> None:
         self.input = {}
-        self.output = {}
+        self.output = (None, [])
