@@ -4,29 +4,6 @@ from slu import constants as const
 from slu.utils.config import Config
 
 
-plugin_schema_parser_map = {
-    const.LIST_ENTITY_PLUGIN: list_entity_plugin_schema_parser
-}
-
-
-def schema_parser(plugin: str, entity_type: str, config: Config, entity_config_file: Any) -> Dict[str, Any]:
-    """
-    Parse entity config for each plugin.
-
-    :param plugin: A supported plugin.
-    :type plugin: str
-    :param entity_type: [description]
-    :type entity_type: str
-    :param config: [description]
-    :type config: Config
-    :param entity_config_file: A file object containing data-structure that can be parsed.
-    :type entity_config_file: Any
-    :return: Updated slu-service config.
-    :rtype: Any
-    """
-    return plugin_schema_parser_map[plugin](entity_type, config, entity_config_file)
-    
-
 def list_entity_plugin_schema_parser(entity_type: str, config: Config, entity_config_file: Any) -> Dict[str, Any]:
     """
     Parse csv file to obtain list_entity_plugin_schema.
@@ -53,3 +30,26 @@ def list_entity_plugin_schema_parser(entity_type: str, config: Config, entity_co
     plugin_metadata = config.find_plugin_metadata(const.PREPROCESS, const.LIST_ENTITY_PLUGIN)
     config.update_plugin_metadata(plugin_metadata, const.CANDIDATES, candidates)
     return config.json()
+
+
+plugin_schema_parser_map = {
+    const.LIST_ENTITY_PLUGIN: list_entity_plugin_schema_parser
+}
+
+
+def schema_parser(plugin: str, entity_type: str, config: Config, entity_config_file: Any) -> Dict[str, Any]:
+    """
+    Parse entity config for each plugin.
+
+    :param plugin: A supported plugin.
+    :type plugin: str
+    :param entity_type: [description]
+    :type entity_type: str
+    :param config: [description]
+    :type config: Config
+    :param entity_config_file: A file object containing data-structure that can be parsed.
+    :type entity_config_file: Any
+    :return: Updated slu-service config.
+    :rtype: Any
+    """
+    return plugin_schema_parser_map[plugin](entity_type, config, entity_config_file)
