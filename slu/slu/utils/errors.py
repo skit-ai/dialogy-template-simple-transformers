@@ -49,3 +49,36 @@ def missing_project_name(project_name):
         ),
         404,
     )
+
+
+def invalid_initialization(client_name, model_name):
+    return (
+        jsonify(
+            {
+                "message": "Missing config.",
+                "cause": f"Server started but config for {client_name} -- {model_name} was not loaded."
+            }
+        ), 500
+    )
+
+
+def config_upload_required(plugin):
+    return (
+        jsonify(
+            {
+                "message": "Plugin needs config file.",
+                "cause": f"Plugin {plugin} needs a config file."
+            }
+        ), 400
+    )
+
+
+def unknown_plugin(plugin):
+    return (
+        jsonify(
+            {
+                "message": "No schema available for plugin.",
+                "cause": f"Plugin {plugin} does not have a schema parser defined."
+            }
+        ), 400
+    )

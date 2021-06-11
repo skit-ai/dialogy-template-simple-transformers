@@ -11,6 +11,7 @@ from slu.src.controller.prediction import predict_wrapper
 from slu.utils.config import Config, OnStartupClientConfigDataProvider, JSONAPIConfigDataProvider
 from slu.utils.sentry import capture_exception
 from slu.utils import errors
+from slu.utils.schema_parsing import schema_parser
 
 
 PREDICT_API = predict_wrapper()
@@ -82,9 +83,8 @@ def slu(lang: str, client_name: str, model_name: str):
         return jsonify({"message": str(exc), "cause": traceback.format_exc()}), 500
 
 
-
 @app.route("/update/<client_name>/<model_name>/", methods=["POST"])
-def slu(client_name: str, model_name: str):
+def update_config(client_name: str, model_name: str):
     """
     Update SLU config.
     """
@@ -99,6 +99,41 @@ def slu(client_name: str, model_name: str):
     return jsonify(
         status="ok",
         response={"message": f"{model_name} has been updated."},
+    )
+
+
+@app.route("/schema/<plugin>/<entity_type>/<client_name>/<model_name>/", methods=["POST"])
+def create_plugin_schema(plugin: str, entity_type: str, client_name: str, model_name: str):
+    """
+    Generate plugin config from a readable source.
+
+    :param plugin: Dialogy plugin or lambda function.
+    :type plugin: str
+    :param entity_type: The entity for which we need to produce plugin schema.
+    :type entity_type: str
+    :param client_name: Required for readability and debugging.
+    :type client_name: str
+    :param model_name: The project for which we need to save the config in the plugin.
+    :type model_name: str
+    """
+    if model_name not in CLIENT_CONFIGS:
+        return errors.invalid_initialization(client_name, model_name)
+
+    if plugin != const.LIST_ENTITY_PLUGIN:
+        return errors.unknown_plugin(plugin)
+
+    entity_config_file = request.files.get("entity_config")
+
+    if entity_config_file is None:
+        return errors.config_upload_required(plugin) 
+
+    config = CLIENT_CONFIGS[model_name]
+
+    updated_config = schema_parser(plugin, entity_type, config, entity_config_file)
+
+    return jsonify(
+        status="ok",
+        response=updated_config,
     )
 
 

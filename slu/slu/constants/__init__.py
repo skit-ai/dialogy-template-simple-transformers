@@ -65,12 +65,15 @@ VALUE = "value"
 VALUES = "values"
 PREPROCESS = "preprocess"
 POSTPROCESS = "postprocess"
+PREPROCESS = "preprocess"
 PLUGIN = "plugin"
 PARAMS = "params"
 RULE_BASED_PLUGIN = "RuleBasedSlotFillerPlugin"
-DUCKLING_BASED_PLUGIN = "DucklingPlugin"
-
-
+DUCKLING_PLUGIN = "DucklingPlugin"
+LIST_ENTITY_PLUGIN = "ListEntityPlugin"
+CANDIDATES = "candidates"
+STYLE = "style"
+ENTITY_MAP = "entity_map"
 
 S_TRAIN_DATA = "train.csv"
 S_TEST_DATA = "test.csv"
