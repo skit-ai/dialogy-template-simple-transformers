@@ -43,7 +43,7 @@ tasks:
         best_model_dir: null
         reprocess_input_data: true
   ner:
-    use: [% use_ner %]
+    use: [[ use_ner ]]
     format: "csv"
     threshold: 0.6
     model_args:
