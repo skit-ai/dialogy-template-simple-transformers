@@ -3,7 +3,7 @@ Imports:
 
 - XLMRWorkflow
 """
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Type
 
 import numpy as np
 import pydash as py_
@@ -15,6 +15,7 @@ from slu import constants as const
 from slu.utils.config import Config
 from slu.utils.logger import log
 from slu.utils.sentry import capture_exception
+from slu.utils.error import MissingArtifact
 
 
 class XLMRWorkflow(Workflow):
@@ -33,6 +34,7 @@ class XLMRWorkflow(Workflow):
         self,
         preprocessors: Any,
         postprocessors: Any,
+        config: Config,
         debug: bool = False,
     ):
         """
@@ -42,17 +44,24 @@ class XLMRWorkflow(Workflow):
         super().__init__(
             preprocessors=preprocessors, postprocessors=postprocessors, debug=debug
         )
-        self.input = {}
-        self.output = (None, [])
+        self.input: Dict[str, Any] = {}
+        self.output: Dict[str, Any] = {}
+        self.set_io()
 
         # Read config/config.yaml and setup slu-level utils.
-        self.config = Config()
+        self.config = config
 
         # XLMR Classifier
-        self.classifier = self.config.get_model(const.CLASSIFICATION, const.PROD)
+        try:
+            self.classifier = self.config.get_model(const.CLASSIFICATION, const.PROD)
+        except (TypeError, MissingArtifact):
+            self.classifier = None
 
         # XLMR NER
-        self.ner = self.config.get_model(const.NER, const.PROD)
+        try:
+            self.ner = self.config.get_model(const.NER, const.PROD)
+        except (TypeError, MissingArtifact):
+            self.ner = None
 
         # You should extend dialogy.types.entity.BaseEntity
         # and use it to different types of entities here. Like:
@@ -65,9 +74,16 @@ class XLMRWorkflow(Workflow):
         }
 
         # Processed labels for classification tasks.
-        self.labelencoder = self.config.load_pickle(
-            const.CLASSIFICATION, const.S_INTENT_LABEL_ENCODER
-        )
+        try:
+            self.labelencoder = self.config.load_pickle(
+                const.CLASSIFICATION, const.PROD, const.S_INTENT_LABEL_ENCODER
+            )
+        except (TypeError, MissingArtifact):
+            self.labelencoder = None
+
+    def set_io(self):
+        self.input: Dict[str, Any] = {}
+        self.output: Dict[str, Any] = {const.INTENT: None, const.ENTITIES: []}
 
     def classify(self, text: str, fallback_intent=const.S_INTENT_ERROR) -> Intent:
         """
@@ -76,9 +92,6 @@ class XLMRWorkflow(Workflow):
         Returns:
             Intent: name and score (confidence) are the prominent attributes.
         """
-        if not self.config.use_classifier:
-            return Intent(name=const.S_INTENT_ERROR, score=1)
-
         predictions, raw_outputs = self.classifier.predict([text])
 
         try:
@@ -92,7 +105,8 @@ class XLMRWorkflow(Workflow):
             # Threshold's should also consider data samples available per class.
             # Using http://rasbt.github.io/mlxtend/user_guide/plotting/plot_decision_regions/
             # should shed more light on optimal threshold usage.
-            if confidence < self.config.classification_threshold:
+            task = self.config.task_by_name(const.CLASSIFICATION)
+            if confidence < task.threshold:
                 predicted_intent = fallback_intent
         except IndexError as index_error:
             # This exception means raw_outputs classifier failed to produce raw_outputs.
@@ -294,7 +308,8 @@ class XLMRWorkflow(Workflow):
         Returns:
             List[BaseEntity]: List of entities
         """
-        if not self.config.use_ner:
+        task = self.config.task_by_name(const.NER)
+        if not task.use:
             return []
 
         # The second value is `raw_output` which can be used for estimating confidence
@@ -329,12 +344,9 @@ class XLMRWorkflow(Workflow):
         intent = self.classify(classifier_input)
         ner_entities = self.extract(ner_input)
 
-        if self.output is not None:
-            _, pre_filled_entities = self.output
-            self.output = (intent, [*pre_filled_entities, *ner_entities])
-        else:
-            self.output = (intent, ner_entities)
+        pre_filled_entities = self.output[const.ENTITIES]
+        entities = pre_filled_entities + ner_entities
+        self.output = {const.INTENT: intent, const.ENTITIES: entities}
 
     def flush(self) -> None:
-        self.input = {}
-        self.output = (None, [])
+        self.set_io()
