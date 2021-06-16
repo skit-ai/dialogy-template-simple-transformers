@@ -39,7 +39,7 @@ def train_intent_classifier(
     label_encoder = preprocessing.LabelEncoder()
     encoder = label_encoder.fit(train_df[const.LABELS])
     train_df[const.LABELS] = encoder.transform(train_df[const.LABELS])
-    config.set_labels(const.CLASSIFICATION, label_encoder)
+    config.set_labels(const.CLASSIFICATION, const.TRAIN, label_encoder)
 
     train_df, eval_df = train_test_split(
         train_df,
@@ -70,7 +70,7 @@ def train_ner_model(config: Config, file_format=const.CSV):
     log.info("Preparing dataset.")
     train_df = config.get_dataset(const.NER, const.TRAIN, file_format=file_format)
     labels = sorted(train_df[const.LABELS].unique().tolist())
-    config.set_labels(const.NER, labels)
+    config.set_labels(const.NER, const.TRAIN, labels)
     model = config.get_model(const.NER, const.TRAIN)
 
     log.info("Training started.")
