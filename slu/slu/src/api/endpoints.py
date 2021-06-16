@@ -8,9 +8,9 @@ from flask import jsonify, request
 from slu import constants as const
 from slu.src.api import app
 from slu.src.controller.prediction import predict_wrapper
-from slu.utils.config import HTTPConfig, YAMLLocalConfig
+from slu.utils.config import HTTPConfig, YAMLLocalConfig, Config
 from slu.utils.sentry import capture_exception
-from slu.utils import errors
+from slu.utils import error_response
 from slu.utils.schema_parsing import schema_parser
 
 
@@ -41,16 +41,16 @@ def slu(lang: str, client_name: str, model_name: str):
     config = CLIENT_CONFIGS.get(model_name, None)
 
     if config is None:
-        return errors.missing_project_name(model_name), 404
+        return error_response.missing_project_name(model_name), 404
 
     if lang not in config.get_supported_languages():
-        return errors.invalid_language(lang)
+        return error_response.invalid_language(lang)
 
     if not isinstance(request.json, dict):
-        return errors.invalid_request(request.json)
+        return error_response.invalid_request(request.json)
 
     if not (const.ALTERNATIVES in request.json or const.TEXT in request.json):
-        return errors.invalid_input(request.json)
+        return error_response.invalid_input(request.json)
 
     try:
         maybe_utterance: Any = request.json.get(const.ALTERNATIVES) or request.json.get(
@@ -89,15 +89,13 @@ def update_config(client_name: str, model_name: str):
     """
 
     if not isinstance(request.json, dict):
-        return errors.invalid_request(request.json)
+        return error_response.invalid_request(request.json)
 
-    json_config_data_provider = JSONAPIConfigDataProvider(config=request.json)
-    config = Config(config_data_provider=json_config_data_provider)
-    CLIENT_CONFIGS[model_name] = config
+    CLIENT_CONFIGS[model_name] = Config(**request.json)
 
     return jsonify(
         status="ok",
-        response={"message": f"{model_name} has been updated."},
+        response={"message": f"{model_name} has been updated | ref {client_name}."},
     )
 
 
@@ -116,15 +114,15 @@ def create_plugin_schema(plugin: str, entity_type: str, client_name: str, model_
     :type model_name: str
     """
     if model_name not in CLIENT_CONFIGS:
-        return errors.invalid_initialization(client_name, model_name)
+        return error_response.invalid_initialization(client_name, model_name)
 
     if plugin != const.LIST_ENTITY_PLUGIN:
-        return errors.unknown_plugin(plugin)
+        return error_response.unknown_plugin(plugin)
 
     entity_config_file = request.files.get("entity_config")
 
     if entity_config_file is None:
-        return errors.config_upload_required(plugin) 
+        return error_response.config_upload_required(plugin) 
 
     config = CLIENT_CONFIGS[model_name]
 
