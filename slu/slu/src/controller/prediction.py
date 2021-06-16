@@ -2,17 +2,10 @@
 This module provides a simple interface to provide text features
 and receive Intent and Entities.
 """
-from typing import Any, Callable, Dict, List, Optional
+import importlib
+from typing import Any, Dict, List, Optional
 
-from dialogy.preprocess.text.duckling_plugin import DucklingPlugin
-from dialogy.preprocess.text.list_entity_plugin import ListEntityPlugin
-from dialogy.postprocess.text.slot_filler.rule_slot_filler import (
-    RuleBasedSlotFillerPlugin,
-)
-from dialogy.preprocess.text.duckling_plugin import DucklingPlugin
-from dialogy.types.entity import BaseEntity
-from dialogy.preprocess.text.merge_asr_output import merge_asr_output_plugin
-from dialogy.preprocess.text.normalize_utterance import normalize
+from dialogy.plugins.preprocess.text.normalize_utterance import normalize
 from dialogy.workflow.workflow import Workflow
 
 from slu import constants as const
@@ -20,12 +13,7 @@ from slu.src.workflow import XLMRWorkflow
 from slu.utils.config import Config
 
 
-plugins: Dict[str, Callable[..., Any]] = {
-    "RuleBasedSlotFillerPlugin": RuleBasedSlotFillerPlugin,
-    "merge_asr_output_plugin": merge_asr_output_plugin,
-    "DucklingPlugin": DucklingPlugin,
-    "ListEntityPlugin": ListEntityPlugin
-}
+plugin_module = importlib.import_module("dialogy.plugins")
 
 
 def access(node: str, *attributes):
@@ -36,7 +24,7 @@ def access(node: str, *attributes):
 
 
 def mutate(node: str, attribute: str):
-    def write(workflow, value):
+    def write(workflow: Workflow, value: Any):
         workflow_io = getattr(workflow, node)
         container = workflow_io[attribute]
         if isinstance(container, list):
@@ -62,7 +50,7 @@ def predict_wrapper(config_map: Dict[str, Config]):
     for plugin_config in config.preprocess:
         plugin_name = plugin_config[const.PLUGIN]
         plugin_params = plugin_config[const.PARAMS]
-        plugin_container = plugins[plugin_name]
+        plugin_container = getattr(plugin_module, plugin_name)
         plugin = plugin_container(**plugin_params)
         preprocessors.append(plugin())
 
@@ -70,7 +58,7 @@ def predict_wrapper(config_map: Dict[str, Config]):
     for plugin_config in config.postprocess:
         plugin_name = plugin_config[const.PLUGIN]
         plugin_params = plugin_config[const.PARAMS]
-        plugin_container = plugins[plugin_name]
+        plugin_container = getattr(plugin_module, plugin_name)
         plugin = plugin_container(**plugin_params)
         postprocessors.append(plugin())
 
