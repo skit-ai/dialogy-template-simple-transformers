@@ -2,71 +2,78 @@
 This module provides a simple interface to provide text features
 and receive Intent and Entities.
 """
-from typing import Any, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 
-from dialogy.parser.text.entity.duckling_parser import DucklingParser
+from dialogy.preprocess.text.duckling_plugin import DucklingPlugin
+from dialogy.preprocess.text.list_entity_plugin import ListEntityPlugin
 from dialogy.postprocess.text.slot_filler.rule_slot_filler import (
     RuleBasedSlotFillerPlugin,
 )
+from dialogy.preprocess.text.duckling_plugin import DucklingPlugin
 from dialogy.types.entity import BaseEntity
 from dialogy.preprocess.text.merge_asr_output import merge_asr_output_plugin
 from dialogy.preprocess.text.normalize_utterance import normalize
+from dialogy.workflow.workflow import Workflow
 
 from slu import constants as const
 from slu.src.workflow import XLMRWorkflow
 from slu.utils.config import Config
 
-config = Config()
 
-slot_filler = RuleBasedSlotFillerPlugin(
-    rules=config.rules[const.SLOTS], access=lambda w: w.output
-)()
-
-
-def update_input(w: XLMRWorkflow, value: str) -> None:
-    w.input[const.S_CLASSIFICATION_INPUT] = value
+plugins: Dict[str, Callable[..., Any]] = {
+    "RuleBasedSlotFillerPlugin": RuleBasedSlotFillerPlugin,
+    "merge_asr_output_plugin": merge_asr_output_plugin,
+    "DucklingPlugin": DucklingPlugin,
+    "ListEntityPlugin": ListEntityPlugin
+}
 
 
-merge_asr_output = merge_asr_output_plugin(
-    access=lambda w: w.input[const.S_CLASSIFICATION_INPUT], mutate=update_input
-)
+def access(node: str, *attributes):
+    def read(workflow):
+        workflow_io = getattr(workflow, node)
+        return (workflow_io[attribute] for attribute in attributes)
+    return read
 
 
-def update_entities(workflow: XLMRWorkflow, entities: List[BaseEntity]):
-    intents, collected_entities = workflow.output
-    workflow.output = (intents, collected_entities + entities)
+def mutate(node: str, attribute: str):
+    def write(workflow, value):
+        workflow_io = getattr(workflow, node)
+        container = workflow_io[attribute]
+        if isinstance(container, list):
+            if isinstance(value, list):
+                container += value
+            else:
+                container.append(value)
+        else:
+            workflow_io[attribute] = value
+    return write
 
 
-duckling_parser = DucklingParser(
-    access=lambda w: (
-        w.input[const.S_CLASSIFICATION_INPUT],
-        w.input[const.S_REFERENCE_TIME],
-        w.input[const.S_LOCALE]
-    ),
-    mutate=update_entities,
-    **config.duckling_params,
-)()
-
-
-def predict_wrapper():
+def predict_wrapper(config_map: Dict[str, Config]):
     """
     Create a closure for the predict function.
 
     Ensures that the workflow is loaded just once without creating global variables for it.
     This can also be made into a class if needed.
     """
-    preprocessors = [
-        merge_asr_output,
-    ]
+    config: Config = list(config_map.values()).pop()
 
-    if config.use_duckling:
-        preprocessors.append(duckling_parser)
+    preprocessors = []
+    for plugin_config in config.preprocess:
+        plugin_name = plugin_config[const.PLUGIN]
+        plugin_params = plugin_config[const.PARAMS]
+        plugin_container = plugins[plugin_name]
+        print(plugin_config[const.PLUGIN])
+        plugin = plugin_container(**plugin_params)
+        preprocessors.append(plugin())
 
-    postprocessors = [
-        slot_filler
-        # slot_filler should always be the last plugin.
-        # If you add entities afterwards, they wont fill intent slots.
-    ]
+    postprocessors = []
+    for plugin_config in config.postprocess:
+        plugin_name = plugin_config[const.PLUGIN]
+        plugin_params = plugin_config[const.PARAMS]
+        plugin_container = plugins[plugin_name]
+        plugin = plugin_container(**plugin_params)
+        postprocessors.append(plugin())
 
     workflow = XLMRWorkflow(
         preprocessors=preprocessors,
@@ -74,6 +81,7 @@ def predict_wrapper():
     )
 
     def predict(
+        config: Config,
         utterance: List[str],
         context: Dict[str, Any],
         intents_info: Optional[List[Dict[str, Any]]] = None,
