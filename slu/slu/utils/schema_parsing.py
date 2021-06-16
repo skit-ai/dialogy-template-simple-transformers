@@ -27,8 +27,7 @@ def list_entity_plugin_schema_parser(entity_type: str, config: Config, entity_co
         else:
             candidates[entity_type][entity_value] = [pattern]
 
-    plugin_metadata = config.find_plugin_metadata(const.PREPROCESS, const.LIST_ENTITY_PLUGIN)
-    config.update_plugin_metadata(plugin_metadata, const.CANDIDATES, candidates)
+    config.update_plugin_metadata(const.LIST_ENTITY_PLUGIN, const.CANDIDATES, candidates)
     return config.json()
 
 
