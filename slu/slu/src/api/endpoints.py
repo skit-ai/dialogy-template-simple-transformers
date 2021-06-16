@@ -8,15 +8,14 @@ from flask import jsonify, request
 from slu import constants as const
 from slu.src.api import app
 from slu.src.controller.prediction import predict_wrapper
-from slu.utils.config import Config, OnStartupClientConfigDataProvider, JSONAPIConfigDataProvider
+from slu.utils.config import HTTPConfig, YAMLLocalConfig
 from slu.utils.sentry import capture_exception
 from slu.utils import errors
 from slu.utils.schema_parsing import schema_parser
 
 
-PREDICT_API = predict_wrapper()
-startup_client_config_provider = OnStartupClientConfigDataProvider()
-CLIENT_CONFIGS = startup_client_config_provider.give_config_data()
+CLIENT_CONFIGS = YAMLLocalConfig().generate()
+PREDICT_API = predict_wrapper(CLIENT_CONFIGS)
 
 
 @app.route("/", methods=["GET"])
@@ -39,13 +38,12 @@ def slu(lang: str, client_name: str, model_name: str):
 
     Produces a json response containing intents and entities.
     """
+    config = CLIENT_CONFIGS.get(model_name, None)
 
-    MODEL_CONFIG = CLIENT_CONFIGS.get(model_name, None)
+    if config is None:
+        return errors.missing_project_name(model_name), 404
 
-    if MODEL_CONFIG is None:
-        return errors.invalid_project_name(model_name), 404
-
-    if lang not in MODEL_CONFIG.get_supported_langauges():
+    if lang not in config.get_supported_languages():
         return errors.invalid_language(lang)
 
     if not isinstance(request.json, dict):
@@ -60,12 +58,13 @@ def slu(lang: str, client_name: str, model_name: str):
         )
 
         sentences: List[str] = normalize(maybe_utterance)
-        context: str = request.json.get(const.CONTEXT) or {}
+        context: str = request.json.get(const.CONTEXT) or {} # type: ignore
         intents_info: List[Dict[str, Any]] = (
             request.json.get(const.S_INTENTS_INFO) or []
         )
 
         response = PREDICT_API(
+            config,
             sentences,
             context,
             intents_info=intents_info,
