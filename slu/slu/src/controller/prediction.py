@@ -63,7 +63,6 @@ def predict_wrapper(config_map: Dict[str, Config]):
         plugin_name = plugin_config[const.PLUGIN]
         plugin_params = plugin_config[const.PARAMS]
         plugin_container = plugins[plugin_name]
-        print(plugin_config[const.PLUGIN])
         plugin = plugin_container(**plugin_params)
         preprocessors.append(plugin())
 
@@ -78,6 +77,7 @@ def predict_wrapper(config_map: Dict[str, Config]):
     workflow = XLMRWorkflow(
         preprocessors=preprocessors,
         postprocessors=postprocessors,
+        config=config
     )
 
     def predict(
