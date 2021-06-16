@@ -26,6 +26,7 @@ from slu.dev.io.reader.csv import (
 from slu.dev.prepare import prepare
 from slu.utils.logger import log
 from slu.utils.decorators import task_guard
+from slu.utils.error import MissingArtifact
 
 
 @attr.s
@@ -73,8 +74,8 @@ class Config:
     - Load models and their configurations
     - Save pickled objects.
     """
-    project_name = attr.ib(type=str, kw_only=True)
-    version = attr.ib(type=str, kw_only=True)
+    project_name = attr.ib(type=str, kw_only=True, validator=attr.validators.instance_of(str))
+    version = attr.ib(type=str, kw_only=True, validator=attr.validators.instance_of(str))
     tasks = attr.ib(type=Tasks, kw_only=True)
     preprocess: List[Dict[str, Any]] = attr.ib(factory=list, kw_only=True)
     postprocess: List[Dict[str, Any]] = attr.ib(factory=list, kw_only=True)
@@ -99,8 +100,12 @@ class Config:
         return os.path.join(self.get_data_dir(task_name), const.METRICS)
 
     @task_guard
-    def get_model_dir(self, task_name: str) -> str:
-        return self.task_by_name(task_name).model_args[const.S_OUTPUT_DIR]
+    def get_model_dir(self, task_name: str, purpose: str) -> str:
+        model_dir = self.task_by_name(task_name).model_args[purpose][const.S_OUTPUT_DIR]
+        if not isinstance(model_dir, str):
+            raise TypeError(f"Expected model directory for task={task_name}[{purpose}]"
+            f" to be a string but {type(model_dir)} was found.")
+        return model_dir
 
     @task_guard
     def get_dataset(
@@ -130,10 +135,10 @@ class Config:
     def get_model_args(self, task_name: str, purpose: str) -> Dict[str, Any]:
         model_args = self.task_by_name(task_name).model_args
         if not model_args[const.S_OUTPUT_DIR]:
-            model_args[const.S_OUTPUT_DIR] = self.get_model_dir(task_name)
+            model_args[const.S_OUTPUT_DIR] = self.get_model_dir(task_name, purpose)
 
         if not model_args[const.S_BEST_MODEL]:
-            model_args[const.S_BEST_MODEL] = self.get_model_dir(task_name)
+            model_args[const.S_BEST_MODEL] = self.get_model_dir(task_name, purpose)
 
         n_epochs = model_args.get(const.S_NUM_TRAIN_EPOCHS)
 
@@ -220,36 +225,40 @@ class Config:
 
     @task_guard
     def get_model(self, task_name: str, purpose: str) -> Union[ClassificationModel, NERModel]:
-        labels = self.get_labels(task_name)
+        labels = self.get_labels(task_name, purpose)
         if task_name == const.NER:
             return self.get_ner_model(purpose, labels)
         return self.get_classification_model(purpose, labels)
 
     @task_guard
-    def get_labels(self, task_name: str) -> List[str]:
+    def get_labels(self, task_name: str, purpose: str) -> List[str]:
         if task_name == const.NER:
-            return self.load_pickle(const.NER, const.S_ENTITY_LABELS)
+            return self.load_pickle(const.NER, purpose, const.S_ENTITY_LABELS)
 
-        encoder = self.load_pickle(const.CLASSIFICATION, const.S_INTENT_LABEL_ENCODER)
+        try:
+            encoder = self.load_pickle(const.CLASSIFICATION, purpose, const.S_INTENT_LABEL_ENCODER)
+        except TypeError:
+            model_dir = self.get_model_dir(task_name, purpose)
+            raise MissingArtifact(const.S_INTENT_LABEL_ENCODER, os.path.join(model_dir, const.S_INTENT_LABEL_ENCODER))
         return encoder.classes_
 
     @task_guard
-    def set_labels(self, task_name: str, labels: List[str]) -> None:
+    def set_labels(self, task_name: str, purpose: str, labels: List[str]) -> None:
         namespace = (
             const.S_ENTITY_LABELS if task_name == const.NER else const.S_INTENT_LABEL_ENCODER
         )
-        self.save_pickle(task_name, namespace, labels)
+        self.save_pickle(task_name, purpose, namespace, labels)
 
     @task_guard
-    def save_pickle(self, task_name: str, prop: str, value: Any) -> "Config":
-        model_dir = self.get_model_dir(task_name)
+    def save_pickle(self, task_name: str, purpose: str, prop: str, value: Any) -> "Config":
+        model_dir = self.get_model_dir(task_name, purpose)
         with open(os.path.join(model_dir, prop), "wb") as handle:
             pickle.dump(value, handle)
         return self
 
     @task_guard
-    def load_pickle(self, task_name: str, prop: str):
-        model_dir = self.get_model_dir(task_name)
+    def load_pickle(self, task_name: str, purpose: str, prop: str):
+        model_dir = self.get_model_dir(task_name, purpose)
         with open(os.path.join(model_dir, prop), "rb") as handle:
             return pickle.load(handle)
 
