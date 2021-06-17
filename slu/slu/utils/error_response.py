@@ -1,4 +1,4 @@
-from flask import jsonify, request
+from flask import json, jsonify, request
 
 from slu import constants as const
 
@@ -81,4 +81,15 @@ def unknown_plugin(plugin):
                 "cause": f"Plugin {plugin} does not have a schema parser defined."
             }
         ), 400
+    )
+
+
+def missing_models(message):
+    return (
+        jsonify(
+            {
+                "message": "Missing artifacts!",
+                "cause": message
+            }
+        )
     )
