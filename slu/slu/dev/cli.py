@@ -59,6 +59,7 @@ Options:
 """
 import semver
 from docopt import docopt
+from simpletransformers import classification
 
 from slu import constants as const
 from slu.dev.dir_setup import copy_data_directory, create_data_directory
@@ -66,8 +67,11 @@ from slu.dev.evaluate import test_classifier, test_ner
 from slu.dev.release import release
 from slu.dev.repl import repl
 from slu.dev.train import train_intent_classifier, train_ner_model
-from slu.utils.config import Config
+from slu.utils.config import YAMLLocalConfig, Config
 from slu.utils.logger import log
+
+
+CLIENT_CONFIGS = YAMLLocalConfig().generate()
 
 
 def main() -> None:
@@ -75,63 +79,66 @@ def main() -> None:
     version = args["--version"]
     force = args["--force"]
 
-    config = Config()
+    config: Config = list(CLIENT_CONFIGS.values()).pop()
+    classification_task = config.task_by_name(const.CLASSIFICATION)
+    ner_task = config.task_by_name(const.NER)
 
     if version:
         semver.VersionInfo.parse(version)
-        config.set_version(version)
+        config.version = version
     else:
         version = config.version
 
     if args.get(const.CLASSIFICATION):
-        file_format = args["--file-format"] or config.classification_file_format
+        file_format = args["--file-format"] or const.CSV
     elif args[const.NER]:
-        file_format = args["--file-format"] or config.ner_file_format
+        file_format = args["--file-format"] or const.CSV
     else:
         file_format = const.CSV
 
-    if args[const.TRAIN] and args.get(const.CLASSIFICATION):
-        if config.use_classifier:
+    if args[const.TRAIN] and args.get(const.CLASSIFICATION) and classification_task.use:
+        train_intent_classifier(config, file_format=file_format)
+        return None
+    else:
+        log.warning("Config is not prepared for using classification model.")
+
+    if args[const.TRAIN] and args.get(const.NER) and ner_task.use:
+        train_ner_model(config, file_format=file_format)
+        return None
+    else:
+        log.warning("Config is not prepared for using ner model.")
+
+    if args[const.TEST] and args.get(const.CLASSIFICATION) and classification_task.use:
+        test_classifier(config, file_format=file_format, custom_file=args["--file"])
+        return None
+    else:
+        log.warning("Config is not prepared for using classification model.")
+
+    if args[const.TEST] and args.get(const.NER) and ner_task.use:
+        test_ner(config, file_format=file_format, custom_file=args["--file"])
+        return None
+    else:
+        log.warning("Config is not prepared for using ner model.")
+
+    if args[const.TRAIN]:
+        if classification_task.use:
             train_intent_classifier(config, file_format=file_format)
         else:
             log.warning("Config is not prepared for using classification model.")
 
-    elif args[const.TRAIN] and args.get(const.NER):
-        if config.use_ner:
+        if ner_task.use:
             train_ner_model(config, file_format=file_format)
+            return None
         else:
             log.warning("Config is not prepared for using ner model.")
 
-    elif args[const.TRAIN]:
-        if config.use_classifier:
-            train_intent_classifier(config, file_format=file_format)
-        else:
-            log.warning("Config is not prepared for using classification model.")
-
-        if config.use_ner:
-            train_ner_model(config, file_format=file_format)
-        else:
-            log.warning("Config is not prepared for using ner model.")
-
-    if args[const.TEST] and args.get(const.CLASSIFICATION):
-        if config.use_classifier:
+    if args[const.TEST]:
+        if classification_task.use:
             test_classifier(config, file_format=file_format, custom_file=args["--file"])
         else:
             log.warning("Config is not prepared for using classification model.")
 
-    elif args[const.TEST] and args.get(const.NER):
-        if config.use_ner:
-            test_ner(config, file_format=file_format, custom_file=args["--file"])
-        else:
-            log.warning("Config is not prepared for using ner model.")
-
-    elif args[const.TEST]:
-        if config.use_classifier:
-            test_classifier(config, file_format=file_format, custom_file=args["--file"])
-        else:
-            log.warning("Config is not prepared for using classification model.")
-
-        if config.use_ner:
+        if ner_task.use:
             test_ner(config, file_format=file_format, custom_file=args["--file"])
         else:
             log.warning("Config is not prepared for using ner model.")
