@@ -3,7 +3,7 @@ import json
 import pandas as pd
 from tqdm import tqdm
 
-from dialogy.preprocess.text.merge_asr_output import merge_asr_output  # type: ignore
+from dialogy.plugins.preprocess.text.normalize_utterance import normalize  # type: ignore
 
 from slu import constants as const  # type: ignore
 from slu.dev.io.reader.csv import read_multiclass_dataset_csv, map_labels_in_df, get_unique_labels  # type: ignore
@@ -20,7 +20,7 @@ def preprocess(df):
         data = json.loads(row[const.DATA])
         try:
             alternatives = data[const.ALTERNATIVES]
-            data = merge_asr_output(alternatives)
+            data = normalize(alternatives)
             texts.append(data)
             labels.append(label)
             data_id.append(row[const.DATA_ID])
