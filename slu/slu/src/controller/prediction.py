@@ -2,8 +2,9 @@
 This module provides a simple interface to provide text features
 and receive Intent and Entities.
 """
+import os
 import importlib
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from dialogy.plugins.preprocess.text.normalize_utterance import normalize
 from dialogy.workflow.workflow import Workflow
@@ -11,30 +12,10 @@ from dialogy.workflow.workflow import Workflow
 from slu import constants as const
 from slu.src.workflow import XLMRWorkflow
 from slu.utils.config import Config
+from slu.dev.plugin_parse.plugin_functional_arguments import plugin_param_parser
 
 
 plugin_module = importlib.import_module("dialogy.plugins")
-
-
-def access(node: str, *attributes):
-    def read(workflow):
-        workflow_io = getattr(workflow, node)
-        return (workflow_io[attribute] for attribute in attributes)
-    return read
-
-
-def mutate(node: str, attribute: str):
-    def write(workflow: Workflow, value: Any):
-        workflow_io = getattr(workflow, node)
-        container = workflow_io[attribute]
-        if isinstance(container, list):
-            if isinstance(value, list):
-                container += value
-            else:
-                container.append(value)
-        else:
-            workflow_io[attribute] = value
-    return write
 
 
 def predict_wrapper(config_map: Dict[str, Config]):
@@ -49,7 +30,7 @@ def predict_wrapper(config_map: Dict[str, Config]):
     preprocessors = []
     for plugin_config in config.preprocess:
         plugin_name = plugin_config[const.PLUGIN]
-        plugin_params = plugin_config[const.PARAMS]
+        plugin_params = {key: plugin_param_parser(value) for key, value in plugin_config[const.PARAMS].items()}
         plugin_container = getattr(plugin_module, plugin_name)
         plugin = plugin_container(**plugin_params)
         preprocessors.append(plugin())
@@ -69,7 +50,6 @@ def predict_wrapper(config_map: Dict[str, Config]):
     )
 
     def predict(
-        config: Config,
         utterance: List[str],
         context: Dict[str, Any],
         intents_info: Optional[List[Dict[str, Any]]] = None,
