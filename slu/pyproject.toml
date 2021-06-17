@@ -27,6 +27,7 @@ pydash = "^4.8.0"
 uWSGI = "^2.0.19"
 taskipy = "^1.6.0"
 httpretty = "^1.1.3"
+boto3 = "^1.17.96"
 
 [tool.poetry.dev-dependencies]
 tqdm = "^4.56.1"
