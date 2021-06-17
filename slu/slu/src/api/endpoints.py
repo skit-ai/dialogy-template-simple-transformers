@@ -2,7 +2,7 @@ import traceback
 from datetime import datetime
 from typing import Any, Dict, List
 
-from dialogy.preprocess.text.normalize_utterance import normalize
+from dialogy.plugins.preprocess.text.normalize_utterance import normalize
 from flask import jsonify, request
 
 from slu import constants as const
@@ -63,16 +63,17 @@ def slu(lang: str, client_name: str, model_name: str):
             request.json.get(const.S_INTENTS_INFO) or []
         )
 
-        response = PREDICT_API(
-            config,
-            sentences,
-            context,
-            intents_info=intents_info,
-            reference_time=int(datetime.now().timestamp() * 1000),
-            locale=const.LANG_TO_LOCALES[lang]
-        )
-
-        return jsonify(status="ok", response=response), 200
+        try:
+            response = PREDICT_API(
+                sentences,
+                context,
+                intents_info=intents_info,
+                reference_time=int(datetime.now().timestamp() * 1000),
+                locale=const.LANG_TO_LOCALES[lang]
+            )
+            return jsonify(status="ok", response=response), 200
+        except OSError as os_error:
+            return error_response.missing_models(os_error)
 
     except Exception as exc:
         # Update this section to:
