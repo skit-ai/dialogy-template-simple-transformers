@@ -91,5 +91,5 @@ def missing_models(message):
                 "message": "Missing artifacts!",
                 "cause": message
             }
-        )
+        ), 500
     )
