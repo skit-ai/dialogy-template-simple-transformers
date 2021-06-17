@@ -4,6 +4,7 @@ Imports:
 - XLMRWorkflow
 """
 from typing import Any, Dict, List, Type
+from unicodedata import name
 
 import numpy as np
 import pydash as py_
@@ -92,6 +93,14 @@ class XLMRWorkflow(Workflow):
         Returns:
             Intent: name and score (confidence) are the prominent attributes.
         """
+        fallback_intent = Intent(name=fallback_intent, score=1)
+        task = self.config.task_by_name(const.CLASSIFICATION)
+
+        if not task.use:
+            return fallback_intent
+
+        if self.classifier is None:
+            raise OSError("Classifier is not loaded")
         predictions, raw_outputs = self.classifier.predict([text])
 
         try:
@@ -114,7 +123,7 @@ class XLMRWorkflow(Workflow):
             confidence = 1
             capture_exception(index_error, ctx="workflow", message="raw_outputs")
 
-        return Intent(name=predicted_intent, score=confidence)
+        return Intent(name=predicted_intent, confidence=confidence)
 
     def make_entity(
         self,
@@ -312,6 +321,9 @@ class XLMRWorkflow(Workflow):
         if not task.use:
             return []
 
+        if self.ner is None:
+            raise OSError("NER Model was not loaded.")
+
         # The second value is `raw_output` which can be used for estimating confidence
         # scores for each token identified as an entity.
         raw_token_lists, _ = self.ner.predict(texts)
@@ -341,6 +353,7 @@ class XLMRWorkflow(Workflow):
     def inference(self):
         classifier_input = self.input[const.S_CLASSIFICATION_INPUT]
         ner_input = self.input[const.S_NER_INPUT]
+
         intent = self.classify(classifier_input)
         ner_entities = self.extract(ner_input)
 
