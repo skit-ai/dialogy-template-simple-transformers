@@ -88,8 +88,8 @@ def missing_models(message):
     return (
         jsonify(
             {
-                "message": "Missing artifacts!",
-                "cause": message
+                "message": message,
+                "cause": "Possibly missed the training step or it wasn't planned."
             }
         ), 500
     )
