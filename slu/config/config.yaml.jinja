@@ -1,6 +1,3 @@
-project_name: slu
-version: 0.0.0
-cores: 8
 tasks:
   classification:
     use: true
@@ -77,3 +74,27 @@ tasks:
         thread_count: 1
         silent: true
         dynamic_quantize: true
+preprocess:
+  - plugin: "MergeASROutputPlugin"
+    params:
+      access: ["access", ["input", ["classification_input"]]]
+      mutate: ["mutate", ["input", ["classification_input"]]]
+  - plugin: "DucklingPlugin"
+    params:
+      access: ["access", ["input", ["classification_input", "reference_time", "locale"]]]
+      mutate: ["mutate", ["output", ["entities"]]]
+      dimensions: ["people", "time", "date", "duration"]
+      locale: "en_IN"
+      timezone: "Asia/Kolkata"
+      datetime_filters: "future"
+      threshold: 0.1
+      url: ["env", ["DUCKLING_URL"], []]
+  - plugin: "ListEntityPlugin"
+    params:
+      access: ["access", ["input", ["ner_input"]]]
+      mutate: ["mutate", ["output", ["entities"]]]
+      style: "regex"
+postprocess:
+  - plugin: "RuleBasedSlotFillerPlugin"
+    params:
+      access: ["access", ["input", ["classification_input"]]]
