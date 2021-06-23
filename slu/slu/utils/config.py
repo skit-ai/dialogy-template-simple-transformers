@@ -27,6 +27,7 @@ from slu.dev.prepare import prepare
 from slu.utils.logger import log
 from slu.utils.decorators import task_guard
 from slu.utils.error import MissingArtifact
+from slu.utils.s3 import get_csvs
 
 
 @attr.s
@@ -74,12 +75,13 @@ class Config:
     - Load models and their configurations
     - Save pickled objects.
     """
-    project_name = attr.ib(type=str, kw_only=True, validator=attr.validators.instance_of(str))
-    version = attr.ib(type=str, kw_only=True, validator=attr.validators.instance_of(str))
+    model_name = attr.ib(type=str, kw_only=True, validator=attr.validators.instance_of(str))
+    version = attr.ib(type=str, kw_only=True, default="0.0.0", validator=attr.validators.instance_of(str))
     tasks = attr.ib(type=Tasks, kw_only=True)
+    languages = attr.ib(type=List[str], kw_only=True)
+    slots: Dict[str, Dict[str, Any]] = attr.ib(factory=dict, kw_only=True)
     preprocess: List[Dict[str, Any]] = attr.ib(factory=list, kw_only=True)
     postprocess: List[Dict[str, Any]] = attr.ib(factory=list, kw_only=True)
-    supported_languages: List[str] = attr.ib(factory=list, kw_only=True)
 
     def __attrs_post_init__(self) -> None:
         """
@@ -302,34 +304,42 @@ class Config:
                 shutil.rmtree(subdir)
 
     def get_supported_languages(self) -> List[str]:
-        return self.supported_languages
+        return self.languages
 
-    def find_plugin_metadata(self, plugin_name: str) -> Optional[Dict[str, Any]]:
-        """
-        Access a plugin metadata within _config.
+    def make_slot_rules(self):
+        slot_rules = {}
+        for intent_name, slot_dict in self.slots.items():
+            slot_rules[intent_name] = {}
+            for slot_name, entities in slot_dict.items():
+                for entity in entities:
+                    if slot_name in slot_rules[intent_name]:
+                        slot_rules[intent_name][slot_name].append(entity[const.NAME])
+                    else:
+                        slot_rules[intent_name][slot_name] = [entity[const.NAME]]
+        return slot_rules
 
-        :param plugin_name: [description]
-        :type plugin_name: str
-        :return: Value of the sub-property within _config.
-        :rtype: Any
-        """
-        metadata_for_plugins = self.preprocess + self.postprocess
-        return py_.find(metadata_for_plugins, lambda plugin_metadata: plugin_metadata.get(const.PLUGIN) == plugin_name)
+    def make_candidates_from_csv_urls(self):
+        urls = set()
+        candidates = {}
+        for slot_dict in self.slots.values():
+            for entities in slot_dict.values():
+                for entity in entities:
+                    if entity[const.TYPE] == const.LIST_ENTITY_PLUGIN:
+                        urls.add(entity[const.PARAMS][const.URL])
+                dataframe = get_csvs(urls)
+                columns = dataframe.columns
+                reference_column = columns[1] # The entity value corresponding to a set of patterns.
+                value_column = columns[0] # A set of patterns.
+                references = dataframe[reference_column].unique()
+                candidates[entity[const.NAME]] = {reference: dataframe[dataframe[reference_column] == reference][value_column].to_list() 
+                for reference in references }
+        return candidates
 
-    def update_plugin_metadata(self, plugin_name: str, param_name: str, value: Any) -> None:
-        """
-        Update plugin selected params.
-
-        :param plugin_metadata: Metadata object that instantiates a plugin.
-        :type plugin_metadata: Optional[Dict[str, Any]]
-        :param param_name: The parameter to update.
-        :type param_name: str
-        :param value: An expected value for the pugin parameter.
-        :type value: Any
-        """
-        plugin_metadata = self.find_plugin_metadata(plugin_name)
-        if plugin_metadata:
-            plugin_metadata[const.PARAMS][param_name] = value
+    def plugin_parameterize(self, plugin_name):
+        if plugin_name == const.RULE_BASED_SLOT_FILLER_PLUGIN:
+            return {const.RULES: self.make_slot_rules()}
+        if plugin_name == const.LIST_ENTITY_PLUGIN:
+            return {const.CANDIDATES: self.make_candidates_from_csv_urls()}
 
     def json(self) -> Dict[str, Any]:
         """
@@ -350,13 +360,33 @@ class ConfigDataProviderInterface(metaclass=abc.ABCMeta):
 class HTTPConfig(ConfigDataProviderInterface):
     def __init__(self) -> None:
         self.client_configs: Dict[str, Any] = {}
+        self.root_level_keys = [const.MODEL_NAME, const.LANGUAGES, const.SLOTS]
 
     def _parse_json(self, configs: List[Dict[str, Any]]):
         # if project_configs_response is of List[Dict]
         for config_dict in configs:
             model_name = config_dict.get(const.MODEL_NAME)
             if model_name:
-                self.client_configs[model_name] = Config(**config_dict)
+                alias = config_dict[const.ALIAS]
+                metadata = config_dict[const.METADATA]
+                root_level_config = {key: value for key, value in config_dict.items() 
+                                        if key in self.root_level_keys}
+                if not metadata:
+                    raise ValueError(f"You need to set metadata for {model_name}.")
+
+                root_level_config.update(metadata)
+                root_level_config[const.TASKS][const.CLASSIFICATION][const.ALIAS] = alias
+                config = Config(**root_level_config)
+                plugins = config.preprocess + config.postprocess
+
+                for plugin_dict in plugins:
+                    plugin_name = plugin_dict[const.PLUGIN]
+                    params = config.plugin_parameterize(plugin_name=plugin_name)
+                    if params:
+                        plugin_dict[const.PARAMS].update(params)
+
+                self.client_configs[model_name] = config
+
 
     def _get_config(self):
         BUILDER_BACKEND_URL = os.getenv("BUILDER_BACKEND_URL")
@@ -401,5 +431,5 @@ class YAMLLocalConfig(ConfigDataProviderInterface):
 
     def generate(self) -> Dict[str, Config]:
         with open(self.config_path, "r") as handle:
-            config_dict = yaml.load(handle, Loader=yaml.FullLoader)
+            config_dict = yaml.safe_load(handle)
         return {config_dict[const.PROJECT_NAME]: Config(**config_dict)}
