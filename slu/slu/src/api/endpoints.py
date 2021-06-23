@@ -1,9 +1,15 @@
+import os
+import io
+import pandas as pd
 import traceback
+import requests
 from datetime import datetime
 from typing import Any, Dict, List
 
+import sentry_sdk
 from dialogy.plugins.preprocess.text.normalize_utterance import normalize
 from flask import jsonify, request
+from sentry_sdk.integrations.flask import FlaskIntegration
 
 from slu import constants as const
 from slu.src.api import app
@@ -11,11 +17,25 @@ from slu.src.controller.prediction import predict_wrapper
 from slu.utils.config import HTTPConfig, YAMLLocalConfig, Config
 from slu.utils.sentry import capture_exception
 from slu.utils import error_response
-from slu.utils.schema_parsing import schema_parser
 
 
-CLIENT_CONFIGS = YAMLLocalConfig().generate()
+CLIENT_CONFIGS = HTTPConfig().generate()
 PREDICT_API = predict_wrapper(CLIENT_CONFIGS)
+
+
+if os.environ.get(const.ENVIRONMENT) == const.PRODUCTION:
+    sentry_sdk.init(
+        dsn=os.environ["SENTRY_DSN"],
+        integrations=[FlaskIntegration()],
+        # Set traces_sample_rate to 1.0 to capture 100%
+        # of transactions for performance monitoring.
+        # We recommend adjusting this value in production.
+        # By default the SDK will try to use the SENTRY_RELEASE
+        # environment variable, or infer a git commit
+        # SHA as release, however you may want to set
+        # something more human-readable.
+        # release="myapp@1.0.0",
+    )
 
 
 @app.route("/", methods=["GET"])
@@ -41,7 +61,7 @@ def slu(lang: str, client_name: str, model_name: str):
     config = CLIENT_CONFIGS.get(model_name, None)
 
     if config is None:
-        return error_response.missing_project_name(model_name), 404
+        return error_response.missing_project_name(model_name)
 
     if lang not in config.get_supported_languages():
         return error_response.invalid_language(lang)
@@ -81,58 +101,6 @@ def slu(lang: str, client_name: str, model_name: str):
         # 2. provide user-friendly messages. The current is developer friendly.
         capture_exception(exc, ctx="api", message=request.json)
         return jsonify({"message": str(exc), "cause": traceback.format_exc()}), 500
-
-
-@app.route("/update/<client_name>/<model_name>/", methods=["POST"])
-def update_config(client_name: str, model_name: str):
-    """
-    Update SLU config.
-    """
-
-    if not isinstance(request.json, dict):
-        return error_response.invalid_request(request.json)
-
-    CLIENT_CONFIGS[model_name] = Config(**request.json)
-
-    return jsonify(
-        status="ok",
-        response={"message": f"{model_name} has been updated | ref {client_name}."},
-    )
-
-
-@app.route("/schema/<plugin>/<entity_type>/<client_name>/<model_name>/", methods=["POST"])
-def create_plugin_schema(plugin: str, entity_type: str, client_name: str, model_name: str):
-    """
-    Generate plugin config from a readable source.
-
-    :param plugin: Dialogy plugin or lambda function.
-    :type plugin: str
-    :param entity_type: The entity for which we need to produce plugin schema.
-    :type entity_type: str
-    :param client_name: Required for readability and debugging.
-    :type client_name: str
-    :param model_name: The project for which we need to save the config in the plugin.
-    :type model_name: str
-    """
-    if model_name not in CLIENT_CONFIGS:
-        return error_response.invalid_initialization(client_name, model_name)
-
-    if plugin != const.LIST_ENTITY_PLUGIN:
-        return error_response.unknown_plugin(plugin)
-
-    entity_config_file = request.files.get("entity_config")
-
-    if entity_config_file is None:
-        return error_response.config_upload_required(plugin) 
-
-    config = CLIENT_CONFIGS[model_name]
-
-    updated_config = schema_parser(plugin, entity_type, config, entity_config_file)
-
-    return jsonify(
-        status="ok",
-        response=updated_config,
-    )
 
 
 if __name__ == "__main__":
