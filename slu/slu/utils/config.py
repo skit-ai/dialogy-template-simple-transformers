@@ -3,6 +3,7 @@
 """
 import abc
 import os
+import re
 import pickle
 import shutil
 from typing import Any, Dict, List, Optional, Union
@@ -11,7 +12,6 @@ import attr
 import requests
 import semver
 import yaml
-import pydash as py_
 from requests.adapters import HTTPAdapter
 from simpletransformers.classification import ClassificationModel  # type: ignore
 from simpletransformers.ner import NERModel
@@ -318,28 +318,42 @@ class Config:
                         slot_rules[intent_name][slot_name] = [entity[const.NAME]]
         return slot_rules
 
-    def make_candidates_from_csv_urls(self):
+    def make_candidates(self):
         urls = set()
         candidates = {}
+        pattern_delim = re.compile(r",\s*")
         for slot_dict in self.slots.values():
             for entities in slot_dict.values():
                 for entity in entities:
-                    if entity[const.TYPE] == const.LIST_ENTITY_PLUGIN:
+                    candidates[entity[const.NAME]] = {}
+                    if entity[const.PARSER] == const.LIST_ENTITY_PLUGIN and const.URL in entity[const.PARAMS]:
                         urls.add(entity[const.PARAMS][const.URL])
-                dataframe = get_csvs(urls)
-                columns = dataframe.columns
-                reference_column = columns[1] # The entity value corresponding to a set of patterns.
-                value_column = columns[0] # A set of patterns.
-                references = dataframe[reference_column].unique()
-                candidates[entity[const.NAME]] = {reference: dataframe[dataframe[reference_column] == reference][value_column].to_list() 
-                for reference in references }
+                    else:
+                        for language in self.languages:
+                            pattern_map = entity[const.PARAMS][language]
+                            for parse_value, patterns in pattern_map.items():
+                                if isinstance(patterns, str):
+                                    candidates[entity[const.NAME]].update({parse_value: pattern_delim.split(patterns)})
+                                elif isinstance(patterns, list):
+                                    candidates[entity[const.NAME]].update({parse_value: patterns})
+                                else:
+                                    raise TypeError("Patterns are expected to be comma separated strings or list of strings.")
+
+                if urls:
+                    dataframe = get_csvs(urls)
+                    columns = dataframe.columns
+                    reference_column = columns[1] # The entity value corresponding to a set of patterns.
+                    value_column = columns[0] # A set of patterns.
+                    references = dataframe[reference_column].unique()
+                    candidates[entity[const.NAME]] = {reference: dataframe[dataframe[reference_column] == reference][value_column].to_list() 
+                        for reference in references }
         return candidates
 
     def plugin_parameterize(self, plugin_name):
         if plugin_name == const.RULE_BASED_SLOT_FILLER_PLUGIN:
             return {const.RULES: self.make_slot_rules()}
         if plugin_name == const.LIST_ENTITY_PLUGIN:
-            return {const.CANDIDATES: self.make_candidates_from_csv_urls()}
+            return {const.CANDIDATES: self.make_candidates()}
 
     def json(self) -> Dict[str, Any]:
         """
