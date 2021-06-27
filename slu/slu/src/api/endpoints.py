@@ -1,8 +1,5 @@
 import os
-import io
-import pandas as pd
 import traceback
-import requests
 from datetime import datetime
 from typing import Any, Dict, List
 
@@ -14,12 +11,14 @@ from sentry_sdk.integrations.flask import FlaskIntegration
 from slu import constants as const
 from slu.src.api import app
 from slu.src.controller.prediction import predict_wrapper
-from slu.utils.config import HTTPConfig, YAMLLocalConfig, Config
+from slu.utils.config import HTTPConfig, YAMLLocalConfig
 from slu.utils.sentry import capture_exception
 from slu.utils import error_response
 
-
-CLIENT_CONFIGS = HTTPConfig().generate()
+try:
+    CLIENT_CONFIGS = YAMLLocalConfig().generate()
+except FileNotFoundError:
+    CLIENT_CONFIGS = HTTPConfig().generate()
 PREDICT_API = predict_wrapper(CLIENT_CONFIGS)
 
 
