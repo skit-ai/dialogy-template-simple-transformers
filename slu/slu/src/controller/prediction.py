@@ -2,12 +2,9 @@
 This module provides a simple interface to provide text features
 and receive Intent and Entities.
 """
-import os
 import importlib
-from typing import Any, Dict, List, Optional, Tuple, Union
-
+from typing import Any, Dict, List, Optional
 from dialogy.plugins.preprocess.text.normalize_utterance import normalize
-from dialogy.workflow.workflow import Workflow
 
 from slu import constants as const
 from slu.src.workflow import XLMRWorkflow
