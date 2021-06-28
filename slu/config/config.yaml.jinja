@@ -1,3 +1,4 @@
+model_name: slu
 tasks:
   classification:
     use: true
@@ -98,3 +99,10 @@ postprocess:
   - plugin: "RuleBasedSlotFillerPlugin"
     params:
       access: ["access", ["input", ["classification_input"]]]
+slots:
+  intent_name:
+    slot_name:
+      - name: "entity_name"
+        params: {}
+        parser: "plugin_name"
+ 
