@@ -451,4 +451,14 @@ class YAMLLocalConfig(ConfigDataProviderInterface):
     def generate(self) -> Dict[str, Config]:
         with open(self.config_path, "r") as handle:
             config_dict = yaml.safe_load(handle)
-        return {config_dict[const.PROJECT_NAME]: Config(**config_dict)}
+
+        config = Config(**config_dict)
+        plugins = config.preprocess + config.postprocess
+
+        for plugin_dict in plugins:
+            plugin_name = plugin_dict[const.PLUGIN]
+            params = config.plugin_parameterize(plugin_name=plugin_name)
+            if params:
+                plugin_dict[const.PARAMS].update(params)
+
+        return {config_dict[const.MODEL_NAME]: config}
