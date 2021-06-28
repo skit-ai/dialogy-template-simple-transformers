@@ -49,7 +49,7 @@ def train_intent_classifier(
     )
 
     model = config.get_model(const.CLASSIFICATION, const.TRAIN)
-    model_dir = config.get_model_dir(const.CLASSIFICATION)
+    model_dir = config.get_model_dir(const.CLASSIFICATION, const.TRAIN)
 
     log.info("Training started.")
     model.train_model(
