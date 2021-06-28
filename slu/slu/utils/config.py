@@ -36,7 +36,9 @@ class Task:
     threshold = attr.ib(type=float, kw_only=True, validator=attr.validators.instance_of(float))
     model_args = attr.ib(type=dict, kw_only=True, validator=attr.validators.instance_of(dict))
     alias = attr.ib(factory=dict, kw_only=True, validator=attr.validators.instance_of(dict))
-
+    format = attr.ib(
+        factory=str, kw_only=True, validator=attr.validators.optional(attr.validators.instance_of(str))
+    )
 
 @attr.s
 class Tasks:
