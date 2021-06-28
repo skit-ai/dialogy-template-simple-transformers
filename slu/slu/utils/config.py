@@ -140,7 +140,7 @@ class Config:
 
     @task_guard
     def get_model_args(self, task_name: str, purpose: str) -> Dict[str, Any]:
-        model_args = self.task_by_name(task_name).model_args
+        model_args = self.task_by_name(task_name).model_args[purpose]
         if not model_args[const.S_OUTPUT_DIR]:
             model_args[const.S_OUTPUT_DIR] = self.get_model_dir(task_name, purpose)
 
