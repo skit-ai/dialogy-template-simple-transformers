@@ -178,7 +178,7 @@ class Config:
         }
 
         if purpose == const.TRAIN:
-            kwargs["num_labels"] = len(labels),
+            kwargs["num_labels"] = len(labels)
 
         try:
             return ClassificationModel(
@@ -212,7 +212,7 @@ class Config:
         }
 
         if purpose == const.TRAIN:
-            kwargs["labels"] = len(labels),
+            kwargs["labels"] = len(labels)
 
         try:
             return NERModel(
