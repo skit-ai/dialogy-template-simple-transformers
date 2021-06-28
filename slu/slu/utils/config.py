@@ -327,6 +327,7 @@ class Config:
         urls = set()
         candidates = {}
         pattern_delim = re.compile(r",\s*")
+
         for slot_dict in self.slots.values():
             for entities in slot_dict.values():
                 for entity in entities:
