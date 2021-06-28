@@ -105,7 +105,10 @@ class Config:
 
     @task_guard
     def get_model_dir(self, task_name: str, purpose: str) -> str:
-        model_dir = self.task_by_name(task_name).model_args[purpose][const.S_OUTPUT_DIR]
+        if purpose == const.TRAIN:
+            model_dir = os.path.join(self.get_data_dir(task_name), const.MODELS)
+        else:
+            model_dir = self.task_by_name(task_name).model_args[purpose][const.S_OUTPUT_DIR]
         if not isinstance(model_dir, str):
             raise TypeError(f"Expected model directory for task={task_name}[{purpose}]"
             f" to be a string but {type(model_dir)} was found.")
