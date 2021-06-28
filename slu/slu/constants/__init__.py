@@ -13,6 +13,7 @@ k = 1000
 
 NAME = "name"
 MODEL_NAME = "model_name"
+SLU = "slu"
 CORES = "cores"
 DATA_ID = "data_id"
 DATA = "data"
