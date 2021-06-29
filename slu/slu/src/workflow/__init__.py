@@ -54,13 +54,13 @@ class XLMRWorkflow(Workflow):
 
         # XLMR Classifier
         try:
-            self.classifier = self.config.get_model(const.CLASSIFICATION, const.PROD)
+            self.classifier = self.config.get_model(const.CLASSIFICATION, const.PRODUCTION.lower())
         except (TypeError, MissingArtifact):
             self.classifier = None
 
         # XLMR NER
         try:
-            self.ner = self.config.get_model(const.NER, const.PROD)
+            self.ner = self.config.get_model(const.NER, const.PRODUCTION.lower())
         except (TypeError, MissingArtifact):
             self.ner = None
 
@@ -77,7 +77,7 @@ class XLMRWorkflow(Workflow):
         # Processed labels for classification tasks.
         try:
             self.labelencoder = self.config.load_pickle(
-                const.CLASSIFICATION, const.PROD, const.S_INTENT_LABEL_ENCODER
+                const.CLASSIFICATION, const.PRODUCTION.lower(), const.S_INTENT_LABEL_ENCODER
             )
         except (TypeError, MissingArtifact):
             self.labelencoder = None
