@@ -299,8 +299,8 @@ class Config:
             )
 
     @task_guard
-    def remove_checkpoints(self, task) -> None:
-        model_dir = self.get_model_dir(task)
+    def remove_checkpoints(self, task, purpose) -> None:
+        model_dir = self.get_model_dir(task, purpose)
         items = os.listdir(model_dir)
         for item in items:
             subdir = os.path.join(model_dir, item)
