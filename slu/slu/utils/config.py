@@ -173,7 +173,7 @@ class Config:
 
         model_args = self.get_model_args(const.CLASSIFICATION, purpose)
         kwargs = {
-            "use_cuda": (purpose != const.PRODUCTION),
+            "use_cuda": (purpose != const.PRODUCTION.lower()),
             "args": model_args,
         }
 
@@ -206,13 +206,12 @@ class Config:
         model_args = self.get_model_args(const.NER, purpose)
 
         kwargs = {
-            "labels": labels,
-            "use_cuda": (purpose != const.PROD),
+            "use_cuda": (purpose != const.PRODUCTION.lower()),
             "args": model_args,
         }
 
         if purpose == const.TRAIN:
-            kwargs["labels"] = len(labels)
+            kwargs[const.LABELS] = labels
 
         try:
             return NERModel(
