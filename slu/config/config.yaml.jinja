@@ -25,7 +25,7 @@ tasks:
         save_model_every_epoch: false
         save_steps: -1
         use_early_stopping: true
-      prod:
+      production:
         output_dir: null
         best_model_dir: null
         reprocess_input_data: true
@@ -62,7 +62,7 @@ tasks:
         output_dir: null
         best_model_dir: null
         classification_report: true
-      prod:
+      production:
         output_dir: null
         best_model_dir: null
         output_dir: null
@@ -98,7 +98,7 @@ preprocess:
 postprocess:
   - plugin: "RuleBasedSlotFillerPlugin"
     params:
-      access: ["access", ["input", ["classification_input"]]]
+      access: ["access", ["output", ["intent", "entities"]]]
 slots:
   intent_name:
     slot_name:
