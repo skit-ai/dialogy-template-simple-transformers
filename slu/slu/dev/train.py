@@ -78,6 +78,6 @@ def train_ner_model(config: Config, file_format=const.CSV):
 
     log.info("Saving artifacts.")
     config.save()
-    config.remove_checkpoints(const.NER)
+    config.remove_checkpoints(const.NER, const.TRAIN)
 
     log.debug("Finished!")
