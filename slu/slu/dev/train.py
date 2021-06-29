@@ -61,7 +61,7 @@ def train_intent_classifier(
 
     log.info("Saving artifacts.")
     config.save()
-    config.remove_checkpoints(const.CLASSIFICATION)
+    config.remove_checkpoints(const.CLASSIFICATION, const.TRAIN)
 
     log.debug("Finished!")
 
