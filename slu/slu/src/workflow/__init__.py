@@ -109,21 +109,21 @@ class XLMRWorkflow(Workflow):
             raw_output = raw_outputs[0]
 
             # Confidence estimate.
-            confidence = max(np.exp(raw_output) / sum(np.exp(raw_output)))
+            confidence_score = max(np.exp(raw_output) / sum(np.exp(raw_output)))
 
             # Threshold's should also consider data samples available per class.
             # Using http://rasbt.github.io/mlxtend/user_guide/plotting/plot_decision_regions/
             # should shed more light on optimal threshold usage.
             task = self.config.task_by_name(const.CLASSIFICATION)
-            if confidence < task.threshold:
+            if confidence_score < task.threshold:
                 predicted_intent = fallback_intent
         except IndexError as index_error:
             # This exception means raw_outputs classifier failed to produce raw_outputs.
             predicted_intent = fallback_intent
-            confidence = 1
+            confidence_score = 1.0
             capture_exception(index_error, ctx="workflow", message="raw_outputs")
 
-        return Intent(name=predicted_intent, confidence=confidence)
+        return Intent(name=predicted_intent, score=confidence_score)
 
     def make_entity(
         self,
