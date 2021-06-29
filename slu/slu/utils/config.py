@@ -337,7 +337,9 @@ class Config:
                         urls.add(entity[const.PARAMS][const.URL])
                     else:
                         for language in self.languages:
-                            pattern_map = entity[const.PARAMS][language]
+                            pattern_map = entity[const.PARAMS].get(language, {})
+                            if not pattern_map:
+                                log.error(f"entity={entity} doesn't have patterns for language={language}.")
                             for parse_value, patterns in pattern_map.items():
                                 if isinstance(patterns, str):
                                     candidates[entity[const.NAME]].update({parse_value: pattern_delim.split(patterns)})
