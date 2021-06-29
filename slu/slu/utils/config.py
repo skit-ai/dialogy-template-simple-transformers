@@ -151,10 +151,10 @@ class Config:
 
         eval_batch_size = model_args.get(const.S_EVAL_BATCH_SIZE)
 
-        if not isinstance(n_epochs, int):
+        if purpose == const.TRAIN and not isinstance(n_epochs, int):
             raise TypeError("n_epochs should be an int.")
 
-        if not isinstance(eval_batch_size, int):
+        if purpose == const.TRAIN and not isinstance(eval_batch_size, int):
             raise TypeError("Number of eval_batch_size should be an int.")
 
         if n_epochs and purpose == const.TRAIN:
