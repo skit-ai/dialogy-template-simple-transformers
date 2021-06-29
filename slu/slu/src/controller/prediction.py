@@ -69,7 +69,7 @@ def predict_wrapper(config_map: Dict[str, Config]):
         """
         utterance = normalize(utterance)
 
-        intent, entities = workflow.run(
+        output = workflow.run(
             {
                 const.S_CLASSIFICATION_INPUT: utterance,
                 const.S_CONTEXT: context,
@@ -79,6 +79,8 @@ def predict_wrapper(config_map: Dict[str, Config]):
                 const.S_LOCALE: locale
             }
         )
+        intent = output[const.INTENT]
+        entities = output[const.ENTITIES]
         workflow.flush()
 
         intent = intent.json()
