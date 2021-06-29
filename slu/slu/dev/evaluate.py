@@ -34,7 +34,7 @@ def test_classifier(config, file_format=const.CSV, custom_file=None):
         custom_file=custom_file,
     )
     labelencoder = config.load_pickle(
-        const.CLASSIFICATION, const.S_INTENT_LABEL_ENCODER
+        const.CLASSIFICATION, const.TEST, const.S_INTENT_LABEL_ENCODER
     )
     test_data_frame[const.LABELS] = labelencoder.transform(
         test_data_frame[const.LABELS]
