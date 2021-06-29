@@ -330,6 +330,8 @@ class Config:
         for slot_dict in self.slots.values():
             for entities in slot_dict.values():
                 for entity in entities:
+                    if entity[const.PARSER] in (const.DUCKLING_PLUGIN, const.DUCKLING):
+                        continue
                     candidates[entity[const.NAME]] = {}
                     if entity[const.PARSER] == const.LIST_ENTITY_PLUGIN and const.URL in entity[const.PARAMS]:
                         urls.add(entity[const.PARAMS][const.URL])
@@ -441,6 +443,7 @@ class HTTPConfig(ConfigDataProviderInterface):
         if not self.client_configs:
             configs_response = self._get_config()
             self._parse_json(configs_response)
+        
         return self.client_configs
 
 
