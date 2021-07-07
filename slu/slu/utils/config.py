@@ -173,7 +173,7 @@ class Config:
 
         model_args = self.get_model_args(const.CLASSIFICATION, purpose)
         kwargs = {
-            "use_cuda": (purpose != const.PRODUCTION.lower()),
+            "use_cuda": ((purpose != const.PRODUCTION.lower()) and (torch.cuda.device_count() > 0)),
             "args": model_args,
         }
 
@@ -206,7 +206,7 @@ class Config:
         model_args = self.get_model_args(const.NER, purpose)
 
         kwargs = {
-            "use_cuda": (purpose != const.PRODUCTION.lower()),
+            "use_cuda": ((purpose != const.PRODUCTION.lower()) and (torch.cuda.device_count() > 0)),
             "args": model_args,
         }
 
