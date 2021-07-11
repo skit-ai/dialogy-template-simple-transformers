@@ -3,7 +3,8 @@ Imports:
 
 - XLMRWorkflow
 """
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Type
+from unicodedata import name
 
 import numpy as np
 import pydash as py_
@@ -15,6 +16,7 @@ from slu import constants as const
 from slu.utils.config import Config
 from slu.utils.logger import log
 from slu.utils.sentry import capture_exception
+from slu.utils.error import MissingArtifact
 
 
 class XLMRWorkflow(Workflow):
@@ -33,6 +35,7 @@ class XLMRWorkflow(Workflow):
         self,
         preprocessors: Any,
         postprocessors: Any,
+        config: Config,
         debug: bool = False,
     ):
         """
@@ -42,17 +45,24 @@ class XLMRWorkflow(Workflow):
         super().__init__(
             preprocessors=preprocessors, postprocessors=postprocessors, debug=debug
         )
-        self.input = {}
-        self.output = (None, [])
+        self.input: Dict[str, Any] = {}
+        self.output: Dict[str, Any] = {}
+        self.set_io()
 
         # Read config/config.yaml and setup slu-level utils.
-        self.config = Config()
+        self.config = config
 
         # XLMR Classifier
-        self.classifier = self.config.get_model(const.CLASSIFICATION, const.PROD)
+        try:
+            self.classifier = self.config.get_model(const.CLASSIFICATION, const.PRODUCTION.lower())
+        except (TypeError, MissingArtifact):
+            self.classifier = None
 
         # XLMR NER
-        self.ner = self.config.get_model(const.NER, const.PROD)
+        try:
+            self.ner = self.config.get_model(const.NER, const.PRODUCTION.lower())
+        except (TypeError, MissingArtifact):
+            self.ner = None
 
         # You should extend dialogy.types.entity.BaseEntity
         # and use it to different types of entities here. Like:
@@ -65,9 +75,16 @@ class XLMRWorkflow(Workflow):
         }
 
         # Processed labels for classification tasks.
-        self.labelencoder = self.config.load_pickle(
-            const.CLASSIFICATION, const.S_INTENT_LABEL_ENCODER
-        )
+        try:
+            self.labelencoder = self.config.load_pickle(
+                const.CLASSIFICATION, const.PRODUCTION.lower(), const.S_INTENT_LABEL_ENCODER
+            )
+        except (TypeError, MissingArtifact):
+            self.labelencoder = None
+
+    def set_io(self):
+        self.input: Dict[str, Any] = {}
+        self.output: Dict[str, Any] = {const.INTENT: None, const.ENTITIES: []}
 
     def classify(self, text: str, fallback_intent=const.S_INTENT_ERROR) -> Intent:
         """
@@ -76,9 +93,14 @@ class XLMRWorkflow(Workflow):
         Returns:
             Intent: name and score (confidence) are the prominent attributes.
         """
-        if not self.config.use_classifier:
-            return Intent(name=const.S_INTENT_ERROR, score=1)
+        fallback_intent = Intent(name=fallback_intent, score=1)
+        task = self.config.task_by_name(const.CLASSIFICATION)
 
+        if not task.use:
+            return fallback_intent
+
+        if self.classifier is None:
+            raise OSError("Classifier is not loaded")
         predictions, raw_outputs = self.classifier.predict([text])
 
         try:
@@ -87,20 +109,21 @@ class XLMRWorkflow(Workflow):
             raw_output = raw_outputs[0]
 
             # Confidence estimate.
-            confidence = max(np.exp(raw_output) / sum(np.exp(raw_output)))
+            confidence_score = max(np.exp(raw_output) / sum(np.exp(raw_output)))
 
             # Threshold's should also consider data samples available per class.
             # Using http://rasbt.github.io/mlxtend/user_guide/plotting/plot_decision_regions/
             # should shed more light on optimal threshold usage.
-            if confidence < self.config.classification_threshold:
+            task = self.config.task_by_name(const.CLASSIFICATION)
+            if confidence_score < task.threshold:
                 predicted_intent = fallback_intent
         except IndexError as index_error:
             # This exception means raw_outputs classifier failed to produce raw_outputs.
             predicted_intent = fallback_intent
-            confidence = 1
+            confidence_score = 1.0
             capture_exception(index_error, ctx="workflow", message="raw_outputs")
 
-        return Intent(name=predicted_intent, score=confidence)
+        return Intent(name=predicted_intent, score=confidence_score)
 
     def make_entity(
         self,
@@ -294,8 +317,12 @@ class XLMRWorkflow(Workflow):
         Returns:
             List[BaseEntity]: List of entities
         """
-        if not self.config.use_ner:
+        task = self.config.task_by_name(const.NER)
+        if not task.use:
             return []
+
+        if self.ner is None:
+            raise OSError("NER Model was not loaded.")
 
         # The second value is `raw_output` which can be used for estimating confidence
         # scores for each token identified as an entity.
@@ -326,15 +353,13 @@ class XLMRWorkflow(Workflow):
     def inference(self):
         classifier_input = self.input[const.S_CLASSIFICATION_INPUT]
         ner_input = self.input[const.S_NER_INPUT]
+
         intent = self.classify(classifier_input)
         ner_entities = self.extract(ner_input)
 
-        if self.output is not None:
-            _, pre_filled_entities = self.output
-            self.output = (intent, [*pre_filled_entities, *ner_entities])
-        else:
-            self.output = (intent, ner_entities)
+        pre_filled_entities = self.output[const.ENTITIES]
+        entities = pre_filled_entities + ner_entities
+        self.output = {const.INTENT: intent, const.ENTITIES: entities}
 
     def flush(self) -> None:
-        self.input = {}
-        self.output = (None, [])
+        self.set_io()

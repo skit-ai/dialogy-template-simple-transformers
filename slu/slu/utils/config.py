@@ -3,6 +3,7 @@
 """
 import abc
 import os
+import re
 import pickle
 import shutil
 from typing import Any, Dict, List, Optional, Union
@@ -24,43 +25,44 @@ from slu.dev.io.reader.csv import (
 )
 from slu.dev.prepare import prepare
 from slu.utils.logger import log
-from slu.utils.decorators import checks_usage
+from slu.utils.decorators import task_guard
+from slu.utils.error import MissingArtifact
+from slu.utils.s3 import get_csvs
 
 
-class ConfigDataProviderInterface(metaclass=abc.ABCMeta):
+@attr.s
+class Task:
+    use = attr.ib(type=bool, kw_only=True, validator=attr.validators.instance_of(bool))
+    threshold = attr.ib(type=float, kw_only=True, validator=attr.validators.instance_of(float))
+    model_args = attr.ib(type=dict, kw_only=True, validator=attr.validators.instance_of(dict))
+    alias = attr.ib(factory=dict, kw_only=True, validator=attr.validators.instance_of(dict))
+    format = attr.ib(
+        factory=str, kw_only=True, validator=attr.validators.optional(attr.validators.instance_of(str))
+    )
 
-    @abc.abstractmethod
-    def give_config_data(self):
-        return
+@attr.s
+class Tasks:
+    classification = attr.ib(type=Task, kw_only=True, validator=attr.validators.instance_of(dict))
+    ner = attr.ib(type=Task, kw_only=True, validator=attr.validators.instance_of(dict))
 
-
-class YAMLLocalConfigDataProvider(ConfigDataProviderInterface):
-
-    def __init__(self, config_path:Optional[str]=None) -> None:
-        super().__init__()
-        self.config = None
-        self.config_path = config_path if config_path else os.path.join("config", "config.yaml")
-
-
-
-    def give_config_data(self) -> Dict:
-
-        if self.config is None:
-            with open(self.config_path, "r") as handle:
-                self.config = yaml.load(handle, Loader=yaml.FullLoader)
-        return self.config
+    def __attrs_post_init__(self) -> None:
+        self.classification = Task(**self.classification) # type: ignore
+        self.ner = Task(**self.ner) # type: ignore
 
 
-class JSONAPIConfigDataProvider(ConfigDataProviderInterface):
+@attr.s
+class Parser:
+    params = attr.ib(type=dict, validator=attr.validators.instance_of(dict))
+    plugin = attr.ib(type=str, default=None)
+    lambda_ = attr.ib(type=str, default=None)
 
-    def __init__(self, config_dict:Optional[Dict]= None) -> None:
-        super().__init__()
-        self.config = config_dict
+    def __attrs_post_init__(self) -> None:
+        error_message = "A Parser should define either a plugin or lambda_ endpoint."
+        if isinstance(self.plugin, str) and isinstance(self.lambda_, str):
+            raise TypeError(error_message)
 
-    def give_config_data(self) -> Dict:
-        return self.config
-
-
+        if self.plugin is None and self.lambda_ is None:
+            raise TypeError(error_message)
 
 
 @attr.s
@@ -75,176 +77,95 @@ class Config:
     - Load models and their configurations
     - Save pickled objects.
     """
-
-    # **config_path**
-    #
-    # In case config/config.yaml is not the appropriate location.
-    config_path = attr.ib(default=os.path.join("config", "config.yaml"))
-
-    # **project_name**
-    #
-    # The name of your project.
-    project_name = attr.ib(default=None)
-
-    # **_config**
-    #
-    # Read contents of `config.yaml` into a Dict.
-    _config = attr.ib(default=None)
-
-    # **version**
-    #
-    # Current project version.
-    version = attr.ib(default=None)
-
-    # **n_cores**
-    #
-    # Number of cpu cores to use for certain jobs.
-    n_cores = attr.ib(default=None)
-
-    # **classification_threshold**
-    #
-    # Confidence threshold for classification tasks.
-    classification_threshold = attr.ib(default=None)
-
-    # **ner_threshold**
-    #
-    # Confidence threshold for NER tasks.
-    ner_threshold = attr.ib(default=None)
-
-    # **rules**
-    #
-    # Rules for filling Entities within Intent slots.
-    rules = attr.ib(default=None)
-
-    # **config_data_provider**
-    #
-    # dictionary source if we are getting config from API.
-    config_data_provider : ConfigDataProviderInterface = attr.ib()
-    @config_data_provider.default
-    def _default_legacy_yaml_local_config_data_provider(self):
-        return YAMLLocalConfigDataProvider(config_path=self.config_path)
+    model_name = attr.ib(type=str, kw_only=True, validator=attr.validators.instance_of(str))
+    version = attr.ib(type=str, kw_only=True, default="0.0.0", validator=attr.validators.instance_of(str))
+    tasks = attr.ib(type=Tasks, kw_only=True)
+    languages = attr.ib(type=List[str], kw_only=True)
+    slots: Dict[str, Dict[str, Any]] = attr.ib(factory=dict, kw_only=True)
+    preprocess: List[Dict[str, Any]] = attr.ib(factory=list, kw_only=True)
+    postprocess: List[Dict[str, Any]] = attr.ib(factory=list, kw_only=True)
 
     def __attrs_post_init__(self) -> None:
         """
         Update default values of attributes from `conifg.yaml`.
         """
-        self._config = self.config_data_provider.give_config_data()
-        semver.VersionInfo.parse(self._config.get(const.VERSION))
-        self.version = self._config.get(const.VERSION)
-        self.n_cores = self._config.get(const.CORES)
-        self.classification_threshold = self._config[const.TASKS][const.CLASSIFICATION][
-            const.THRESHOLD
-        ]
+        self.tasks = Tasks(**self.tasks) # type: ignore
+        semver.VersionInfo.parse(self.version)
 
-        self.classification_file_format = self._config[const.TASKS][
-            const.CLASSIFICATION
-        ][const.FORMAT]
+    def task_by_name(self, task_name: str) -> Task:
+        return getattr(self.tasks, task_name)
 
-        self.postprocess = self._config.get(const.POSTPROCESS, None)
-        if self.postprocess:
-            for postprocess_plugin in self.postprocess:
-                if postprocess_plugin[const.PLUGIN] == const.RULE_BASED_PLUGIN:
-                    self.rules = postprocess_plugin[const.PARAMS][const.RULES]
-                    break
+    @task_guard
+    def get_data_dir(self, task_name: str) -> str:
+        return os.path.join(const.DATA, self.version, task_name)
 
-        if self.rules is None:
-            self.rules = self._config[const.RULES]
+    @task_guard
+    def get_metrics_dir(self, task_name: str) -> str:
+        return os.path.join(self.get_data_dir(task_name), const.METRICS)
 
-        self.preprocess = self._config.get(const.PREPROCESS, None)
-        self.use_duckling = False
+    @task_guard
+    def get_model_dir(self, task_name: str, purpose: str) -> str:
+        if purpose == const.TRAIN:
+            model_dir = os.path.join(self.get_data_dir(task_name), const.MODELS)
+        else:
+            model_dir = self.task_by_name(task_name).model_args[purpose][const.S_OUTPUT_DIR]
+        if not isinstance(model_dir, str):
+            raise TypeError(f"Expected model directory for task={task_name}[{purpose}]"
+            f" to be a string but {type(model_dir)} was found.")
+        return model_dir
 
-        if self.preprocess:
-            for preprocess_plugin in self.preprocess:
-                if preprocess_plugin[const.PLUGIN] == const.DUCKLING_BASED_PLUGIN:
-                    self.use_duckling = postprocess_plugin[const.USE]
-                    self.duckling_params = postprocess_plugin[const.PARAMS]
-                    break
-
-        self.use_classifier = self._config[const.TASKS][const.CLASSIFICATION][const.USE]
-
-        self.ner_file_format = self._config[const.TASKS][const.NER][const.FORMAT]
-
-        self.ner_threshold = self._config[const.TASKS][const.NER][const.THRESHOLD]
-        self.use_ner = self._config[const.TASKS][const.NER][const.USE]
-
-        self.supported_tasks = []
-        if self.use_classifier:
-            self.supported_tasks.append(const.CLASSIFICATION)
-        if self.use_ner:
-            self.supported_tasks.append(const.NER)
-
-    def set_version(self, version) -> "Config":
-        self.version = version
-        self._config[const.VERSION] = version
-        return self
-
-    @checks_usage
-    def get_data_dir(self, task) -> str:
-        return os.path.join(const.DATA, self.version, task)
-
-    @checks_usage
-    def get_metrics_dir(self, task) -> str:
-        return os.path.join(self.get_data_dir(task), const.METRICS)
-
-    @checks_usage
-    def get_model_dir(self, task) -> str:
-        return os.path.join(self.get_data_dir(task), const.MODELS)
-
-    @checks_usage
-    def get_model_path(self, task) -> str:
-        return os.path.join(self.get_model_dir(task), self.version)
-
-    @checks_usage
+    @task_guard
     def get_dataset(
-        self, task, purpose, file_format=const.CSV, custom_file=None
+        self, task_name: str, purpose: str, file_format=const.CSV, custom_file=None
     ) -> Any:
-        error_message = (
-            f"Expected task to be in {self.supported_tasks} instead, {task} was found!"
-        )
-
-        data_dir = os.path.join(const.DATA, self.version, task)
+        data_dir = self.get_data_dir(task_name)
         dataset_dir = os.path.join(data_dir, const.DATASETS)
         dataset_file = custom_file or os.path.join(
             dataset_dir, f"{purpose}.{file_format}"
         )
-        alias = self.get_alias(task)
-
+        alias = self.task_by_name(task_name).alias
         try:
-            if task == const.CLASSIFICATION:
+            if task_name == const.CLASSIFICATION:
                 data, _ = prepare(
-                    dataset_file, alias, n_cores=self.n_cores, file_format=file_format
+                    dataset_file, alias, file_format=file_format
                 )
-            elif task == const.NER:
-                data, labels = read_ner_dataset_csv(dataset_file)
-            else:
-                raise ValueError(error_message)
+            elif task_name == const.NER:
+                data, _ = read_ner_dataset_csv(dataset_file)
         except FileNotFoundError as file_missing_error:
             raise ValueError(
-                f"{dataset_file} not found! Are you sure {const.TASKS}.{purpose}.use = true?"
-                " within config/config.yaml?"
+                f"{dataset_file} not found! Are you sure {const.TASKS}.{task_name}.use = true?"
             ) from file_missing_error
 
         return data
 
-    @checks_usage
-    def get_model_args(self, task, purpose) -> Dict[str, Any]:
-        model_args = self._config[const.TASKS][task][const.S_MODEL_ARGS][purpose]
-        model_args[const.S_OUTPUT_DIR] = self.get_model_dir(task)
-        model_args[const.S_BEST_MODEL] = self.get_model_dir(task)
+    @task_guard
+    def get_model_args(self, task_name: str, purpose: str) -> Dict[str, Any]:
+        model_args = self.task_by_name(task_name).model_args[purpose]
+        if not model_args[const.S_OUTPUT_DIR]:
+            model_args[const.S_OUTPUT_DIR] = self.get_model_dir(task_name, purpose)
+
+        if not model_args[const.S_BEST_MODEL]:
+            model_args[const.S_BEST_MODEL] = self.get_model_dir(task_name, purpose)
+
         n_epochs = model_args.get(const.S_NUM_TRAIN_EPOCHS)
+
         eval_batch_size = model_args.get(const.S_EVAL_BATCH_SIZE)
 
-        if purpose == const.TRAIN:
+        if purpose == const.TRAIN and not isinstance(n_epochs, int):
+            raise TypeError("n_epochs should be an int.")
+
+        if purpose == const.TRAIN and not isinstance(eval_batch_size, int):
+            raise TypeError("Number of eval_batch_size should be an int.")
+
+        if n_epochs and purpose == const.TRAIN:
             model_args[const.S_EVAL_DURING_TRAINING_STEPS] = (
                 n_epochs * eval_batch_size + const.k
             )
 
         return model_args
 
-    def get_classification_model(
-        self, purpose, labels
-    ) -> Optional[ClassificationModel]:
-        if not self.use_classifier:
+    def get_classification_model(self, purpose: str, labels: List[str]) -> ClassificationModel:
+        if not self.tasks.classification.use:
             log.warning(
                 "You have set `classification.use = false` within `config.yaml`. Model will not be loaded."
             )
@@ -252,12 +173,12 @@ class Config:
 
         model_args = self.get_model_args(const.CLASSIFICATION, purpose)
         kwargs = {
-            "num_labels": len(labels),
-            "use_cuda": (purpose != const.PROD),
+            "use_cuda": (purpose != const.PRODUCTION.lower()),
             "args": model_args,
         }
-        if purpose != const.TRAIN:
-            del kwargs["num_labels"]
+
+        if purpose == const.TRAIN:
+            kwargs["num_labels"] = len(labels)
 
         try:
             return ClassificationModel(
@@ -275,8 +196,8 @@ class Config:
                 f"but no model found in {model_args[const.S_OUTPUT_DIR]}"
             ) from os_err
 
-    def get_ner_model(self, purpose, labels) -> Optional[NERModel]:
-        if not self.use_ner:
+    def get_ner_model(self, purpose: str, labels: List[str]) -> NERModel:
+        if not self.tasks.ner.use:
             log.warning(
                 "You have set `ner.use = false` within `config.yaml`. Model will not be loaded."
             )
@@ -285,12 +206,12 @@ class Config:
         model_args = self.get_model_args(const.NER, purpose)
 
         kwargs = {
-            "labels": labels,
-            "use_cuda": (purpose != const.PROD),
+            "use_cuda": (purpose != const.PRODUCTION.lower()),
             "args": model_args,
         }
-        if purpose != const.TRAIN:
-            del kwargs["labels"]
+
+        if purpose == const.TRAIN:
+            kwargs[const.LABELS] = labels
 
         try:
             return NERModel(
@@ -308,32 +229,48 @@ class Config:
                 f"but no model found in {model_args[const.S_OUTPUT_DIR]}"
             ) from os_err
 
-    @checks_usage
-    def get_labels(self, task) -> List[str]:
-        if task == const.CLASSIFICATION:
-            encoder = self.load_pickle(
-                const.CLASSIFICATION, const.S_INTENT_LABEL_ENCODER
-            )
-            return encoder.classes_
-        elif task == const.NER:
-            return self.load_pickle(const.NER, const.S_ENTITY_LABELS)
-        else:
-            raise ValueError(
-                f"Expected task to be {const.CLASSIFICATION} or {const.NER} instead, {task} was found"
-            )
+    @task_guard
+    def get_model(self, task_name: str, purpose: str) -> Union[ClassificationModel, NERModel]:
+        labels = self.get_labels(task_name, purpose)
+        if task_name == const.NER:
+            return self.get_ner_model(purpose, labels)
+        return self.get_classification_model(purpose, labels)
 
-    @checks_usage
-    def set_labels(self, task, labels) -> None:
-        if task not in self.supported_tasks:
-            raise ValueError(f"Expected task to be one of {self.supported_tasks}")
+    @task_guard
+    def get_labels(self, task_name: str, purpose: str) -> List[str]:
+        if task_name == const.NER:
+            return self.load_pickle(const.NER, purpose, const.S_ENTITY_LABELS)
+
+        try:
+            encoder = self.load_pickle(const.CLASSIFICATION, purpose, const.S_INTENT_LABEL_ENCODER)
+        except TypeError:
+            model_dir = self.get_model_dir(task_name, purpose)
+            raise MissingArtifact(const.S_INTENT_LABEL_ENCODER, os.path.join(model_dir, const.S_INTENT_LABEL_ENCODER))
+        return encoder.classes_
+
+    @task_guard
+    def set_labels(self, task_name: str, purpose: str, labels: List[str]) -> None:
         namespace = (
-            const.S_ENTITY_LABELS if task == const.NER else const.S_INTENT_LABEL_ENCODER
+            const.S_ENTITY_LABELS if task_name == const.NER else const.S_INTENT_LABEL_ENCODER
         )
-        self.save_pickle(task, namespace, labels)
+        self.save_pickle(task_name, purpose, namespace, labels)
 
-    @checks_usage
-    def get_alias(self, task) -> List[str]:
-        return self._config.get(const.TASKS, {}).get(task, {}).get(const.ALIAS)
+    @task_guard
+    def save_pickle(self, task_name: str, purpose: str, prop: str, value: Any) -> "Config":
+        model_dir = self.get_model_dir(task_name, purpose)
+        with open(os.path.join(model_dir, prop), "wb") as handle:
+            pickle.dump(value, handle)
+        return self
+
+    @task_guard
+    def load_pickle(self, task_name: str, purpose: str, prop: str):
+        model_dir = self.get_model_dir(task_name, purpose)
+        with open(os.path.join(model_dir, prop), "rb") as handle:
+            return pickle.load(handle)
+
+    @task_guard
+    def get_alias(self, task_name: str) -> Dict[str, str]:
+        return self.task_by_name(task_name).alias
 
     def save_classification_errors(self, df):
         df.to_csv(
@@ -341,39 +278,12 @@ class Config:
             index=False,
         )
 
-    @checks_usage
-    def get_model(self, task, purpose):
-        labels = self.get_labels(task)
-        error_message = (
-            f"Expected task to be in {self.supported_tasks} instead, {task} was found!"
-        )
-
-        if task == const.CLASSIFICATION:
-            return self.get_classification_model(purpose, labels)
-        elif task == const.NER:
-            return self.get_ner_model(purpose, labels)
-        else:
-            raise ValueError(error_message)
-
-    @checks_usage
-    def save_pickle(self, task, prop, value) -> "Config":
-        model_dir = self.get_model_dir(task)
-        with open(os.path.join(model_dir, prop), "wb") as handle:
-            pickle.dump(value, handle)
-        return self
-
-    @checks_usage
-    def load_pickle(self, task, prop):
-        model_dir = self.get_model_dir(task)
-        with open(os.path.join(model_dir, prop), "rb") as handle:
-            return pickle.load(handle)
-
     def save(self) -> "Config":
-        with open(self.config_path, "w") as handle:
-            yaml.dump(self._config, handle, sort_keys=False)
+        with open(const.S_CONFIG_PATH, "w") as handle:
+            yaml.dump(attr.asdict(self), handle, sort_keys=False)
         return self
 
-    @checks_usage
+    @task_guard
     def save_report(self, task, results) -> "Config":
         if task == const.CLASSIFICATION:
             save_classification_report(
@@ -388,58 +298,71 @@ class Config:
                 f"Expected task to be {const.CLASSIFICATION} or {const.NER} instead, {task} was found"
             )
 
-    @checks_usage
-    def remove_checkpoints(self, task) -> None:
-        model_dir = self.get_model_dir(task)
+    @task_guard
+    def remove_checkpoints(self, task, purpose) -> None:
+        model_dir = self.get_model_dir(task, purpose)
         items = os.listdir(model_dir)
         for item in items:
             subdir = os.path.join(model_dir, item)
             if os.path.isdir(subdir):
                 shutil.rmtree(subdir)
 
-    def get_supported_langauges(self) -> Dict[str, str]:
-        return self._config["languages"]
+    def get_supported_languages(self) -> List[str]:
+        return self.languages
 
-    def find_plugin_metadata(self, config_property: str, plugin_name: str) -> Optional[Dict[str, Any]]:
-        """
-        Access a plugin metadata within _config.
+    def make_slot_rules(self):
+        slot_rules = {}
+        for intent_name, slot_dict in self.slots.items():
+            slot_rules[intent_name] = {}
+            for slot_name, entities in slot_dict.items():
+                for entity in entities:
+                    if slot_name in slot_rules[intent_name]:
+                        slot_rules[intent_name][slot_name].append(entity[const.NAME])
+                    else:
+                        slot_rules[intent_name][slot_name] = [entity[const.NAME]]
+        return slot_rules
 
-        :param config_property: Expected property within _config.
-        :type config_property: str
-        :param plugin_name: [description]
-        :type plugin_name: str
-        :return: Value of the sub-property within _config.
-        :rtype: Any
-        """
-        metadata_for_plugins = self._config.get(config_property)
-        for plugin_metadata in metadata_for_plugins:
-            if plugin_metadata.get(const.PLUGIN) == plugin_name:
-                return plugin_metadata
-        return None
+    def make_candidates(self):
+        urls = set()
+        candidates = {}
+        pattern_delim = re.compile(r",\s*")
 
-    def update_plugin_metadata(self, plugin_metadata: Optional[Dict[str, Any]], param_name: str, value: Any) -> None:
-        """
-        Update plugin selected params.
+        for slot_dict in self.slots.values():
+            for entities in slot_dict.values():
+                for entity in entities:
+                    if entity[const.PARSER] in (const.DUCKLING_PLUGIN, const.DUCKLING):
+                        continue
+                    candidates[entity[const.NAME]] = {}
+                    if entity[const.PARSER] == const.LIST_ENTITY_PLUGIN and const.URL in entity[const.PARAMS]:
+                        urls.add(entity[const.PARAMS][const.URL])
+                    else:
+                        for language in self.languages:
+                            pattern_map = entity[const.PARAMS].get(language, {})
+                            if not pattern_map:
+                                log.error(f"entity={entity} doesn't have patterns for language={language}.")
+                            for parse_value, patterns in pattern_map.items():
+                                if isinstance(patterns, str):
+                                    candidates[entity[const.NAME]].update({parse_value: pattern_delim.split(patterns)})
+                                elif isinstance(patterns, list):
+                                    candidates[entity[const.NAME]].update({parse_value: patterns})
+                                else:
+                                    raise TypeError("Patterns are expected to be comma separated strings or list of strings.")
 
-        :param plugin_metadata: Metadata object that instantiates a plugin.
-        :type plugin_metadata: Optional[Dict[str, Any]]
-        :param param_name: The parameter to update.
-        :type param_name: str
-        :param value: An expected value for the pugin parameter.
-        :type value: Any
-        """
-        if plugin_metadata:
-            plugin_metadata[const.PARAMS][const.CANDIDATES] = value
-        else:
-            metadata = {
-                const.PLUGIN: const.LIST_ENTITY_PLUGIN,
-                const.PARAMS: {
-                    const.STYLE: "regex",
-                    const.CANDIDATES: value,
-                    const.ENTITY_MAP: {}
-                }
-            }
-            self._config[const.PREPROCESS].append(metadata)
+                if urls:
+                    dataframe = get_csvs(urls)
+                    columns = dataframe.columns
+                    reference_column = columns[1] # The entity value corresponding to a set of patterns.
+                    value_column = columns[0] # A set of patterns.
+                    references = dataframe[reference_column].unique()
+                    candidates[entity[const.NAME]] = {reference: dataframe[dataframe[reference_column] == reference][value_column].to_list() 
+                        for reference in references }
+        return candidates
+
+    def plugin_parameterize(self, plugin_name):
+        if plugin_name == const.RULE_BASED_SLOT_FILLER_PLUGIN:
+            return {const.RULES: self.make_slot_rules()}
+        if plugin_name == const.LIST_ENTITY_PLUGIN:
+            return {const.CANDIDATES: self.make_candidates()}
 
     def json(self) -> Dict[str, Any]:
         """
@@ -451,36 +374,54 @@ class Config:
         return attr.asdict(self)
 
 
-class OnStartupClientConfigDataProvider:
+class ConfigDataProviderInterface(metaclass=abc.ABCMeta):
+    @abc.abstractmethod
+    def generate(self):
+        ...
 
+
+class HTTPConfig(ConfigDataProviderInterface):
     def __init__(self) -> None:
-        self.client_configs = {}
+        self.client_configs: Dict[str, Any] = {}
+        self.root_level_keys = [const.MODEL_NAME, const.LANGUAGES, const.SLOTS]
 
-    
-    def _is_valid_config_schema(self, config_dict):
-        #TODO: validate the incoming JSON
-        return True
-
-
-    def _parse_json(self, configs_response: List[Dict[str, Dict]]):
-
+    def _parse_json(self, configs: List[Dict[str, Any]]):
         # if project_configs_response is of List[Dict]
-        for config_map in configs_response:
-            model_name = config_map.get(const.MODEL_NAME)
-            if self._is_valid_config_schema(config_map):
-                self.client_configs[model_name] = config_map
+        for config_dict in configs:
+            model_name = config_dict.get(const.MODEL_NAME)
+            if model_name:
+                alias = config_dict[const.ALIAS]
+                metadata = config_dict[const.METADATA]
+                root_level_config = {key: value for key, value in config_dict.items() 
+                                        if key in self.root_level_keys}
+                if not metadata:
+                    raise ValueError(f"You need to set metadata for {model_name}.")
+
+                root_level_config.update(metadata)
+                root_level_config[const.TASKS][const.CLASSIFICATION][const.ALIAS] = alias
+                config = Config(**root_level_config)
+                plugins = config.preprocess + config.postprocess
+
+                for plugin_dict in plugins:
+                    plugin_name = plugin_dict[const.PLUGIN]
+                    params = config.plugin_parameterize(plugin_name=plugin_name)
+                    if params:
+                        plugin_dict[const.PARAMS].update(params)
+
+                self.client_configs[model_name] = config
 
 
-    def _get_configs_from_api(self):
-
+    def _get_config(self):
         BUILDER_BACKEND_URL = os.getenv("BUILDER_BACKEND_URL")
         if BUILDER_BACKEND_URL is None:
             raise ValueError(
                 f"missing BUILDER_BACKEND_URL env variable, please set it appropriately."
             )
+
         url = BUILDER_BACKEND_URL + const.CLIENTS_CONFIGS_ROUTE
 
         session = requests.Session()
+
         retry = Retry(
             total=const.REQUEST_MAX_RETRIES,
             connect=const.REQUEST_MAX_RETRIES,
@@ -488,6 +429,7 @@ class OnStartupClientConfigDataProvider:
             backoff_factor=0.3,
             status_forcelist=(500, 502, 504)
         )
+
         http_adapter = HTTPAdapter(max_retries=retry)
         session.mount("http://", http_adapter)
         session.mount("https://", http_adapter)
@@ -496,12 +438,32 @@ class OnStartupClientConfigDataProvider:
 
         if response.ok:
             return response.json()
-        
+
         raise RuntimeError(f"couldn't establish connection with {url} while trying to collect configs")
 
-
-    def give_config_data(self) -> Dict[str, Config]:
+    def generate(self) -> Dict[str, Config]:
         if not self.client_configs:
-            configs_response = self._get_configs_from_api()
+            configs_response = self._get_config()
             self._parse_json(configs_response)
+        
         return self.client_configs
+
+
+class YAMLLocalConfig(ConfigDataProviderInterface):
+    def __init__(self, config_path:Optional[str]=None) -> None:
+        self.config_path = config_path if config_path else os.path.join("config", "config.yaml")
+
+    def generate(self) -> Dict[str, Config]:
+        with open(self.config_path, "r") as handle:
+            config_dict = yaml.safe_load(handle)
+
+        config = Config(**config_dict)
+        plugins = config.preprocess + config.postprocess
+
+        for plugin_dict in plugins:
+            plugin_name = plugin_dict[const.PLUGIN]
+            params = config.plugin_parameterize(plugin_name=plugin_name)
+            if params:
+                plugin_dict[const.PARAMS].update(params)
+
+        return {config_dict[const.MODEL_NAME]: config}

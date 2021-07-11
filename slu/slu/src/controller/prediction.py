@@ -2,75 +2,56 @@
 This module provides a simple interface to provide text features
 and receive Intent and Entities.
 """
+import importlib
+import traceback
 from typing import Any, Dict, List, Optional
-
-from dialogy.parser.text.entity.duckling_parser import DucklingParser
-from dialogy.postprocess.text.slot_filler.rule_slot_filler import (
-    RuleBasedSlotFillerPlugin,
-)
-from dialogy.types.entity import BaseEntity
-from dialogy.preprocess.text.merge_asr_output import merge_asr_output_plugin
-from dialogy.preprocess.text.normalize_utterance import normalize
+from dialogy.plugins.preprocess.text.normalize_utterance import normalize
 
 from slu import constants as const
 from slu.src.workflow import XLMRWorkflow
 from slu.utils.config import Config
-
-config = Config()
-
-slot_filler = RuleBasedSlotFillerPlugin(
-    rules=config.rules[const.SLOTS], access=lambda w: w.output
-)()
+from slu.dev.plugin_parse.plugin_functional_arguments import plugin_param_parser
+from slu.utils.logger import log
 
 
-def update_input(w: XLMRWorkflow, value: str) -> None:
-    w.input[const.S_CLASSIFICATION_INPUT] = value
+plugin_module = importlib.import_module("dialogy.plugins")
 
 
-merge_asr_output = merge_asr_output_plugin(
-    access=lambda w: w.input[const.S_CLASSIFICATION_INPUT], mutate=update_input
-)
+def parse_plugin_params(plugins):
+    plugin_list = []
+    for plugin_config in plugins:
+        plugin_name = plugin_config[const.PLUGIN]
+        plugin_params = {key: plugin_param_parser(value) for key, value in plugin_config[const.PARAMS].items()}
+        plugin_container = getattr(plugin_module, plugin_name)
+        try:
+            plugin = plugin_container(**plugin_params)
+            plugin_list.append(plugin())
+        except (TypeError, ValueError) as error:
+            log.error("Seems like the slot definitions are missing or incorrect."
+            f" To setup {plugin_name} you need to provide the params via entity definitions in the slots."
+            "If this message is not clear by itself, refer to https://gist.github.com/greed2411/be114ba10e29196a995af8423c98399b for a template." 
+            f"{error}")
+            log.error(traceback.format_exc())
+            log.error(f"{plugin_name} was not added to the list of plugins, your workflow will operate but without {plugin_name}.")
+    return plugin_list
 
 
-def update_entities(workflow: XLMRWorkflow, entities: List[BaseEntity]):
-    intents, collected_entities = workflow.output
-    workflow.output = (intents, collected_entities + entities)
-
-
-duckling_parser = DucklingParser(
-    access=lambda w: (
-        w.input[const.S_CLASSIFICATION_INPUT],
-        w.input[const.S_REFERENCE_TIME],
-        w.input[const.S_LOCALE]
-    ),
-    mutate=update_entities,
-    **config.duckling_params,
-)()
-
-
-def predict_wrapper():
+def predict_wrapper(config_map: Dict[str, Config]):
     """
     Create a closure for the predict function.
 
     Ensures that the workflow is loaded just once without creating global variables for it.
     This can also be made into a class if needed.
     """
-    preprocessors = [
-        merge_asr_output,
-    ]
+    config: Config = list(config_map.values()).pop()
 
-    if config.use_duckling:
-        preprocessors.append(duckling_parser)
-
-    postprocessors = [
-        slot_filler
-        # slot_filler should always be the last plugin.
-        # If you add entities afterwards, they wont fill intent slots.
-    ]
+    preprocessors = parse_plugin_params(config.preprocess)
+    postprocessors = parse_plugin_params(config.postprocess)
 
     workflow = XLMRWorkflow(
         preprocessors=preprocessors,
         postprocessors=postprocessors,
+        config=config
     )
 
     def predict(
@@ -88,7 +69,7 @@ def predict_wrapper():
         """
         utterance = normalize(utterance)
 
-        intent, entities = workflow.run(
+        output = workflow.run(
             {
                 const.S_CLASSIFICATION_INPUT: utterance,
                 const.S_CONTEXT: context,
@@ -98,6 +79,8 @@ def predict_wrapper():
                 const.S_LOCALE: locale
             }
         )
+        intent = output[const.INTENT]
+        entities = output[const.ENTITIES]
         workflow.flush()
 
         intent = intent.json()

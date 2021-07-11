@@ -6,9 +6,10 @@ import json
 import re
 import time
 from pprint import pprint
-from typing import Dict, List, Optional, Tuple
+from typing import List, Optional, Tuple
+from datetime import datetime
 
-from dialogy.preprocess.text.normalize_utterance import normalize
+from dialogy.plugins.preprocess.text.normalize_utterance import normalize
 from prompt_toolkit import PromptSession
 from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
 from prompt_toolkit.history import FileHistory
@@ -16,6 +17,11 @@ from prompt_toolkit.history import FileHistory
 from slu import constants as const
 from slu.src.controller.prediction import predict_wrapper
 from slu.utils.logger import log
+from slu.utils.config import YAMLLocalConfig
+
+
+CLIENT_CONFIGS = YAMLLocalConfig().generate()
+PREDICT_API = predict_wrapper(CLIENT_CONFIGS)
 
 
 def make_alts_from_text(text: str) -> Tuple[List[str], Optional[str]]:
@@ -106,8 +112,7 @@ def repl() -> None:
     separator = "-" * 100
     show_help = True
     log.info("Loading models... this takes around 20s.")
-    predict = predict_wrapper()
-    session = PromptSession(history=FileHistory(".repl_history"))
+    session = PromptSession(history=FileHistory(".repl_history")) # type: ignore
     prompt = session.prompt
     auto_suggest = AutoSuggestFromHistory()
 
@@ -138,11 +143,12 @@ def repl() -> None:
             log.info("context: %s ", context)
 
             start = time.time()
-            response = predict(utterance, context) response = predict(
-                utterances,
+            response = PREDICT_API(
+                utterance,
                 context,
-                reference_time=int(datetime.now().timestamp() * 1000)
+                reference_time=int(datetime.now().timestamp() * 1000),
             )
+
             end = time.time() - start
             log.info("response")
             pprint(response)

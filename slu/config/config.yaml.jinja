@@ -1,6 +1,4 @@
-project_name: slu
-version: 0.0.0
-cores: 8
+model_name: slu
 tasks:
   classification:
     use: true
@@ -27,7 +25,7 @@ tasks:
         save_model_every_epoch: false
         save_steps: -1
         use_early_stopping: true
-      prod:
+      production:
         output_dir: null
         best_model_dir: null
         reprocess_input_data: true
@@ -64,7 +62,7 @@ tasks:
         output_dir: null
         best_model_dir: null
         classification_report: true
-      prod:
+      production:
         output_dir: null
         best_model_dir: null
         output_dir: null
@@ -77,21 +75,35 @@ tasks:
         thread_count: 1
         silent: true
         dynamic_quantize: true
-rules:
-  slots: {}
-languages:
-  en:
-    name: "English"
-    sheet: ""
 preprocess:
+  - plugin: "MergeASROutputPlugin"
+    params:
+      access: ["access", ["input", ["classification_input"]]]
+      mutate: ["mutate", ["input", ["classification_input"]]]
   - plugin: "DucklingPlugin"
     params:
-      [% if use_duckling %]
-      use: true
-      [% elif not use_duckling %]
-      use: false
-      [% endif %]
-      locale: "en-IN"
+      access: ["access", ["input", ["classification_input", "reference_time", "locale"]]]
+      mutate: ["mutate", ["output", ["entities"]]]
+      dimensions: ["people", "time", "date", "duration"]
+      locale: "en_IN"
       timezone: "Asia/Kolkata"
-      dimensions:
-        - "time"
+      datetime_filters: "future"
+      threshold: 0.1
+      url: ["env", ["DUCKLING_URL"], []]
+  - plugin: "ListEntityPlugin"
+    params:
+      access: ["access", ["input", ["ner_input"]]]
+      mutate: ["mutate", ["output", ["entities"]]]
+      style: "regex"
+postprocess:
+  - plugin: "RuleBasedSlotFillerPlugin"
+    params:
+      access: ["access", ["output", ["intent", "entities"]]]
+slots:
+  intent_name:
+    slot_name:
+      - name: "entity_name"
+        params: {}
+        parser: "plugin_name"
+languages:
+  - en

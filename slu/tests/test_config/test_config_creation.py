@@ -39,7 +39,7 @@ def test_update_config_json():
 
     json_config_data_provider = JSONAPIConfigDataProvider(actual_config)
     config = Config(config_data_provider=json_config_data_provider)
-    provider_config = json_config_data_provider.give_config_data()
+    provider_config = json_config_data_provider.set_config()
 
     assert actual_config == provider_config
     assert provider_config == config._config
@@ -77,7 +77,7 @@ def test_api_config_json():
     }
 
     startup_config_data_provider = OnStartupClientConfigDataProvider()
-    assert client_configs == startup_config_data_provider.give_config_data()
+    assert client_configs == startup_config_data_provider.set_config()
 
 
 
