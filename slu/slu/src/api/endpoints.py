@@ -50,8 +50,8 @@ def health_check():
     )
 
 
-@app.route("/predict/<lang>/<client_name>/<model_name>/", methods=["POST"])
-def slu(lang: str, client_name: str, model_name: str):
+@app.route("/predict/<lang>/<model_name>/", methods=["POST"])
+def slu(lang: str, model_name: str):
     """
     Get SLU predictions.
 
