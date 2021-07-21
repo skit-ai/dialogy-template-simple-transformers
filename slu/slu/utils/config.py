@@ -122,20 +122,14 @@ class Config:
             if task == const.CLASSIFICATION:
                 classification_model_dir = self.get_model_dir(const.CLASSIFICAION, const.TRAIN)
 
-                classification_test_model_args = self.get_model_args(const.CLASSIFICATION, const.TEST)
-                classification_prod_model_args = self.get_model_args(const.CLASSIFICATION, const.PROD)
-
-                classification_test_model_args[const.S_OUTPUT_DIR] = classification_model_dir
-                classification_prod_model_args[const.S_BEST_MODEL] = classification_model_dir
+                self.tasks.classification.model_args[const.S_OUTPUT_DIR] = classification_model_dir
+                self.tasks.classification.model_args[const.S_BEST_MODEL] = classification_model_dir
 
             elif task == const.NER:
                 ner_model_dir = self.get_model_dir(const.CLASSIFICAION, const.TRAIN)
-
-                ner_test_model_args = self.get_model_args(const.NER, const.TEST)
-                ner_prod_model_args = self.get_model_args(const.NER, const.PROD)
-
-                ner_test_model_args[const.S_OUTPUT_DIR] = ner_model_dir
-                ner_prod_model_args[const.S_BEST_MODEL] = ner_model_dir
+                
+                self.tasks.ner.model_args[const.S_OUTPUT_DIR] = ner_model_dir
+                self.tasks.ner.model_args[const.S_BEST_MODEL] = ner_model_dir
 
     @task_guard
     def get_dataset(
