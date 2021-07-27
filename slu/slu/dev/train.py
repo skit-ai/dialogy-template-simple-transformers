@@ -60,6 +60,7 @@ def train_intent_classifier(
     )
 
     log.info("Saving artifacts.")
+    config.set_model_dir(const.CLASSIFICATION, const.TRAIN)
     config.save()
     config.remove_checkpoints(const.CLASSIFICATION, const.TRAIN)
 
@@ -77,6 +78,7 @@ def train_ner_model(config: Config, file_format=const.CSV):
     model.train_model(train_df)
 
     log.info("Saving artifacts.")
+    config.set_model_dir(const.NER, const.TRAIN)
     config.save()
     config.remove_checkpoints(const.NER, const.TRAIN)
 

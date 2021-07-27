@@ -11,6 +11,7 @@ from typing import Any, Dict, List, Optional, Union
 import attr
 import requests
 import semver
+import torch
 import yaml
 from requests.adapters import HTTPAdapter
 from simpletransformers.classification import ClassificationModel  # type: ignore
@@ -114,6 +115,28 @@ class Config:
             f" to be a string but {type(model_dir)} was found.")
         return model_dir
 
+
+    def set_model_dir(self, task: str, purpose:str):
+
+        if purpose == const.TRAIN:
+
+            if task == const.CLASSIFICATION:
+                classification_model_dir = self.get_model_dir(const.CLASSIFICATION, const.TRAIN)
+
+                for next_purpose in [const.TEST, const.PRODUCTION.lower()]:
+
+                    self.tasks.classification.model_args[next_purpose][const.S_OUTPUT_DIR] = classification_model_dir
+                    self.tasks.classification.model_args[next_purpose][const.S_BEST_MODEL] = classification_model_dir
+
+            elif task == const.NER:
+                ner_model_dir = self.get_model_dir(const.NER, const.TRAIN)
+
+                for next_purpose in [const.TEST, const.PRODUCTION.lower()]:
+
+                    self.tasks.ner.model_args[next_purpose][const.S_OUTPUT_DIR] = ner_model_dir
+                    self.tasks.ner.model_args[next_purpose][const.S_BEST_MODEL] = ner_model_dir
+
+
     @task_guard
     def get_dataset(
         self, task_name: str, purpose: str, file_format=const.CSV, custom_file=None
@@ -173,7 +196,7 @@ class Config:
 
         model_args = self.get_model_args(const.CLASSIFICATION, purpose)
         kwargs = {
-            "use_cuda": (purpose != const.PRODUCTION.lower()),
+            "use_cuda": ((purpose != const.PRODUCTION.lower()) and (torch.cuda.device_count() > 0)),
             "args": model_args,
         }
 
@@ -206,7 +229,7 @@ class Config:
         model_args = self.get_model_args(const.NER, purpose)
 
         kwargs = {
-            "use_cuda": (purpose != const.PRODUCTION.lower()),
+            "use_cuda": ((purpose != const.PRODUCTION.lower()) and (torch.cuda.device_count() > 0)),
             "args": model_args,
         }
 
