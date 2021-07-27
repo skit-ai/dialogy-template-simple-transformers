@@ -115,6 +115,29 @@ class Config:
             f" to be a string but {type(model_dir)} was found.")
         return model_dir
 
+
+    def set_model_dir(self, task: str, purpose:str):
+
+        if purpose == const.TRAIN:
+
+            if task == const.CLASSIFICATION:
+                classification_model_dir = self.get_model_dir(const.CLASSIFICAION, const.TRAIN)
+
+                classification_test_model_args = self.get_model_args(const.CLASSIFICATION, const.TEST)
+                classification_prod_model_args = self.get_model_args(const.CLASSIFICATION, const.PROD)
+
+                classification_test_model_args[const.S_OUTPUT_DIR] = classification_model_dir
+                classification_prod_model_args[const.S_BEST_MODEL] = classification_model_dir
+
+            elif task == const.NER:
+                ner_model_dir = self.get_model_dir(const.CLASSIFICAION, const.TRAIN)
+
+                ner_test_model_args = self.get_model_args(const.NER, const.TEST)
+                ner_prod_model_args = self.get_model_args(const.NER, const.PROD)
+
+                ner_test_model_args[const.S_OUTPUT_DIR] = ner_model_dir
+                ner_prod_model_args[const.S_BEST_MODEL] = ner_model_dir
+
     @task_guard
     def get_dataset(
         self, task_name: str, purpose: str, file_format=const.CSV, custom_file=None
