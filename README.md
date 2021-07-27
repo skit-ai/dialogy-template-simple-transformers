@@ -48,9 +48,8 @@ The questions here help:
 -   Create a repository and python package with the scaffolding you need.
 
 ### 2. Install Dependencies
-
+Please ensure that you are running the following commands from your project's root directory.
 ```shell
-cd slu
 poetry install
 make lint
 git init
