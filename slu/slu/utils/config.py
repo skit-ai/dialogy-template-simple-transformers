@@ -11,6 +11,7 @@ from typing import Any, Dict, List, Optional, Union
 import attr
 import requests
 import semver
+import torch
 import yaml
 from requests.adapters import HTTPAdapter
 from simpletransformers.classification import ClassificationModel  # type: ignore
