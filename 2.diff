@@ -1,0 +1,488 @@
+diff --git a/slu/config/config.yaml.jinja b/slu/config/config.yaml.jinja
+index ea6aa7f..7a2b407 100644
+--- a/slu/config/config.yaml.jinja
++++ b/slu/config/config.yaml.jinja
+@@ -83,3 +83,8 @@ slots:
+         parser: "plugin_name"
+ languages:
+   - en
++calibration:
++  en:
++    - threshold: 0.9
++    - vectorizer_path: "../../asr-calib/new-intents/axis-dialogy/calibration/vec.pkl"
++    - classifier_path: "../../asr-calib/new-intents/axis-dialogy/calibration/vec-xgb.pkl"
+\ No newline at end of file
+diff --git a/slu/pyproject.toml b/slu/pyproject.toml
+index 6a22f3d..dc360cd 100644
+--- a/slu/pyproject.toml
++++ b/slu/pyproject.toml
+@@ -9,7 +9,7 @@ description = "An SLU core project."
+ authors = ["ltbringer <amresh.venugopal@gmail.com>",]
+ 
+ [tool.poetry.dependencies]
+-python = "^3.8"
++python = "3.8"
+ simpletransformers = "^0.60.6"
+ coloredlogs = "^15.0"
+ PyYAML = "5.4.1"
+@@ -22,7 +22,7 @@ attrs = "^20.3.0"
+ toml = "^0.10.2"
+ semver = "^2.13.0"
+ torch = "^1.8.0"
+-dialogy = "0.7.2"
++dialogy = { git = "https://github.com/ayush-1506/dialogy.git", branch = "calibration_plugin" }
+ pydash = "^4.8.0"
+ uWSGI = "^2.0.19"
+ taskipy = "^1.6.0"
+diff --git a/slu/slu/constants/__init__.py b/slu/slu/constants/__init__.py
+index 4f0c006..7cc31d4 100644
+--- a/slu/slu/constants/__init__.py
++++ b/slu/slu/constants/__init__.py
+@@ -58,6 +58,7 @@ INIT = "init"
+ CLONE = "clone"
+ REPL = "repl"
+ LANGUAGES = "languages"
++LANGUAGE = "language"
+ RELEASE = "release"
+ CSV = "csv"
+ SQLITE = "sqlite"
+diff --git a/slu/slu/dev/cli.py b/slu/slu/dev/cli.py
+index 8288837..efe1264 100644
+--- a/slu/slu/dev/cli.py
++++ b/slu/slu/dev/cli.py
+@@ -67,10 +67,9 @@ from slu.dev.evaluate import test_classifier, test_ner
+ from slu.dev.release import release
+ from slu.dev.repl import repl
+ from slu.dev.train import train_intent_classifier, train_ner_model
+-from slu.utils.config import YAMLLocalConfig, Config
++from slu.utils.config import Config, YAMLLocalConfig
+ from slu.utils.logger import log
+ 
+-
+ CLIENT_CONFIGS = YAMLLocalConfig().generate()
+ 
+ 
+diff --git a/slu/slu/dev/io/mp/__init__.py b/slu/slu/dev/io/mp/__init__.py
+index 8a5b162..aa9ffe2 100644
+--- a/slu/slu/dev/io/mp/__init__.py
++++ b/slu/slu/dev/io/mp/__init__.py
+@@ -6,20 +6,26 @@ import pandas as pd  # type: ignore
+ from slu import constants as const
+ 
+ 
+-def parallel_proc(items, fn, return_df=False, n_cores=const.N_DEFAULT_CORES):
++def parallel_proc(
++    items, fn, calibration_config, return_df=False, n_cores=const.N_DEFAULT_CORES
++):
+     """
+     Perform arbitrary functions of a dataframe.
+ 
+     Using multi-processing on a dataframe to preprocess records.
+     """
++
++    def wrapper(items):
++        return fn(items, calibration_config=calibration_config)
++
+     if n_cores == const.N_MIN_CORES:
+-        processed_items = fn(items)
++        processed_items = fn(items, calibration_config)
+     else:
+         chunks = np.array_split(items, n_cores)
+         pool = Pool(n_cores)
+         if return_df:
+-            processed_items = pd.concat(pool.map(fn, chunks))
++            processed_items = pd.concat(pool.map(wrapper, chunks))
+         else:
+-            processed_items = pool.map(fn, chunks)
++            processed_items = pool.map(wrapper, chunks)
+         pool.close()
+     return processed_items
+diff --git a/slu/slu/dev/plugin_parse/plugin_functional_arguments.py b/slu/slu/dev/plugin_parse/plugin_functional_arguments.py
+index abc9932..decb25d 100644
+--- a/slu/slu/dev/plugin_parse/plugin_functional_arguments.py
++++ b/slu/slu/dev/plugin_parse/plugin_functional_arguments.py
+@@ -1,7 +1,6 @@
+ import importlib
+ from typing import Any, List, Tuple, Union
+ 
+-
+ fn_module = importlib.import_module("slu.dev.plugin_parse.plugin_functions")
+ 
+ 
+diff --git a/slu/slu/dev/plugin_parse/plugin_functions.py b/slu/slu/dev/plugin_parse/plugin_functions.py
+index d824e3f..89061bd 100644
+--- a/slu/slu/dev/plugin_parse/plugin_functions.py
++++ b/slu/slu/dev/plugin_parse/plugin_functions.py
+@@ -1,5 +1,6 @@
+ import os
+ from typing import Any
++
+ from dialogy.workflow import Workflow
+ 
+ 
+diff --git a/slu/slu/dev/prepare.py b/slu/slu/dev/prepare.py
+index 507cd00..4dc2ef5 100644
+--- a/slu/slu/dev/prepare.py
++++ b/slu/slu/dev/prepare.py
+@@ -1,17 +1,24 @@
+ import json
+ 
+ import pandas as pd
++from dialogy.plugins.preprocess.text.calibration import (
++    filter_asr_output,
++)  # type: ignore
++from dialogy.plugins.preprocess.text.normalize_utterance import (
++    normalize,
++)  # type: ignore
+ from tqdm import tqdm
+ 
+-from dialogy.plugins.preprocess.text.normalize_utterance import normalize  # type: ignore
+-
+ from slu import constants as const  # type: ignore
+-from slu.dev.io.reader.csv import read_multiclass_dataset_csv, map_labels_in_df, get_unique_labels  # type: ignore
+-from slu.dev.io.reader.sqlite import read_multiclass_dataset_sqlite  # type: ignore
+ from slu.dev.io.mp import parallel_proc  # type: ignore
++from slu.dev.io.reader.csv import get_unique_labels  # type: ignore
++from slu.dev.io.reader.csv import map_labels_in_df, read_multiclass_dataset_csv
++from slu.dev.io.reader.sqlite import read_multiclass_dataset_sqlite  # type: ignore
++from slu.utils.merge_configs import merge_calibration_config
+ 
+ 
+-def preprocess(df):
++def preprocess(df, calibration_config):
++    calibration = merge_calibration_config(calibration_config)
+     texts = []
+     labels = []
+     data_id = []
+@@ -19,7 +26,13 @@ def preprocess(df):
+         label = row[const.LABELS]
+         data = json.loads(row[const.DATA])
+         try:
+-            alternatives = data[const.ALTERNATIVES]
++            if data[const.LANGUAGE] in calibration:
++                alternatives = filter_asr_output(
++                    data[const.ALTERNATIVES], **calibration[data[const.LANGUAGE]]
++                )
++            else:
++                alternatives = data[const.ALTERNATIVES]
++
+             data = normalize(alternatives)
+             texts.append(data)
+             labels.append(label)
+@@ -50,13 +63,25 @@ def read_multiclass_dataset(full_path, alias=None, file_format=const.CSV, **kwar
+         )
+ 
+ 
+-def prepare(data_file, alias, file_format=const.CSV, n_cores=const.N_DEFAULT_CORES):
++def prepare(
++    data_file,
++    alias,
++    file_format=const.CSV,
++    n_cores=const.N_DEFAULT_CORES,
++    calibration_config=[],
++):
+     dataset = read_multiclass_dataset(
+         data_file,
+         alias,
+         file_format=file_format,
+         usecols=[const.DATA_ID, const.DATA, const.LABELS],
+     )
+-    data_frame = parallel_proc(dataset, preprocess, return_df=True, n_cores=n_cores)
++    data_frame = parallel_proc(
++        dataset,
++        preprocess,
++        calibration_config=calibration_config,
++        return_df=True,
++        n_cores=n_cores,
++    )
+     labels = get_unique_labels(data_frame, const.LABELS)
+     return data_frame, labels
+diff --git a/slu/slu/dev/repl.py b/slu/slu/dev/repl.py
+index 18bd115..64a41d4 100644
+--- a/slu/slu/dev/repl.py
++++ b/slu/slu/dev/repl.py
+@@ -5,9 +5,9 @@ import ast
+ import json
+ import re
+ import time
++from datetime import datetime
+ from pprint import pprint
+ from typing import List, Optional, Tuple
+-from datetime import datetime
+ 
+ from dialogy.plugins.preprocess.text.normalize_utterance import normalize
+ from prompt_toolkit import PromptSession
+@@ -16,9 +16,8 @@ from prompt_toolkit.history import FileHistory
+ 
+ from slu import constants as const
+ from slu.src.controller.prediction import predict_wrapper
+-from slu.utils.logger import log
+ from slu.utils.config import YAMLLocalConfig
+-
++from slu.utils.logger import log
+ 
+ CLIENT_CONFIGS = YAMLLocalConfig().generate()
+ PREDICT_API = predict_wrapper(CLIENT_CONFIGS)
+diff --git a/slu/slu/src/api/__init__.py b/slu/slu/src/api/__init__.py
+index 6bb429c..d7562aa 100644
+--- a/slu/slu/src/api/__init__.py
++++ b/slu/slu/src/api/__init__.py
+@@ -1,4 +1,3 @@
+ from flask import Flask
+ 
+-
+ app = Flask(__name__)
+diff --git a/slu/slu/src/api/endpoints.py b/slu/slu/src/api/endpoints.py
+index 82ce1ca..186ebdb 100644
+--- a/slu/slu/src/api/endpoints.py
++++ b/slu/slu/src/api/endpoints.py
+@@ -11,10 +11,9 @@ from sentry_sdk.integrations.flask import FlaskIntegration
+ from slu import constants as const
+ from slu.src.api import app
+ from slu.src.controller.prediction import predict_wrapper
++from slu.utils import error_response
+ from slu.utils.config import YAMLLocalConfig
+ from slu.utils.sentry import capture_exception
+-from slu.utils import error_response
+-
+ 
+ CLIENT_CONFIGS = YAMLLocalConfig().generate()
+ PREDICT_API = predict_wrapper(CLIENT_CONFIGS)
+@@ -69,35 +68,31 @@ def slu(lang: str, model_name: str):
+     if not (const.ALTERNATIVES in request.json or const.TEXT in request.json):
+         return error_response.invalid_input(request.json)
+ 
+-    try:
+-        maybe_utterance: Any = request.json.get(const.ALTERNATIVES) or request.json.get(
+-            const.TEXT
+-        )
+-
+-        sentences: List[str] = normalize(maybe_utterance)
+-        context: str = request.json.get(const.CONTEXT) or {}  # type: ignore
+-        intents_info: List[Dict[str, Any]] = (
+-            request.json.get(const.S_INTENTS_INFO) or []
+-        )
+-
+-        try:
+-            response = PREDICT_API(
+-                sentences,
+-                context,
+-                intents_info=intents_info,
+-                reference_time=int(datetime.now().timestamp() * 1000),
+-                locale=const.LANG_TO_LOCALES[lang],
+-            )
+-            return jsonify(status="ok", response=response), 200
+-        except OSError as os_error:
+-            return error_response.missing_models(os_error)
+-
+-    except Exception as exc:
+-        # Update this section to:
+-        # 1. Handle specific errors
+-        # 2. provide user-friendly messages. The current is developer friendly.
+-        capture_exception(exc, ctx="api", message=request.json)
+-        return jsonify({"message": str(exc), "cause": traceback.format_exc()}), 200
++    maybe_utterance: Any = request.json.get(const.ALTERNATIVES) or request.json.get(
++        const.TEXT
++    )
++
++    context: str = request.json.get(const.CONTEXT) or {}  # type: ignore
++    intents_info: List[Dict[str, Any]] = request.json.get(const.S_INTENTS_INFO) or []
++
++    response = PREDICT_API(
++        maybe_utterance,
++        context,
++        intents_info=intents_info,
++        reference_time=int(datetime.now().timestamp() * 1000),
++        locale=const.LANG_TO_LOCALES[lang],
++        lang=lang,
++    )
++    return jsonify(status="ok", response=response), 200
++    # except OSError as os_error:
++    #    return error_response.missing_models(os_error)
++
++    # except Exception as exc:
++    # Update this section to:
++    # 1. Handle specific errors
++    # 2. provide user-friendly messages. The current is developer friendly.
++    #    capture_exception(exc, ctx="api", message=request.json)
++    #    return jsonify({"message": str(exc), "cause": traceback.format_exc()}), 200
+ 
+ 
+ if __name__ == "__main__":
+diff --git a/slu/slu/src/controller/prediction.py b/slu/slu/src/controller/prediction.py
+index d101167..b19d929 100644
+--- a/slu/slu/src/controller/prediction.py
++++ b/slu/slu/src/controller/prediction.py
+@@ -3,16 +3,21 @@ This module provides a simple interface to provide text features
+ and receive Intent and Entities.
+ """
+ import os
++import pickle
++from functools import reduce
++from operator import add
+ from typing import Any, Dict, List, Optional
+-from dialogy.plugins.preprocess.text.normalize_utterance import normalize
++
+ from dialogy import plugins
++from dialogy.plugins.preprocess.text.calibration import filter_asr_output
++from dialogy.plugins.preprocess.text.normalize_utterance import normalize
+ 
+ from slu import constants as const
++from slu.dev.plugin_parse import plugin_functions
+ from slu.src.workflow import XLMRWorkflow
+ from slu.utils.config import Config
+-from slu.dev.plugin_parse import plugin_functions
+ from slu.utils.logger import log
+-
++from slu.utils.merge_configs import merge_calibration_config
+ 
+ merge_asr_output = plugins.MergeASROutputPlugin(
+     access=plugin_functions.access(const.INPUT, const.S_CLASSIFICATION_INPUT),
+@@ -55,6 +60,7 @@ def predict_wrapper(config_map: Dict[str, Config]):
+         fallback_intent="_oos_",
+         config=config,
+     )
++    calibration = merge_calibration_config(config.calibration)
+ 
+     def predict(
+         utterance: List[str],
+@@ -62,6 +68,7 @@ def predict_wrapper(config_map: Dict[str, Config]):
+         intents_info: Optional[List[Dict[str, Any]]] = None,
+         reference_time: Optional[int] = None,
+         locale: Optional[str] = None,
++        lang="en",
+     ):
+         """
+         Produce intent and entities for a given utterance.
+@@ -69,11 +76,42 @@ def predict_wrapper(config_map: Dict[str, Config]):
+         The second argument is context. Use it when available, it is
+         a good practice to use it for modeling.
+         """
++        use_calibration = lang in calibration
++        if use_calibration:
++            filtered_utterance, predicted_wers = filter_asr_output(
++                utterance, **calibration["lang"]
++            )
++            if len(predicted_wers) == 0:
++                return {
++                    const.VERSION: config.VERSION,
++                    const.INTENTS: [{"name": "_oos_"}],
++                    const.ENTITIES: [],
++                }
++            filtered_utterance = normalize(filtered_utterance)
++            filtered_utterance_lengths = [
++                len(uttr.split()) for uttr in filtered_utterance
++            ]
++
++            output_calibration = workflow.run(
++                {
++                    const.S_CLASSIFICATION_INPUT: filtered_utterance,
++                    const.S_CONTEXT: context,
++                    const.S_INTENTS_INFO: intents_info,
++                    const.S_NER_INPUT: [],
++                    const.S_REFERENCE_TIME: reference_time,
++                    const.S_LOCALE: locale,
++                }
++            )
++            intent_calibration = output_calibration[const.INTENT]
++            if sum(filtered_utterance_lengths) / len(filtered_utterance_lengths) > 2:
++                if sum(predicted_wers) / len(prediced_wers) > 0.9:
++                    intent_calibration = [{"name": "_oos_"}]
++
+         utterance = normalize(utterance)
+ 
+         output = workflow.run(
+             {
+-                const.S_CLASSIFICATION_INPUT: utterance,
++                const.S_CLASSIFICATION_INPUT: [],
+                 const.S_CONTEXT: context,
+                 const.S_INTENTS_INFO: intents_info,
+                 const.S_NER_INPUT: utterance,
+@@ -81,7 +119,7 @@ def predict_wrapper(config_map: Dict[str, Config]):
+                 const.S_LOCALE: locale,
+             }
+         )
+-        intent = output[const.INTENT]
++        intent = output[const.INTENT] if not use_calibration else intent_calibration
+         entities = output[const.ENTITIES]
+         workflow.flush()
+ 
+diff --git a/slu/slu/src/workflow/__init__.py b/slu/slu/src/workflow/__init__.py
+index e9e7084..7cd6efb 100644
+--- a/slu/slu/src/workflow/__init__.py
++++ b/slu/slu/src/workflow/__init__.py
+@@ -14,9 +14,9 @@ from dialogy.workflow import Workflow  # type: ignore
+ 
+ from slu import constants as const
+ from slu.utils.config import Config
++from slu.utils.error import MissingArtifact
+ from slu.utils.logger import log
+ from slu.utils.sentry import capture_exception
+-from slu.utils.error import MissingArtifact
+ 
+ 
+ class XLMRWorkflow(Workflow):
+diff --git a/slu/slu/utils/config.py b/slu/slu/utils/config.py
+index b9b69cf..65d6213 100644
+--- a/slu/slu/utils/config.py
++++ b/slu/slu/utils/config.py
+@@ -3,8 +3,8 @@
+ """
+ import abc
+ import os
+-import re
+ import pickle
++import re
+ import shutil
+ from typing import Any, Dict, List, Optional, Union
+ 
+@@ -25,9 +25,9 @@ from slu.dev.io.reader.csv import (
+     save_ner_report,
+ )
+ from slu.dev.prepare import prepare
+-from slu.utils.logger import log
+ from slu.utils.decorators import task_guard
+ from slu.utils.error import MissingArtifact
++from slu.utils.logger import log
+ from slu.utils.s3 import get_csvs
+ 
+ 
+@@ -102,6 +102,7 @@ class Config:
+     tasks = attr.ib(type=Tasks, kw_only=True)
+     languages = attr.ib(type=List[str], kw_only=True)
+     slots: Dict[str, Dict[str, Any]] = attr.ib(factory=dict, kw_only=True)
++    calibration = attr.ib(type=Dict[str, Any], kw_only=True)
+ 
+     def __attrs_post_init__(self) -> None:
+         """
+@@ -178,7 +179,12 @@ class Config:
+         alias = self.task_by_name(task_name).alias
+         try:
+             if task_name == const.CLASSIFICATION:
+-                data, _ = prepare(dataset_file, alias, file_format=file_format)
++                data, _ = prepare(
++                    dataset_file,
++                    alias,
++                    file_format=file_format,
++                    calibration_config=self.calibration,
++                )
+             elif task_name == const.NER:
+                 data, _ = read_ner_dataset_csv(dataset_file)
+         except FileNotFoundError as file_missing_error:
+diff --git a/slu/slu/utils/s3.py b/slu/slu/utils/s3.py
+index 745a44c..50ffd94 100644
+--- a/slu/slu/utils/s3.py
++++ b/slu/slu/utils/s3.py
+@@ -1,10 +1,10 @@
+ import io
+ from typing import Set, Union
+ 
+-import pandas as pd
+ import boto3
+-from pandas.core.algorithms import isin
++import pandas as pd
+ import requests
++from pandas.core.algorithms import isin
+ 
+ 
+ def get_private_csv_from_s3(file_key: str, bucket: str):

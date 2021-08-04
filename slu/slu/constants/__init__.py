@@ -119,3 +119,5 @@ LANG_TO_LOCALES = {"en": "en_IN", "hi": "hi_IN"}  # This should be set via confi
 
 CLIENTS_CONFIGS_ROUTE = "/clients/configs/"
 REQUEST_MAX_RETRIES = 5
+
+TEXTS_TO_IGNORE = {"<UNK>"}
