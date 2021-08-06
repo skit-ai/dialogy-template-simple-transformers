@@ -26,6 +26,8 @@ INTENT = "intent"
 INTENTS = "intents"
 URL = "url"
 ENTITIES = "entities"
+INPUT = "input"
+OUTPUT = "output"
 TYPE = "type"
 PARSER = "parser"
 SENTENCE_ID = "sentence_id"
@@ -112,10 +114,7 @@ S_REFERENCE_TIME = "reference_time"
 S_LOCALE = "locale"
 
 V_SUPPORTED_DATA_FORMATS = [CSV, SQLITE]
-LANG_TO_LOCALES = {
-    "en": "en_IN", # This should be set via config
-    "hi": "hi_IN"
-}
+LANG_TO_LOCALES = {"en": "en_IN", "hi": "hi_IN"}  # This should be set via config
 
 CLIENTS_CONFIGS_ROUTE = "/clients/configs/"
 REQUEST_MAX_RETRIES = 5
