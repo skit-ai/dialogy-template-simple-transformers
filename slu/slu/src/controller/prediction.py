@@ -6,34 +6,30 @@ import importlib
 import traceback
 from typing import Any, Dict, List, Optional
 from dialogy.plugins.preprocess.text.normalize_utterance import normalize
+from dialogy import plugins
 
 from slu import constants as const
 from slu.src.workflow import XLMRWorkflow
 from slu.utils.config import Config
-from slu.dev.plugin_parse.plugin_functional_arguments import plugin_param_parser
+from slu.dev.plugin_parse import plugin_functions
 from slu.utils.logger import log
 
 
-plugin_module = importlib.import_module("dialogy.plugins")
+merge_asr_output = plugins.MergeASROutputPlugin(
+    access=plugin_functions.access(const.INPUT, const.S_CLASSIFICATION_INPUT),
+    mutate=plugin_functions.mutate(const.INPUT, const.S_CLASSIFICATION_INPUT),
+)()
 
-
-def parse_plugin_params(plugins):
-    plugin_list = []
-    for plugin_config in plugins:
-        plugin_name = plugin_config[const.PLUGIN]
-        plugin_params = {key: plugin_param_parser(value) for key, value in plugin_config[const.PARAMS].items()}
-        plugin_container = getattr(plugin_module, plugin_name)
-        try:
-            plugin = plugin_container(**plugin_params)
-            plugin_list.append(plugin())
-        except (TypeError, ValueError) as error:
-            log.error("Seems like the slot definitions are missing or incorrect."
-            f" To setup {plugin_name} you need to provide the params via entity definitions in the slots."
-            "If this message is not clear by itself, refer to https://gist.github.com/greed2411/be114ba10e29196a995af8423c98399b for a template." 
-            f"{error}")
-            log.error(traceback.format_exc())
-            log.error(f"{plugin_name} was not added to the list of plugins, your workflow will operate but without {plugin_name}.")
-    return plugin_list
+duckling_plugin = plugins.DucklingPlugin(
+    access=plugin_functions.access(const.INPUT, const.S_NER_INPUT, const.S_REFERENCE_TIME, const.S_LOCALE),
+    mutate=plugin_functions.mutate(const.OUTPUT, const.ENTITIES),
+    dimensions=["people", "number", "time", "duration"],
+    locale="en_IN",
+    timezone="Asia/Kolkata",
+    timeout=0.5,
+    # Works only in development mode. You need to set this in k8s configs.
+    url=os.environ.get("DUCKLING_URL", "http://localhost:8000/parse/"),
+)()
 
 
 def predict_wrapper(config_map: Dict[str, Config]):
@@ -44,14 +40,19 @@ def predict_wrapper(config_map: Dict[str, Config]):
     This can also be made into a class if needed.
     """
     config: Config = list(config_map.values()).pop()
+    slot_filler = plugins.RuleBasedSlotFillerPlugin(
+        access=plugin_functions.access(const.OUTPUT, const.INTENT, const.ENTITIES),
+        rules=config.slots,
+    )()
 
-    preprocessors = parse_plugin_params(config.preprocess)
-    postprocessors = parse_plugin_params(config.postprocess)
+    preprocessors = [merge_asr_output, duckling_plugin]
+    postprocessors = [slot_filler]
 
     workflow = XLMRWorkflow(
         preprocessors=preprocessors,
         postprocessors=postprocessors,
-        config=config
+        fallback_intent="_oos_",
+        config=config,
     )
 
     def predict(
