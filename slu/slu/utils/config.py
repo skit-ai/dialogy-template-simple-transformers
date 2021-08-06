@@ -333,60 +333,6 @@ class Config:
     def get_supported_languages(self) -> List[str]:
         return self.languages
 
-    def make_slot_rules(self):
-        slot_rules = {}
-        for intent_name, slot_dict in self.slots.items():
-            slot_rules[intent_name] = {}
-            for slot_name, entities in slot_dict.items():
-                for entity in entities:
-                    if slot_name in slot_rules[intent_name]:
-                        slot_rules[intent_name][slot_name].append(entity[const.NAME])
-                    else:
-                        slot_rules[intent_name][slot_name] = [entity[const.NAME]]
-        return slot_rules
-
-    def make_candidates(self):
-        urls = set()
-        candidates = {}
-        pattern_delim = re.compile(r",\s*")
-
-        for slot_dict in self.slots.values():
-            for entities in slot_dict.values():
-                for entity in entities:
-                    if entity[const.PARSER] in (const.DUCKLING_PLUGIN, const.DUCKLING):
-                        continue
-                    candidates[entity[const.NAME]] = {}
-                    if entity[const.PARSER] == const.LIST_ENTITY_PLUGIN and const.URL in entity[const.PARAMS]:
-                        urls.add(entity[const.PARAMS][const.URL])
-                    else:
-                        for language in self.languages:
-                            pattern_map = entity[const.PARAMS].get(language, {})
-                            if not pattern_map:
-                                log.error(f"entity={entity} doesn't have patterns for language={language}.")
-                            for parse_value, patterns in pattern_map.items():
-                                if isinstance(patterns, str):
-                                    candidates[entity[const.NAME]].update({parse_value: pattern_delim.split(patterns)})
-                                elif isinstance(patterns, list):
-                                    candidates[entity[const.NAME]].update({parse_value: patterns})
-                                else:
-                                    raise TypeError("Patterns are expected to be comma separated strings or list of strings.")
-
-                if urls:
-                    dataframe = get_csvs(urls)
-                    columns = dataframe.columns
-                    reference_column = columns[1] # The entity value corresponding to a set of patterns.
-                    value_column = columns[0] # A set of patterns.
-                    references = dataframe[reference_column].unique()
-                    candidates[entity[const.NAME]] = {reference: dataframe[dataframe[reference_column] == reference][value_column].to_list() 
-                        for reference in references }
-        return candidates
-
-    def plugin_parameterize(self, plugin_name):
-        if plugin_name == const.RULE_BASED_SLOT_FILLER_PLUGIN:
-            return {const.RULES: self.make_slot_rules()}
-        if plugin_name == const.LIST_ENTITY_PLUGIN:
-            return {const.CANDIDATES: self.make_candidates()}
-
     def json(self) -> Dict[str, Any]:
         """
         Represent the class as json
@@ -403,75 +349,6 @@ class ConfigDataProviderInterface(metaclass=abc.ABCMeta):
         ...
 
 
-class HTTPConfig(ConfigDataProviderInterface):
-    def __init__(self) -> None:
-        self.client_configs: Dict[str, Any] = {}
-        self.root_level_keys = [const.MODEL_NAME, const.LANGUAGES, const.SLOTS]
-
-    def _parse_json(self, configs: List[Dict[str, Any]]):
-        # if project_configs_response is of List[Dict]
-        for config_dict in configs:
-            model_name = config_dict.get(const.MODEL_NAME)
-            if model_name:
-                alias = config_dict[const.ALIAS]
-                metadata = config_dict[const.METADATA]
-                root_level_config = {key: value for key, value in config_dict.items() 
-                                        if key in self.root_level_keys}
-                if not metadata:
-                    raise ValueError(f"You need to set metadata for {model_name}.")
-
-                root_level_config.update(metadata)
-                root_level_config[const.TASKS][const.CLASSIFICATION][const.ALIAS] = alias
-                config = Config(**root_level_config)
-                plugins = config.preprocess + config.postprocess
-
-                for plugin_dict in plugins:
-                    plugin_name = plugin_dict[const.PLUGIN]
-                    params = config.plugin_parameterize(plugin_name=plugin_name)
-                    if params:
-                        plugin_dict[const.PARAMS].update(params)
-
-                self.client_configs[model_name] = config
-
-
-    def _get_config(self):
-        BUILDER_BACKEND_URL = os.getenv("BUILDER_BACKEND_URL")
-        if BUILDER_BACKEND_URL is None:
-            raise ValueError(
-                f"missing BUILDER_BACKEND_URL env variable, please set it appropriately."
-            )
-
-        url = BUILDER_BACKEND_URL + const.CLIENTS_CONFIGS_ROUTE
-
-        session = requests.Session()
-
-        retry = Retry(
-            total=const.REQUEST_MAX_RETRIES,
-            connect=const.REQUEST_MAX_RETRIES,
-            read=const.REQUEST_MAX_RETRIES,
-            backoff_factor=0.3,
-            status_forcelist=(500, 502, 504)
-        )
-
-        http_adapter = HTTPAdapter(max_retries=retry)
-        session.mount("http://", http_adapter)
-        session.mount("https://", http_adapter)
-
-        response = session.get(url, timeout=10)
-
-        if response.ok:
-            return response.json()
-
-        raise RuntimeError(f"couldn't establish connection with {url} while trying to collect configs")
-
-    def generate(self) -> Dict[str, Config]:
-        if not self.client_configs:
-            configs_response = self._get_config()
-            self._parse_json(configs_response)
-        
-        return self.client_configs
-
-
 class YAMLLocalConfig(ConfigDataProviderInterface):
     def __init__(self, config_path:Optional[str]=None) -> None:
         self.config_path = config_path if config_path else os.path.join("config", "config.yaml")
@@ -479,14 +356,5 @@ class YAMLLocalConfig(ConfigDataProviderInterface):
     def generate(self) -> Dict[str, Config]:
         with open(self.config_path, "r") as handle:
             config_dict = yaml.safe_load(handle)
-
-        config = Config(**config_dict)
-        plugins = config.preprocess + config.postprocess
-
-        for plugin_dict in plugins:
-            plugin_name = plugin_dict[const.PLUGIN]
-            params = config.plugin_parameterize(plugin_name=plugin_name)
-            if params:
-                plugin_dict[const.PARAMS].update(params)
-
+            config = Config(**config_dict)
         return {config_dict[const.MODEL_NAME]: config}
