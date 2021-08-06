@@ -13,8 +13,9 @@ def task_guard(func):
         use_task = self.task_by_name(task_name).use
 
         if use_task:
-            value = func(self, task_name,*args, **kwargs)
+            value = func(self, task_name, *args, **kwargs)
             return value
         else:
             return None
+
     return wrapper

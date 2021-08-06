@@ -112,7 +112,7 @@ def repl() -> None:
     separator = "-" * 100
     show_help = True
     log.info("Loading models... this takes around 20s.")
-    session = PromptSession(history=FileHistory(".repl_history")) # type: ignore
+    session = PromptSession(history=FileHistory(".repl_history"))  # type: ignore
     prompt = session.prompt
     auto_suggest = AutoSuggestFromHistory()
 

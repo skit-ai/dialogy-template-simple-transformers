@@ -75,7 +75,7 @@ def slu(lang: str, model_name: str):
         )
 
         sentences: List[str] = normalize(maybe_utterance)
-        context: str = request.json.get(const.CONTEXT) or {} # type: ignore
+        context: str = request.json.get(const.CONTEXT) or {}  # type: ignore
         intents_info: List[Dict[str, Any]] = (
             request.json.get(const.S_INTENTS_INFO) or []
         )
@@ -86,7 +86,7 @@ def slu(lang: str, model_name: str):
                 context,
                 intents_info=intents_info,
                 reference_time=int(datetime.now().timestamp() * 1000),
-                locale=const.LANG_TO_LOCALES[lang]
+                locale=const.LANG_TO_LOCALES[lang],
             )
             return jsonify(status="ok", response=response), 200
         except OSError as os_error:

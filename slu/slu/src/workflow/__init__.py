@@ -35,6 +35,7 @@ class XLMRWorkflow(Workflow):
         self,
         preprocessors: Any,
         postprocessors: Any,
+        fallback_intent: str,
         config: Config,
         debug: bool = False,
     ):
@@ -42,6 +43,9 @@ class XLMRWorkflow(Workflow):
         A workflow instance allows inference of an intent and a set of pre-configured entities.
         Slot filling applies as per rules.
         """
+        self.fallback_intent = Intent(name=fallback_intent, score=1.0)
+        self.fallback_intent.add_parser(self.__class__)
+
         super().__init__(
             preprocessors=preprocessors, postprocessors=postprocessors, debug=debug
         )
@@ -54,7 +58,9 @@ class XLMRWorkflow(Workflow):
 
         # XLMR Classifier
         try:
-            self.classifier = self.config.get_model(const.CLASSIFICATION, const.PRODUCTION.lower())
+            self.classifier = self.config.get_model(
+                const.CLASSIFICATION, const.PRODUCTION.lower()
+            )
         except (TypeError, MissingArtifact):
             self.classifier = None
 
@@ -77,14 +83,19 @@ class XLMRWorkflow(Workflow):
         # Processed labels for classification tasks.
         try:
             self.labelencoder = self.config.load_pickle(
-                const.CLASSIFICATION, const.PRODUCTION.lower(), const.S_INTENT_LABEL_ENCODER
+                const.CLASSIFICATION,
+                const.PRODUCTION.lower(),
+                const.S_INTENT_LABEL_ENCODER,
             )
         except (TypeError, MissingArtifact):
             self.labelencoder = None
 
     def set_io(self):
         self.input: Dict[str, Any] = {}
-        self.output: Dict[str, Any] = {const.INTENT: None, const.ENTITIES: []}
+        self.output: Dict[str, Any] = {
+            const.INTENT: self.fallback_intent,
+            const.ENTITIES: [],
+        }
 
     def classify(self, text: str, fallback_intent=const.S_INTENT_ERROR) -> Intent:
         """
@@ -280,7 +291,9 @@ class XLMRWorkflow(Workflow):
 
         return self.combine_entity_groups(entity_groups, index, text)
 
-    def entity_consensus(self, entities_list: List[Any], threshold: int = 1) -> List[Any]:
+    def entity_consensus(
+        self, entities_list: List[Any], threshold: int = 1
+    ) -> List[Any]:
         """
         Resolve output from multiple sources.
 
@@ -354,8 +367,10 @@ class XLMRWorkflow(Workflow):
         classifier_input = self.input[const.S_CLASSIFICATION_INPUT]
         ner_input = self.input[const.S_NER_INPUT]
 
-        intent = self.classify(classifier_input)
-        ner_entities = self.extract(ner_input)
+        # intent = self.classify(classifier_input)
+        # ner_entities = self.extract(ner_input)
+        intent = self.fallback_intent
+        ner_entities = []
 
         pre_filled_entities = self.output[const.ENTITIES]
         entities = pre_filled_entities + ner_entities

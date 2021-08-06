@@ -34,21 +34,32 @@ from slu.utils.s3 import get_csvs
 @attr.s
 class Task:
     use = attr.ib(type=bool, kw_only=True, validator=attr.validators.instance_of(bool))
-    threshold = attr.ib(type=float, kw_only=True, validator=attr.validators.instance_of(float))
-    model_args = attr.ib(type=dict, kw_only=True, validator=attr.validators.instance_of(dict))
-    alias = attr.ib(factory=dict, kw_only=True, validator=attr.validators.instance_of(dict))
-    format = attr.ib(
-        factory=str, kw_only=True, validator=attr.validators.optional(attr.validators.instance_of(str))
+    threshold = attr.ib(
+        type=float, kw_only=True, validator=attr.validators.instance_of(float)
     )
+    model_args = attr.ib(
+        type=dict, kw_only=True, validator=attr.validators.instance_of(dict)
+    )
+    alias = attr.ib(
+        factory=dict, kw_only=True, validator=attr.validators.instance_of(dict)
+    )
+    format = attr.ib(
+        factory=str,
+        kw_only=True,
+        validator=attr.validators.optional(attr.validators.instance_of(str)),
+    )
+
 
 @attr.s
 class Tasks:
-    classification = attr.ib(type=Task, kw_only=True, validator=attr.validators.instance_of(dict))
+    classification = attr.ib(
+        type=Task, kw_only=True, validator=attr.validators.instance_of(dict)
+    )
     ner = attr.ib(type=Task, kw_only=True, validator=attr.validators.instance_of(dict))
 
     def __attrs_post_init__(self) -> None:
-        self.classification = Task(**self.classification) # type: ignore
-        self.ner = Task(**self.ner) # type: ignore
+        self.classification = Task(**self.classification)  # type: ignore
+        self.ner = Task(**self.ner)  # type: ignore
 
 
 @attr.s
@@ -78,19 +89,25 @@ class Config:
     - Load models and their configurations
     - Save pickled objects.
     """
-    model_name = attr.ib(type=str, kw_only=True, validator=attr.validators.instance_of(str))
-    version = attr.ib(type=str, kw_only=True, default="0.0.0", validator=attr.validators.instance_of(str))
+
+    model_name = attr.ib(
+        type=str, kw_only=True, validator=attr.validators.instance_of(str)
+    )
+    version = attr.ib(
+        type=str,
+        kw_only=True,
+        default="0.0.0",
+        validator=attr.validators.instance_of(str),
+    )
     tasks = attr.ib(type=Tasks, kw_only=True)
     languages = attr.ib(type=List[str], kw_only=True)
     slots: Dict[str, Dict[str, Any]] = attr.ib(factory=dict, kw_only=True)
-    preprocess: List[Dict[str, Any]] = attr.ib(factory=list, kw_only=True)
-    postprocess: List[Dict[str, Any]] = attr.ib(factory=list, kw_only=True)
 
     def __attrs_post_init__(self) -> None:
         """
         Update default values of attributes from `conifg.yaml`.
         """
-        self.tasks = Tasks(**self.tasks) # type: ignore
+        self.tasks = Tasks(**self.tasks)  # type: ignore
         semver.VersionInfo.parse(self.version)
 
     def task_by_name(self, task_name: str) -> Task:
@@ -109,33 +126,45 @@ class Config:
         if purpose == const.TRAIN:
             model_dir = os.path.join(self.get_data_dir(task_name), const.MODELS)
         else:
-            model_dir = self.task_by_name(task_name).model_args[purpose][const.S_OUTPUT_DIR]
+            model_dir = self.task_by_name(task_name).model_args[purpose][
+                const.S_OUTPUT_DIR
+            ]
         if not isinstance(model_dir, str):
-            raise TypeError(f"Expected model directory for task={task_name}[{purpose}]"
-            f" to be a string but {type(model_dir)} was found.")
+            raise TypeError(
+                f"Expected model directory for task={task_name}[{purpose}]"
+                f" to be a string but {type(model_dir)} was found."
+            )
         return model_dir
 
-
-    def set_model_dir(self, task: str, purpose:str):
+    def set_model_dir(self, task: str, purpose: str):
 
         if purpose == const.TRAIN:
 
             if task == const.CLASSIFICATION:
-                classification_model_dir = self.get_model_dir(const.CLASSIFICATION, const.TRAIN)
+                classification_model_dir = self.get_model_dir(
+                    const.CLASSIFICATION, const.TRAIN
+                )
 
                 for next_purpose in [const.TEST, const.PRODUCTION.lower()]:
 
-                    self.tasks.classification.model_args[next_purpose][const.S_OUTPUT_DIR] = classification_model_dir
-                    self.tasks.classification.model_args[next_purpose][const.S_BEST_MODEL] = classification_model_dir
+                    self.tasks.classification.model_args[next_purpose][
+                        const.S_OUTPUT_DIR
+                    ] = classification_model_dir
+                    self.tasks.classification.model_args[next_purpose][
+                        const.S_BEST_MODEL
+                    ] = classification_model_dir
 
             elif task == const.NER:
                 ner_model_dir = self.get_model_dir(const.NER, const.TRAIN)
 
                 for next_purpose in [const.TEST, const.PRODUCTION.lower()]:
 
-                    self.tasks.ner.model_args[next_purpose][const.S_OUTPUT_DIR] = ner_model_dir
-                    self.tasks.ner.model_args[next_purpose][const.S_BEST_MODEL] = ner_model_dir
-
+                    self.tasks.ner.model_args[next_purpose][
+                        const.S_OUTPUT_DIR
+                    ] = ner_model_dir
+                    self.tasks.ner.model_args[next_purpose][
+                        const.S_BEST_MODEL
+                    ] = ner_model_dir
 
     @task_guard
     def get_dataset(
@@ -149,9 +178,7 @@ class Config:
         alias = self.task_by_name(task_name).alias
         try:
             if task_name == const.CLASSIFICATION:
-                data, _ = prepare(
-                    dataset_file, alias, file_format=file_format
-                )
+                data, _ = prepare(dataset_file, alias, file_format=file_format)
             elif task_name == const.NER:
                 data, _ = read_ner_dataset_csv(dataset_file)
         except FileNotFoundError as file_missing_error:
@@ -187,7 +214,9 @@ class Config:
 
         return model_args
 
-    def get_classification_model(self, purpose: str, labels: List[str]) -> ClassificationModel:
+    def get_classification_model(
+        self, purpose: str, labels: List[str]
+    ) -> ClassificationModel:
         if not self.tasks.classification.use:
             log.warning(
                 "You have set `classification.use = false` within `config.yaml`. Model will not be loaded."
@@ -196,7 +225,10 @@ class Config:
 
         model_args = self.get_model_args(const.CLASSIFICATION, purpose)
         kwargs = {
-            "use_cuda": ((purpose != const.PRODUCTION.lower()) and (torch.cuda.device_count() > 0)),
+            "use_cuda": (
+                (purpose != const.PRODUCTION.lower())
+                and (torch.cuda.device_count() > 0)
+            ),
             "args": model_args,
         }
 
@@ -229,7 +261,10 @@ class Config:
         model_args = self.get_model_args(const.NER, purpose)
 
         kwargs = {
-            "use_cuda": ((purpose != const.PRODUCTION.lower()) and (torch.cuda.device_count() > 0)),
+            "use_cuda": (
+                (purpose != const.PRODUCTION.lower())
+                and (torch.cuda.device_count() > 0)
+            ),
             "args": model_args,
         }
 
@@ -253,7 +288,9 @@ class Config:
             ) from os_err
 
     @task_guard
-    def get_model(self, task_name: str, purpose: str) -> Union[ClassificationModel, NERModel]:
+    def get_model(
+        self, task_name: str, purpose: str
+    ) -> Union[ClassificationModel, NERModel]:
         labels = self.get_labels(task_name, purpose)
         if task_name == const.NER:
             return self.get_ner_model(purpose, labels)
@@ -265,21 +302,30 @@ class Config:
             return self.load_pickle(const.NER, purpose, const.S_ENTITY_LABELS)
 
         try:
-            encoder = self.load_pickle(const.CLASSIFICATION, purpose, const.S_INTENT_LABEL_ENCODER)
+            encoder = self.load_pickle(
+                const.CLASSIFICATION, purpose, const.S_INTENT_LABEL_ENCODER
+            )
         except TypeError:
             model_dir = self.get_model_dir(task_name, purpose)
-            raise MissingArtifact(const.S_INTENT_LABEL_ENCODER, os.path.join(model_dir, const.S_INTENT_LABEL_ENCODER))
+            raise MissingArtifact(
+                const.S_INTENT_LABEL_ENCODER,
+                os.path.join(model_dir, const.S_INTENT_LABEL_ENCODER),
+            )
         return encoder.classes_
 
     @task_guard
     def set_labels(self, task_name: str, purpose: str, labels: List[str]) -> None:
         namespace = (
-            const.S_ENTITY_LABELS if task_name == const.NER else const.S_INTENT_LABEL_ENCODER
+            const.S_ENTITY_LABELS
+            if task_name == const.NER
+            else const.S_INTENT_LABEL_ENCODER
         )
         self.save_pickle(task_name, purpose, namespace, labels)
 
     @task_guard
-    def save_pickle(self, task_name: str, purpose: str, prop: str, value: Any) -> "Config":
+    def save_pickle(
+        self, task_name: str, purpose: str, prop: str, value: Any
+    ) -> "Config":
         model_dir = self.get_model_dir(task_name, purpose)
         with open(os.path.join(model_dir, prop), "wb") as handle:
             pickle.dump(value, handle)
@@ -350,8 +396,10 @@ class ConfigDataProviderInterface(metaclass=abc.ABCMeta):
 
 
 class YAMLLocalConfig(ConfigDataProviderInterface):
-    def __init__(self, config_path:Optional[str]=None) -> None:
-        self.config_path = config_path if config_path else os.path.join("config", "config.yaml")
+    def __init__(self, config_path: Optional[str] = None) -> None:
+        self.config_path = (
+            config_path if config_path else os.path.join("config", "config.yaml")
+        )
 
     def generate(self) -> Dict[str, Config]:
         with open(self.config_path, "r") as handle:

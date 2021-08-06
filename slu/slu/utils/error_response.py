@@ -5,14 +5,14 @@ from slu import constants as const
 
 def invalid_language(lang):
     return (
-            jsonify(
-                {
-                    "message": "Invalid request.",
-                    "cause": f"Language '{lang}' is not supported.",
-                }
-            ),
-            400,
-        )
+        jsonify(
+            {
+                "message": "Invalid request.",
+                "cause": f"Language '{lang}' is not supported.",
+            }
+        ),
+        400,
+    )
 
 
 def invalid_request(req):
@@ -33,18 +33,19 @@ def invalid_input(req):
             {
                 "message": "Invalid request.",
                 "cause": f"Post body should have either of these keys: {const.TEXT}, {const.ALTERNATIVES}."
-                         f" Instead got\n{req}",
+                f" Instead got\n{req}",
             }
         ),
         400,
     )
+
 
 def missing_project_name(project_name):
     return (
         jsonify(
             {
                 "message": "Project not found.",
-                "cause": f"config for project_name: {project_name} is not present."
+                "cause": f"config for project_name: {project_name} is not present.",
             }
         ),
         404,
@@ -56,9 +57,10 @@ def invalid_initialization(client_name, model_name):
         jsonify(
             {
                 "message": "Missing config.",
-                "cause": f"Server started but config for {client_name} -- {model_name} was not loaded."
+                "cause": f"Server started but config for {client_name} -- {model_name} was not loaded.",
             }
-        ), 500
+        ),
+        500,
     )
 
 
@@ -67,9 +69,10 @@ def config_upload_required(plugin):
         jsonify(
             {
                 "message": "Plugin needs config file.",
-                "cause": f"Plugin {plugin} needs a config file."
+                "cause": f"Plugin {plugin} needs a config file.",
             }
-        ), 400
+        ),
+        400,
     )
 
 
@@ -78,9 +81,10 @@ def unknown_plugin(plugin):
         jsonify(
             {
                 "message": "No schema available for plugin.",
-                "cause": f"Plugin {plugin} does not have a schema parser defined."
+                "cause": f"Plugin {plugin} does not have a schema parser defined.",
             }
-        ), 400
+        ),
+        400,
     )
 
 
@@ -89,7 +93,8 @@ def missing_models(message):
         jsonify(
             {
                 "message": message,
-                "cause": "Possibly missed the training step or it wasn't planned."
+                "cause": "Possibly missed the training step or it wasn't planned.",
             }
-        ), 500
+        ),
+        500,
     )

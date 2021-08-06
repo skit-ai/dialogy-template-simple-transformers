@@ -2,8 +2,7 @@
 This module provides a simple interface to provide text features
 and receive Intent and Entities.
 """
-import importlib
-import traceback
+import os
 from typing import Any, Dict, List, Optional
 from dialogy.plugins.preprocess.text.normalize_utterance import normalize
 from dialogy import plugins
@@ -21,7 +20,9 @@ merge_asr_output = plugins.MergeASROutputPlugin(
 )()
 
 duckling_plugin = plugins.DucklingPlugin(
-    access=plugin_functions.access(const.INPUT, const.S_NER_INPUT, const.S_REFERENCE_TIME, const.S_LOCALE),
+    access=plugin_functions.access(
+        const.INPUT, const.S_NER_INPUT, const.S_REFERENCE_TIME, const.S_LOCALE
+    ),
     mutate=plugin_functions.mutate(const.OUTPUT, const.ENTITIES),
     dimensions=["people", "number", "time", "duration"],
     locale="en_IN",
@@ -60,7 +61,7 @@ def predict_wrapper(config_map: Dict[str, Config]):
         context: Dict[str, Any],
         intents_info: Optional[List[Dict[str, Any]]] = None,
         reference_time: Optional[int] = None,
-        locale: Optional[str] = None
+        locale: Optional[str] = None,
     ):
         """
         Produce intent and entities for a given utterance.
@@ -77,7 +78,7 @@ def predict_wrapper(config_map: Dict[str, Config]):
                 const.S_INTENTS_INFO: intents_info,
                 const.S_NER_INPUT: utterance,
                 const.S_REFERENCE_TIME: reference_time,
-                const.S_LOCALE: locale
+                const.S_LOCALE: locale,
             }
         )
         intent = output[const.INTENT]
