@@ -97,7 +97,7 @@ def slu(lang: str, model_name: str):
         # 1. Handle specific errors
         # 2. provide user-friendly messages. The current is developer friendly.
         capture_exception(exc, ctx="api", message=request.json)
-        return jsonify({"message": str(exc), "cause": traceback.format_exc()}), 500
+        return jsonify({"message": str(exc), "cause": traceback.format_exc()}), 200
 
 
 if __name__ == "__main__":
