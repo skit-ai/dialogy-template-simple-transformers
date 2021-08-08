@@ -152,4 +152,6 @@ wandb/
 
 # configs
 slu/config/*.json
-slu/config/*.yaml
+*.yaml
+*.json
+*.csv
