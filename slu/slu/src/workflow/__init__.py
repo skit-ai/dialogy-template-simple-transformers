@@ -14,9 +14,9 @@ from dialogy.workflow import Workflow  # type: ignore
 
 from slu import constants as const
 from slu.utils.config import Config
+from slu.utils.error import MissingArtifact
 from slu.utils.logger import log
 from slu.utils.sentry import capture_exception
-from slu.utils.error import MissingArtifact
 
 
 class XLMRWorkflow(Workflow):

@@ -1,7 +1,6 @@
 import importlib
 from typing import Any, List, Tuple, Union
 
-
 fn_module = importlib.import_module("slu.dev.plugin_parse.plugin_functions")
 
 

@@ -3,8 +3,8 @@
 """
 import abc
 import os
-import re
 import pickle
+import re
 import shutil
 from typing import Any, Dict, List, Optional, Union
 
@@ -25,9 +25,9 @@ from slu.dev.io.reader.csv import (
     save_ner_report,
 )
 from slu.dev.prepare import prepare
-from slu.utils.logger import log
 from slu.utils.decorators import task_guard
 from slu.utils.error import MissingArtifact
+from slu.utils.logger import log
 from slu.utils.s3 import get_csvs
 
 
@@ -102,6 +102,7 @@ class Config:
     tasks = attr.ib(type=Tasks, kw_only=True)
     languages = attr.ib(type=List[str], kw_only=True)
     slots: Dict[str, Dict[str, Any]] = attr.ib(factory=dict, kw_only=True)
+    calibration = attr.ib(type=Dict[str, Any], kw_only=True)
 
     def __attrs_post_init__(self) -> None:
         """
@@ -178,7 +179,12 @@ class Config:
         alias = self.task_by_name(task_name).alias
         try:
             if task_name == const.CLASSIFICATION:
-                data, _ = prepare(dataset_file, alias, file_format=file_format)
+                data, _ = prepare(
+                    dataset_file,
+                    alias,
+                    file_format=file_format,
+                    calibration_config=self.calibration,
+                )
             elif task_name == const.NER:
                 data, _ = read_ner_dataset_csv(dataset_file)
         except FileNotFoundError as file_missing_error:
