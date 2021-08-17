@@ -15,6 +15,7 @@ from slu.dev.io.reader.csv import get_unique_labels  # type: ignore
 from slu.dev.io.reader.csv import map_labels_in_df, read_multiclass_dataset_csv
 from slu.dev.io.reader.sqlite import read_multiclass_dataset_sqlite  # type: ignore
 from slu.utils.merge_configs import merge_calibration_config
+from slu.utils.ignore import ignore_utterance
 
 
 def preprocess(df, calibration_config):
@@ -35,6 +36,9 @@ def preprocess(df, calibration_config):
                 alternatives = data[const.ALTERNATIVES]
 
             data = normalize(alternatives)
+            # ignore cases of type {"alternatives": [{"transcript": "<UNK>"}]}
+            if ignore_utterance(data):
+                continue
             texts.append(data)
             labels.append(label)
             data_id.append(row[const.DATA_ID])

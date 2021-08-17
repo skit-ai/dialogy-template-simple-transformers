@@ -18,6 +18,7 @@ from slu.src.workflow import XLMRWorkflow
 from slu.utils.config import Config
 from slu.utils.logger import log
 from slu.utils.merge_configs import merge_calibration_config
+from slu.utils.ignore import ignore_utterance
 
 merge_asr_output = plugins.MergeASROutputPlugin(
     access=plugin_functions.access(const.INPUT, const.S_CLASSIFICATION_INPUT),
@@ -76,6 +77,13 @@ def predict_wrapper(config_map: Dict[str, Config]):
         The second argument is context. Use it when available, it is
         a good practice to use it for modeling.
         """
+        if ignore_utterance(normalize(utterance)):
+            return {
+                const.VERSION: config.VERSION,
+                const.INTENTS: [{"name": "_oos_"}],
+                const.ENTITIES: [],
+            }
+
         use_calibration = lang in calibration
         if use_calibration:
             filtered_utterance, predicted_wers = filter_asr_output(
@@ -104,7 +112,7 @@ def predict_wrapper(config_map: Dict[str, Config]):
             )
             intent_calibration = output_calibration[const.INTENT]
             if sum(filtered_utterance_lengths) / len(filtered_utterance_lengths) > 2:
-                if sum(predicted_wers) / len(prediced_wers) > 0.9:
+                if sum(predicted_wers) / len(predicted_wers) > 0.9:
                     intent_calibration = [{"name": "_oos_"}]
 
         utterance = normalize(utterance)
