@@ -74,7 +74,9 @@ def slu(lang: str, model_name: str):
         )
 
         context: str = request.json.get(const.CONTEXT) or {}  # type: ignore
-        intents_info: List[Dict[str, Any]] = request.json.get(const.S_INTENTS_INFO) or []
+        intents_info: List[Dict[str, Any]] = (
+            request.json.get(const.S_INTENTS_INFO) or []
+        )
 
         try:
             response = PREDICT_API(

@@ -17,28 +17,26 @@ from slu.dev.plugin_parse import plugin_functions
 from slu.src.workflow import XLMRWorkflow
 from slu.utils.config import Config
 from slu.utils.logger import log
+from slu.utils.merge_configs import merge_calibration_config
 from slu.utils.ignore import ignore_utterance
 
-plugin_module = importlib.import_module("dialogy.plugins")
+merge_asr_output = plugins.MergeASROutputPlugin(
+    access=plugin_functions.access(const.INPUT, const.S_CLASSIFICATION_INPUT),
+    mutate=plugin_functions.mutate(const.INPUT, const.S_CLASSIFICATION_INPUT),
+)()
 
-
-def parse_plugin_params(plugins):
-    plugin_list = []
-    for plugin_config in plugins:
-        plugin_name = plugin_config[const.PLUGIN]
-        plugin_params = {key: plugin_param_parser(value) for key, value in plugin_config[const.PARAMS].items()}
-        plugin_container = getattr(plugin_module, plugin_name)
-        try:
-            plugin = plugin_container(**plugin_params)
-            plugin_list.append(plugin())
-        except (TypeError, ValueError) as error:
-            log.error("Seems like the slot definitions are missing or incorrect."
-            f" To setup {plugin_name} you need to provide the params via entity definitions in the slots."
-            "If this message is not clear by itself, refer to https://gist.github.com/greed2411/be114ba10e29196a995af8423c98399b for a template." 
-            f"{error}")
-            log.error(traceback.format_exc())
-            log.error(f"{plugin_name} was not added to the list of plugins, your workflow will operate but without {plugin_name}.")
-    return plugin_list
+duckling_plugin = plugins.DucklingPlugin(
+    access=plugin_functions.access(
+        const.INPUT, const.S_NER_INPUT, const.S_REFERENCE_TIME, const.S_LOCALE
+    ),
+    mutate=plugin_functions.mutate(const.OUTPUT, const.ENTITIES),
+    dimensions=["people", "number", "time", "duration"],
+    locale="en_IN",
+    timezone="Asia/Kolkata",
+    timeout=0.5,
+    # Works only in development mode. You need to set this in k8s configs.
+    url=os.environ.get("DUCKLING_URL", "http://localhost:8000/parse/"),
+)()
 
 
 def predict_wrapper(config_map: Dict[str, Config]):
@@ -79,6 +77,13 @@ def predict_wrapper(config_map: Dict[str, Config]):
         The second argument is context. Use it when available, it is
         a good practice to use it for modeling.
         """
+        if ignore_utterance(normalize(utterance)):
+            return {
+                const.VERSION: config.VERSION,
+                const.INTENTS: [{"name": "_oos_"}],
+                const.ENTITIES: [],
+            }
+
         use_calibration = lang in calibration
         if use_calibration:
             filtered_utterance, predicted_wers = filter_asr_output(
@@ -107,17 +112,10 @@ def predict_wrapper(config_map: Dict[str, Config]):
             )
             intent_calibration = output_calibration[const.INTENT]
             if sum(filtered_utterance_lengths) / len(filtered_utterance_lengths) > 2:
-                if sum(predicted_wers) / len(prediced_wers) > 0.9:
+                if sum(predicted_wers) / len(predicted_wers) > 0.9:
                     intent_calibration = [{"name": "_oos_"}]
 
         utterance = normalize(utterance)
-
-        if ignore_utterance(utterance):
-            return {
-                const.VERSION: config.VERSION,
-                const.INTENTS: [{"name": "_oos_"}],
-                const.ENTITIES: [],
-            }
 
         output = workflow.run(
             {
