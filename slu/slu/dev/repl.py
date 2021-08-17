@@ -5,9 +5,9 @@ import ast
 import json
 import re
 import time
+from datetime import datetime
 from pprint import pprint
 from typing import List, Optional, Tuple
-from datetime import datetime
 
 from dialogy.plugins.preprocess.text.normalize_utterance import normalize
 from prompt_toolkit import PromptSession
@@ -16,9 +16,8 @@ from prompt_toolkit.history import FileHistory
 
 from slu import constants as const
 from slu.src.controller.prediction import predict_wrapper
-from slu.utils.logger import log
 from slu.utils.config import YAMLLocalConfig
-
+from slu.utils.logger import log
 
 CLIENT_CONFIGS = YAMLLocalConfig().generate()
 PREDICT_API = predict_wrapper(CLIENT_CONFIGS)

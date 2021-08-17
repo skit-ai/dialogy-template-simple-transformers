@@ -11,10 +11,9 @@ from sentry_sdk.integrations.flask import FlaskIntegration
 from slu import constants as const
 from slu.src.api import app
 from slu.src.controller.prediction import predict_wrapper
+from slu.utils import error_response
 from slu.utils.config import YAMLLocalConfig
 from slu.utils.sentry import capture_exception
-from slu.utils import error_response
-
 
 CLIENT_CONFIGS = YAMLLocalConfig().generate()
 PREDICT_API = predict_wrapper(CLIENT_CONFIGS)
@@ -74,19 +73,17 @@ def slu(lang: str, model_name: str):
             const.TEXT
         )
 
-        sentences: List[str] = normalize(maybe_utterance)
         context: str = request.json.get(const.CONTEXT) or {}  # type: ignore
-        intents_info: List[Dict[str, Any]] = (
-            request.json.get(const.S_INTENTS_INFO) or []
-        )
+        intents_info: List[Dict[str, Any]] = request.json.get(const.S_INTENTS_INFO) or []
 
         try:
             response = PREDICT_API(
-                sentences,
+                maybe_utterance,
                 context,
                 intents_info=intents_info,
                 reference_time=int(datetime.now().timestamp() * 1000),
                 locale=const.LANG_TO_LOCALES[lang],
+                lang=lang,
             )
             return jsonify(status="ok", response=response), 200
         except OSError as os_error:

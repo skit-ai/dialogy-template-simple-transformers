@@ -1,10 +1,10 @@
 import io
 from typing import Set, Union
 
-import pandas as pd
 import boto3
-from pandas.core.algorithms import isin
+import pandas as pd
 import requests
+from pandas.core.algorithms import isin
 
 
 def get_private_csv_from_s3(file_key: str, bucket: str):

@@ -3,16 +3,21 @@ This module provides a simple interface to provide text features
 and receive Intent and Entities.
 """
 import os
+import pickle
+from functools import reduce
+from operator import add
 from typing import Any, Dict, List, Optional
-from dialogy.plugins.preprocess.text.normalize_utterance import normalize
+
 from dialogy import plugins
+from dialogy.plugins.preprocess.text.calibration import filter_asr_output
+from dialogy.plugins.preprocess.text.normalize_utterance import normalize
 
 from slu import constants as const
+from slu.dev.plugin_parse import plugin_functions
 from slu.src.workflow import XLMRWorkflow
 from slu.utils.config import Config
-from slu.dev.plugin_parse import plugin_functions
 from slu.utils.logger import log
-
+from slu.utils.merge_configs import merge_calibration_config
 
 merge_asr_output = plugins.MergeASROutputPlugin(
     access=plugin_functions.access(const.INPUT, const.S_CLASSIFICATION_INPUT),
@@ -55,6 +60,7 @@ def predict_wrapper(config_map: Dict[str, Config]):
         fallback_intent="_oos_",
         config=config,
     )
+    calibration = merge_calibration_config(config.calibration)
 
     def predict(
         utterance: List[str],
@@ -62,6 +68,7 @@ def predict_wrapper(config_map: Dict[str, Config]):
         intents_info: Optional[List[Dict[str, Any]]] = None,
         reference_time: Optional[int] = None,
         locale: Optional[str] = None,
+        lang="en",
     ):
         """
         Produce intent and entities for a given utterance.
@@ -69,11 +76,42 @@ def predict_wrapper(config_map: Dict[str, Config]):
         The second argument is context. Use it when available, it is
         a good practice to use it for modeling.
         """
+        use_calibration = lang in calibration
+        if use_calibration:
+            filtered_utterance, predicted_wers = filter_asr_output(
+                utterance, **calibration["lang"]
+            )
+            if len(predicted_wers) == 0:
+                return {
+                    const.VERSION: config.VERSION,
+                    const.INTENTS: [{"name": "_oos_"}],
+                    const.ENTITIES: [],
+                }
+            filtered_utterance = normalize(filtered_utterance)
+            filtered_utterance_lengths = [
+                len(uttr.split()) for uttr in filtered_utterance
+            ]
+
+            output_calibration = workflow.run(
+                {
+                    const.S_CLASSIFICATION_INPUT: filtered_utterance,
+                    const.S_CONTEXT: context,
+                    const.S_INTENTS_INFO: intents_info,
+                    const.S_NER_INPUT: [],
+                    const.S_REFERENCE_TIME: reference_time,
+                    const.S_LOCALE: locale,
+                }
+            )
+            intent_calibration = output_calibration[const.INTENT]
+            if sum(filtered_utterance_lengths) / len(filtered_utterance_lengths) > 2:
+                if sum(predicted_wers) / len(prediced_wers) > 0.9:
+                    intent_calibration = [{"name": "_oos_"}]
+
         utterance = normalize(utterance)
 
         output = workflow.run(
             {
-                const.S_CLASSIFICATION_INPUT: utterance,
+                const.S_CLASSIFICATION_INPUT: [],
                 const.S_CONTEXT: context,
                 const.S_INTENTS_INFO: intents_info,
                 const.S_NER_INPUT: utterance,
@@ -81,7 +119,7 @@ def predict_wrapper(config_map: Dict[str, Config]):
                 const.S_LOCALE: locale,
             }
         )
-        intent = output[const.INTENT]
+        intent = output[const.INTENT] if not use_calibration else intent_calibration
         entities = output[const.ENTITIES]
         workflow.flush()
 

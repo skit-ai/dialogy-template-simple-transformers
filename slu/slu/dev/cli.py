@@ -67,9 +67,8 @@ from slu.dev.evaluate import test_classifier, test_ner
 from slu.dev.release import release
 from slu.dev.repl import repl
 from slu.dev.train import train_intent_classifier, train_ner_model
-from slu.utils.config import YAMLLocalConfig, Config
+from slu.utils.config import Config, YAMLLocalConfig
 from slu.utils.logger import log
-
 
 CLIENT_CONFIGS = YAMLLocalConfig().generate()
 
