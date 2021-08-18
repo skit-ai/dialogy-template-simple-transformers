@@ -367,8 +367,8 @@ class XLMRWorkflow(Workflow):
         classifier_input = self.input[const.S_CLASSIFICATION_INPUT]
         ner_input = self.input[const.S_NER_INPUT]
 
-        # intent = self.classify(classifier_input)
-        # ner_entities = self.extract(ner_input)
+        intent = self.classify(classifier_input)
+        ner_entities = self.extract(ner_input)
         intent = self.fallback_intent
         ner_entities = []
 
