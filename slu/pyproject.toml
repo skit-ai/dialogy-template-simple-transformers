@@ -9,7 +9,7 @@ description = "An SLU core project."
 authors = ["ltbringer <amresh.venugopal@gmail.com>",]
 
 [tool.poetry.dependencies]
-python = "3.8"
+python = "^3.8"
 simpletransformers = "^0.60.6"
 coloredlogs = "^15.0"
 PyYAML = "5.4.1"
@@ -22,7 +22,7 @@ attrs = "^20.3.0"
 toml = "^0.10.2"
 semver = "^2.13.0"
 torch = "^1.8.0"
-dialogy = "^0.7.3"
+dialogy = "0.7.4"
 pydash = "^4.8.0"
 uWSGI = "^2.0.19"
 taskipy = "^1.6.0"
