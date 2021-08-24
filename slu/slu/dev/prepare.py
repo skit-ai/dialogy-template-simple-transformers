@@ -14,12 +14,11 @@ from slu.dev.io.mp import parallel_proc  # type: ignore
 from slu.dev.io.reader.csv import get_unique_labels  # type: ignore
 from slu.dev.io.reader.csv import map_labels_in_df, read_multiclass_dataset_csv
 from slu.dev.io.reader.sqlite import read_multiclass_dataset_sqlite  # type: ignore
-from slu.utils.merge_configs import merge_calibration_config
 from slu.utils.ignore import ignore_utterance
 
 
 def preprocess(df, calibration_config):
-    calibration = merge_calibration_config(calibration_config)
+    calibration = calibration_config
     texts = []
     labels = []
     data_id = []
