@@ -3,8 +3,7 @@ Imports:
 
 - XLMRWorkflow
 """
-from typing import Any, Dict, List, Type
-from unicodedata import name
+from typing import Any, Dict, List
 
 import numpy as np
 import pydash as py_
