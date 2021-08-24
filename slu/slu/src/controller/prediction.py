@@ -3,40 +3,18 @@ This module provides a simple interface to provide text features
 and receive Intent and Entities.
 """
 import os
-import pickle
-from functools import reduce
-from operator import add
 from typing import Any, Dict, List, Optional
 
 from dialogy import plugins
-from dialogy.plugins.preprocess.text.calibration import filter_asr_output
 from dialogy.plugins.preprocess.text.normalize_utterance import normalize
 
 from slu import constants as const
-from slu.dev.plugin_parse import plugin_functions
 from slu.src.workflow import XLMRWorkflow
+from slu.utils.calibration import prepare_calibration_config
 from slu.utils.config import Config
-from slu.utils.logger import log
-from slu.utils.merge_configs import merge_calibration_config
 from slu.utils.ignore import ignore_utterance
-
-merge_asr_output = plugins.MergeASROutputPlugin(
-    access=plugin_functions.access(const.INPUT, const.S_CLASSIFICATION_INPUT),
-    mutate=plugin_functions.mutate(const.INPUT, const.S_CLASSIFICATION_INPUT),
-)()
-
-duckling_plugin = plugins.DucklingPlugin(
-    access=plugin_functions.access(
-        const.INPUT, const.S_NER_INPUT, const.S_REFERENCE_TIME, const.S_LOCALE
-    ),
-    mutate=plugin_functions.mutate(const.OUTPUT, const.ENTITIES),
-    dimensions=["people", "number", "time", "duration"],
-    locale="en_IN",
-    timezone="Asia/Kolkata",
-    timeout=0.5,
-    # Works only in development mode. You need to set this in k8s configs.
-    url=os.environ.get("DUCKLING_URL", "http://localhost:8000/parse/"),
-)()
+from slu.utils.logger import log
+from slu.src.controller.processors import get_preprocessors, get_postprocessors
 
 
 def predict_wrapper(config_map: Dict[str, Config]):
@@ -46,22 +24,14 @@ def predict_wrapper(config_map: Dict[str, Config]):
     Ensures that the workflow is loaded just once without creating global variables for it.
     This can also be made into a class if needed.
     """
-    config: Config = list(config_map.values()).pop()
-    slot_filler = plugins.RuleBasedSlotFillerPlugin(
-        access=plugin_functions.access(const.OUTPUT, const.INTENT, const.ENTITIES),
-        rules=config.slots,
-    )()
-
-    preprocessors = [merge_asr_output, duckling_plugin]
-    postprocessors = [slot_filler]
+    config = list(config_map.values()).pop()
 
     workflow = XLMRWorkflow(
-        preprocessors=preprocessors,
-        postprocessors=postprocessors,
-        fallback_intent="_oos_",
         config=config,
+        fallback_intent=const.S_INTENT_OOS,
+        preprocessors=get_preprocessors(config),
+        postprocessors=get_postprocessors(config)
     )
-    calibration = merge_calibration_config(config.calibration)
 
     def predict(
         utterance: List[str],
@@ -79,7 +49,7 @@ def predict_wrapper(config_map: Dict[str, Config]):
         """
         if ignore_utterance(normalize(utterance)):
             return {
-                const.VERSION: config.VERSION,
+                const.VERSION: config.version,
                 const.INTENTS: [{"name": "_oos_"}],
                 const.ENTITIES: [],
             }
@@ -87,11 +57,11 @@ def predict_wrapper(config_map: Dict[str, Config]):
         use_calibration = lang in calibration
         if use_calibration:
             filtered_utterance, predicted_wers = filter_asr_output(
-                utterance, **calibration["lang"]
+                utterance, **calibration[lang]
             )
             if len(predicted_wers) == 0:
                 return {
-                    const.VERSION: config.VERSION,
+                    const.VERSION: config.version,
                     const.INTENTS: [{"name": "_oos_"}],
                     const.ENTITIES: [],
                 }
