@@ -21,7 +21,7 @@ RUN poetry install --no-dev && \
 
 COPY ./slu ./slu
 COPY ./data/${VERSION}/models ./data/${VERSION}/models
-COPY ./uwsgi ./uwsgi
+COPY ./uwsgi.ini ./uwsgi.ini
 COPY ./config ./config
 
 ENV GOOGLE_API_KEY="" \
