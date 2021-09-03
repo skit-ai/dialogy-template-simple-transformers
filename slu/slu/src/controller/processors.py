@@ -9,8 +9,9 @@ from slu.dev.plugin_parse import plugin_functions
 from slu.utils.config import Config
 
 
-def get_plugins(purpose, config: Config) -> List[Plugin]:
-    debug = os.environ.get("ENVIRONMENT") != const.PRODUCTION
+def get_plugins(purpose, config: Config, debug=False) -> List[Plugin]:
+    if os.environ.get("ENVIRONMENT") != const.PRODUCTION:
+        debug = False
 
     merge_asr_output = plugins.MergeASROutputPlugin(
         access=plugin_functions.access(const.INPUT, const.S_CLASSIFICATION_INPUT),
@@ -44,6 +45,8 @@ def get_plugins(purpose, config: Config) -> List[Plugin]:
         threshold=config.get_model_confidence_threshold(const.CLASSIFICATION),
         score_round_off=5,
         purpose=purpose,
+        data_column=const.ALTERNATIVES,
+        label_column=const.INTENT,
         args_map=config.get_model_args(const.CLASSIFICATION),
         debug=debug,
     )

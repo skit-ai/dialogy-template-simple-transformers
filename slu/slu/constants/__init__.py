@@ -66,7 +66,7 @@ USE = "use"
 FORMAT = "format"
 METADATA = "metadata"
 ENVIRONMENT = "ENVIRONMENT"
-PRODUCTION = "PRODUCTION"
+PRODUCTION = "production"
 TRUE_LABEL = "true_label"
 PRED_LABEL = "pred_label"
 VALUE = "value"
@@ -125,5 +125,6 @@ LANG_TO_LOCALES = {"en": "en_IN", "hi": "hi_IN"}  # This should be set via confi
 
 CLIENTS_CONFIGS_ROUTE = "/clients/configs/"
 REQUEST_MAX_RETRIES = 5
-
+LANG = "lang"
 TEXTS_TO_IGNORE = {"<UNK>"}
+SCORE = "score"

@@ -16,7 +16,7 @@ RUN poetry config virtualenvs.create false
 
 COPY pyproject.toml poetry.lock /home/slu/
 
-RUN poetry install --no-dev && \ 
+RUN poetry install --no-dev && \
     rm -rf /root/.cache && pip3 uninstall --yes poetry
 
 COPY ./slu ./slu
@@ -26,7 +26,7 @@ COPY ./config ./config
 
 ENV GOOGLE_API_KEY="" \
     DUCKLING_URL="" \
-    ENVIRONMENT="PRODUCTION" \
+    ENVIRONMENT="production" \
     GOOGLE_API_KEY="" \
     SENTRY_DSN=""
 

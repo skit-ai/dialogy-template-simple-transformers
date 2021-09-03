@@ -20,23 +20,24 @@ To ensure this works correctly, we need to check:
 3. dvc remote is configured.
 4. A tag with the same version doesn't already exist.
 """
+import argparse
 import os
 import shutil
-import argparse
-import subprocess
-from configparser import ConfigParser
+
 from datetime import datetime
 from glob import glob
 
 import semver
 import toml
-from git import Repo
+from dvc.repo import Repo as DVCRepo
+from git import Repo, Actor
 from git.refs.tag import TagReference
 from prompt_toolkit import HTML, print_formatted_text, prompt
 
 from slu import constants as const
-from slu.utils.config import Config
 from slu.utils import logger
+from slu.utils.config import Config, YAMLLocalConfig
+from slu.dev.version import check_version_save_config
 
 
 def update_project_version_toml(version: str) -> None:
@@ -58,18 +59,6 @@ def update_project_version_toml(version: str) -> None:
         toml.dump(toml_content, toml_handle)
 
 
-def update_config(version: str) -> None:
-    """
-    Update config.yaml with the latest version.
-
-    Args:
-        version (str): Current semver.
-    """
-    config = Config()
-    config.set_version(version)
-    config.save()
-
-
 def remove_older_data_versions(current_version: str) -> None:
     """
     Remove versions that are older than current release.
@@ -87,58 +76,30 @@ def remove_older_data_versions(current_version: str) -> None:
             shutil.rmtree(version_module)
 
 
-def vcs_add() -> None:
+def vcs(repo: Repo, version: str, changelog_body: str, active_branch: str) -> None:
     """
-    Run dvc/git commands in a dirty way.
+    Run dvc/git commands.
     """
-    subprocess.call(["dvc", "add", "data"], shell=False)
-    subprocess.call(["git", "add", "data.dvc"], shell=False)
-    subprocess.call(["git", "add", "CHANGELOG.md"], shell=False)
-    subprocess.call(["git", "add", "pyproject.toml"], shell=False)
-    subprocess.call(["git", "add", os.path.join("config", "config.yaml")], shell=False)
+    dvc_repo = DVCRepo()
+    dvc_repo.add("data")
 
+    # Stage
+    index = repo.index
+    index.add(["data.dvc", "pyproject.toml", "CHANGELOG.md", os.path.join("config", "config.yaml")])
+    last_commit_author: Actor = repo.head.commit.author
+    logger.info(f"Using {last_commit_author} for creating commits.")
 
-def vcs_tag_and_commit_state(version, changelog_body) -> None:
-    """
-    Update repository state with tag=version.
-    """
-    message = f"update: {changelog_body}"
-    subprocess.call(["git", "commit", "-m", message], shell=False)
-    subprocess.call(["git", "tag", "-a", version, "-m", message], shell=False)
+    # Commit
+    index.commit(f"update: {changelog_body}", last_commit_author, last_commit_author)
 
+    # Tag version
+    tag = repo.create_tag(version, message=f"{changelog_body}")
 
-def vcs_push_remote(version: str, branch: str) -> None:
-    """
-    Updte repository remote with local branch updates.
-
-    Args:
-        version (str): current semver.
-        branch (str): current active branch.
-    """
-    subprocess.call(["git", "push", "origin", version], shell=False)
-    subprocess.call(["git", "push", "origin", branch], shell=False)
-    subprocess.call(["dvc", "push"], shell=False)
-
-
-def is_dvc_remote_set() -> bool:
-    """
-    Check if dvc config exists and s3 remote is set.
-
-    Returns:
-        bool: True if .dvc/config has s3remote configured.
-    """
-    dvc_config_path = os.path.join(".dvc", "config")
-    if not os.path.exists(dvc_config_path):
-        return False
-
-    config = ConfigParser()
-    _ = config.read(dvc_config_path)
-    sections = config.sections()
-
-    if "'remote \"s3remote\"'" not in sections:
-        return False
-
-    return True
+    # Push changes and tag
+    dvc_repo.push()
+    remote = repo.remote(name=active_branch)
+    remote.push()
+    remote.push(tag)
 
 
 def update_changelog(version: str) -> str:
@@ -188,6 +149,9 @@ def release(args: argparse.Namespace) -> None:
     version = args.version
     # Ensure `version` is a valid semver.
     semver.VersionInfo.parse(version)
+    project_config_map = YAMLLocalConfig().generate()
+    config: Config = list(project_config_map.values()).pop()
+    check_version_save_config(config, version)
 
     # Interact with the git repo, assumes the script root contains the repo.
     repo = Repo(".")
@@ -212,21 +176,11 @@ def release(args: argparse.Namespace) -> None:
         )
         return None
 
-    if not is_dvc_remote_set():
-        logger.error(
-            "Looks like dvc remote is not set. We won't be able to push code."
-            "\nRun:\n\ndvc remote add -d s3remote s3://bucket_name/path/to/dir\n\n... to use this command."
-        )
-        return None
-
     # Remove everything except the current version, meant for release.
     remove_older_data_versions(version)
 
     # Update pyproject.toml to contain the release version.
     update_project_version_toml(version)
-
-    # Update config/config.yaml to contain the release version.
-    update_config(version)
 
     # Maintain changelog.
     changelog_body = update_changelog(version)
@@ -234,7 +188,5 @@ def release(args: argparse.Namespace) -> None:
     # version control commands
     # git and dvc add, commit, push combo.
     # -----------------------------------------------------
-    vcs_add()
-    vcs_tag_and_commit_state(version, changelog_body)
-    vcs_push_remote(version, active_branch)
+    vcs(repo, version, changelog_body, active_branch)
     # -----------------------------------------------------

@@ -13,7 +13,6 @@ from slu.utils import error_response
 from slu.utils.config import Config, YAMLLocalConfig
 from slu.utils.sentry import capture_exception
 
-
 CONFIG_MAP = YAMLLocalConfig().generate()
 CONFIG: Config = list(CONFIG_MAP.values()).pop()
 PREDICT_API = get_predictions(const.PRODUCTION, config=CONFIG)
