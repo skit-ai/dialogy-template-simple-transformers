@@ -3,11 +3,12 @@
 """
 import abc
 import os
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Set
 
 import attr
 import semver
 import yaml
+
 from slu import constants as const
 
 
@@ -22,6 +23,9 @@ class Task:
     )
     alias = attr.ib(
         factory=dict, kw_only=True, validator=attr.validators.instance_of(dict)
+    )
+    skip = attr.ib(
+        factory=list, kw_only=True, validator=attr.validators.instance_of(list)
     )
     format = attr.ib(
         factory=str,
@@ -96,7 +100,7 @@ class Config:
             purpose_args[const.OUTPUT_DIR] = self.get_model_dir(const.CLASSIFICATION)
 
     def _get_data_dir(self, task_name: str, version=None) -> str:
-        return os.path.join(const.DATA, self.version, task_name)
+        return os.path.join(const.DATA, version or self.version, task_name)
 
     def get_metrics_dir(self, task_name: str, version=None) -> str:
         return os.path.join(
@@ -107,6 +111,16 @@ class Config:
         return os.path.join(
             self._get_data_dir(task_name, version=version), const.MODELS
         )
+
+    def get_dataset_dir(self, task_name: str, version=None) -> str:
+        return os.path.join(
+            self._get_data_dir(task_name, version=version), const.DATASETS
+        )
+
+    def get_skip_list(self, task_name: str) -> Set[str]:
+        if task_name == const.CLASSIFICATION:
+            return set(self.tasks.classification.skip)
+        raise NotImplementedError(f"Model for {task_name} is not defined!")
 
     def get_dataset(self, task_name: str, file_name: str, version=None) -> Any:
         return os.path.join(
