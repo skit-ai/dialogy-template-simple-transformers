@@ -9,8 +9,9 @@ from slu.dev.plugin_parse import plugin_functions
 from slu.utils.config import Config
 
 
-def get_plugins(purpose, config: Config) -> List[Plugin]:
-    debug = os.environ.get("ENVIRONMENT") != const.PRODUCTION
+def get_plugins(purpose, config: Config, debug=False) -> List[Plugin]:
+    if os.environ.get("ENVIRONMENT") != const.PRODUCTION:
+        debug = False
 
     merge_asr_output = plugins.MergeASROutputPlugin(
         access=plugin_functions.access(const.INPUT, const.S_CLASSIFICATION_INPUT),
