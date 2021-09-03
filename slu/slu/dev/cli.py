@@ -17,21 +17,14 @@ Options:
     --force                     Pass this flag to overwrite existing directories.
     -h --help                   Show this screen.
 """
-import semver
 import argparse
 from typing import Optional
 
-from slu import constants as const
 from slu.dev.dir_setup import copy_data_directory, create_data_directory
-from slu.dev.test import test_classifier
 from slu.dev.release import release
-from slu.dev.train import train_intent_classifier
 from slu.dev.repl import repl
-from slu.utils.config import Config, YAMLLocalConfig
-from slu.utils import logger
-
-
-CLIENT_CONFIGS = YAMLLocalConfig().generate()
+from slu.dev.test import test_classifier
+from slu.dev.train import create_data_splits, train_intent_classifier
 
 
 def build_dir_cli(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
@@ -40,6 +33,31 @@ def build_dir_cli(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
         default="0.0.1",
         help="The version of the dataset, model, metrics to use. Defaults to the latest version.",
     )
+    return parser
+
+
+def build_split_data_cli(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
+    parser.add_argument("--version", help="The version for dataset paths.")
+    parser.add_argument(
+        "--file", help="A dataset to be split into train, test datasets.", required=True
+    )
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument(
+        "--train-size",
+        help="The proportion of the dataset to include in the train split",
+        type=float,
+    )
+    group.add_argument(
+        "--test-size",
+        help="The proportion of the dataset to include in the test split.",
+        type=float,
+    )
+    parser.add_argument(
+        "--stratify",
+        help="Data is split in a stratified fashion, using the class labels."
+        " Provide the column-name in the dataset that contains class names.",
+    )
+    parser.add_argument("--dest", help="The destination directory for the split data.")
     return parser
 
 
@@ -94,6 +112,10 @@ def build_release_cli(parser: argparse.ArgumentParser) -> argparse.ArgumentParse
 
 def build_repl_cli(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     parser.add_argument(
+        "--version",
+        help="The version of the dataset, model, metrics to use. Defaults to the latest version.",
+    )
+    parser.add_argument(
         "--lang", help="Run the models and pre-processing for the given language code."
     )
     return parser
@@ -104,6 +126,9 @@ def parse_commands(command_string: Optional[str] = None) -> argparse.Namespace:
     command_parsers = parser.add_subparsers(dest="command", help="Project utilities.")
     dir_cli_parser = command_parsers.add_parser(
         "dir-setup", help="Create base directory structure."
+    )
+    data_split_cli_parser = command_parsers.add_parser(
+        "data-split", help="Split a dataset into train-test datasets for given ratio."
     )
     train_cli_parser = command_parsers.add_parser("train", help="Train a workflow.")
     test_cli_parser = command_parsers.add_parser("test", help="Test a workflow.")
@@ -118,6 +143,7 @@ def parse_commands(command_string: Optional[str] = None) -> argparse.Namespace:
     )
 
     dir_cli_parser = build_dir_cli(dir_cli_parser)
+    data_split_cli_parser = build_split_data_cli(data_split_cli_parser)
     train_cli_parser = build_train_cli(train_cli_parser)
     test_cli_parser = build_test_cli(test_cli_parser)
     clone_cli_parser = build_clone_cli(clone_cli_parser)
@@ -132,6 +158,8 @@ def main(command_string: Optional[str] = None) -> None:
     args = parse_commands(command_string=command_string)
     if args.command == "dir-setup":
         create_data_directory(args)
+    elif args.command == "data-split":
+        create_data_splits(args)
     elif args.command == "train":
         train_intent_classifier(args)
     elif args.command == "test":
