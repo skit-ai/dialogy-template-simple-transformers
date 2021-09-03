@@ -171,8 +171,6 @@ def main(command_string: Optional[str] = None) -> None:
         train_intent_classifier(args)
     elif args.command == "test":
         test_classifier(args)
-    elif args.command == "clone":
-        copy_data_directory(args)
     elif args.command == "release":
         release(args)
     elif args.command == "repl":
