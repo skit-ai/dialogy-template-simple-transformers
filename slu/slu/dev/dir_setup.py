@@ -9,21 +9,16 @@ data
     |   |-- datasets
     |   |-- metrics
     |   +-- models
-    +-- ner
-        |-- datasets
-        |-- metrics
-        +-- models
 ```
 
 Given a valid semver, the code here helps creating
 and hence maintaining the uniformity of the directory structure here.
 """
+import argparse
 import os
 import shutil
-import argparse
 
 import semver
-
 
 from slu import constants as const
 
@@ -64,7 +59,6 @@ def copy_data_directory(args: argparse.Namespace) -> None:
     """
     copy_from = args.source
     copy_to = args.dest
-    force = args.force
 
     # This will raise an exception for invalid semver. So we don't have to catch it.
     semver.VersionInfo.parse(copy_from)
