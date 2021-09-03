@@ -1,8 +1,8 @@
 import sys
 
-import slu.constants as const
 from loguru import logger
 
+import slu.constants as const
 
 config = {
     "handlers": [

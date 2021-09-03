@@ -2,20 +2,20 @@
 This module provides a simple interface to provide text features
 and receive Intent and Entities.
 """
-import time
 import copy
+import time
+from datetime import datetime
 from pprint import pformat
 from typing import Any, Dict, List, Optional
-from datetime import datetime
 
 import pytz
-from dialogy.workflow import Workflow
 from dialogy.utils import normalize
+from dialogy.workflow import Workflow
 
 from slu import constants as const
 from slu.src.controller.processors import get_plugins
-from slu.utils.config import Config, YAMLLocalConfig
 from slu.utils import logger
+from slu.utils.config import Config, YAMLLocalConfig
 from slu.utils.make_test_cases import build_test_case
 
 
