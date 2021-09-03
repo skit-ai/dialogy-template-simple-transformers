@@ -3,18 +3,18 @@ This module offers an interactive repl to run a Workflow.
 """
 import argparse
 import json
-import time
 from pprint import pprint
 
+import semver
+from dialogy.utils import normalize
 from prompt_toolkit import PromptSession
 from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
 from prompt_toolkit.history import FileHistory
-from dialogy.utils import normalize
 
 import slu.constants as const
-from slu.utils.config import Config, YAMLLocalConfig
 from slu.src.controller.prediction import get_predictions
 from slu.utils import logger
+from slu.utils.config import Config, YAMLLocalConfig
 
 
 def repl_prompt(separator="", show_help=True):
@@ -60,16 +60,22 @@ def make_input(input_string):
 
 
 def repl(args: argparse.Namespace) -> None:
+    version = args.version
     lang = args.lang
+    project_config_map = YAMLLocalConfig().generate()
+    config: Config = list(project_config_map.values()).pop()
+    if version:
+        semver.VersionInfo.parse(version)
+        config.version = version
+        config.save()
+
     separator = "-" * 100
     show_help = True
     logger.info("Loading models... this takes around 20s.")
     session = PromptSession(history=FileHistory(".repl_history"))  # type: ignore
     prompt = session.prompt
     auto_suggest = AutoSuggestFromHistory()
-    CONFIG_MAP = YAMLLocalConfig().generate()
-    CONFIG: Config = list(CONFIG_MAP.values()).pop()
-    PREDICT_API = get_predictions(const.PRODUCTION, config=CONFIG)
+    PREDICT_API = get_predictions(const.PRODUCTION, config=config)
     show_help = True
 
     try:

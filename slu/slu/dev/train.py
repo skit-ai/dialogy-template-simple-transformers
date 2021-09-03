@@ -16,13 +16,84 @@ Options:
     --version     Show version.
 """
 import argparse
+import os
 
 import pandas as pd
+import semver
+from sklearn.model_selection import train_test_split
 
 from slu import constants as const
 from slu.src.controller.prediction import get_workflow
-from slu.utils.config import Config, YAMLLocalConfig
 from slu.utils import logger
+from slu.utils.config import Config, YAMLLocalConfig
+
+
+def create_data_splits(args: argparse.Namespace) -> None:
+    """
+    Create a data split for the given version.
+    :param args: The arguments passed to the script.
+    """
+    version = args.version
+    project_config_map = YAMLLocalConfig().generate()
+    config: Config = list(project_config_map.values()).pop()
+    if version:
+        semver.VersionInfo.parse(version)
+        config.version = version
+        config.save()
+
+    dataset_file = args.file
+    train_size = args.train_size
+    test_size = args.test_size
+    stratify = args.stratify
+    dest = args.dest or config.get_dataset_dir(const.CLASSIFICATION)
+
+    if os.listdir(dest):
+        ver_ = semver.VersionInfo.parse(config.version)
+        ver_.bump_patch()
+        raise RuntimeError(
+            f"""
+Data already exists in {dest} You should create a new version using:
+
+```shell
+slu dir-setup --version {str(ver_.bump_patch())}
+```
+""".strip()
+        )
+
+    if not os.path.isdir(dest):
+        raise ValueError(
+            f"Destination directory {dest} does not exist or is not a directory."
+        )
+
+    data_frame = pd.read_csv(dataset_file)
+    logger.debug(f"Data frame: {data_frame.shape}")
+    skip_list = config.get_skip_list(const.CLASSIFICATION)
+    skip_filter = data_frame[const.INTENT].isin(skip_list)
+    failed_transcripts = data_frame[const.ALTERNATIVES].isin(["[[]]", "[]"])
+    non_empty_transcripts = data_frame[const.ALTERNATIVES].isna()
+    invalid_samples = skip_filter | non_empty_transcripts | failed_transcripts
+    train_skip_samples = data_frame[invalid_samples]
+    train_available_samples = data_frame[~invalid_samples]
+
+    logger.info(
+        f"Dataset has {len(train_skip_samples)} samples unfit for training."
+        f" Using this for tests and {len(train_available_samples)} for train-test split."
+    )
+
+    if stratify:
+        labels = data_frame[stratify].unique()
+    else:
+        labels = None
+
+    train, test = train_test_split(
+        train_available_samples,
+        train_size=train_size,
+        test_size=test_size,
+        stratify=labels,
+    )
+    test = pd.concat([train_skip_samples, test], sort=False)
+    train.to_csv(os.path.join(dest, f"{const.TRAIN}.csv"), index=False)
+    test.to_csv(os.path.join(dest, f"{const.TEST}.csv"), index=False)
 
 
 def train_intent_classifier(args: argparse.Namespace) -> None:
@@ -30,6 +101,25 @@ def train_intent_classifier(args: argparse.Namespace) -> None:
     dataset = args.file
     project_config_map = YAMLLocalConfig().generate()
     config: Config = list(project_config_map.values()).pop()
+    if version:
+        semver.VersionInfo.parse(version)
+        config.version = version
+        config.save()
+
+    model_dir = config.get_model_dir(const.CLASSIFICATION)
+    if os.listdir(model_dir):
+        ver_ = semver.VersionInfo.parse(config.version)
+        ver_.bump_patch()
+        raise RuntimeError(
+            f"""
+Model already exists in {model_dir}.
+You should create a new version using:
+
+```shell
+slu dir-setup --version {str(ver_.bump_patch())}
+```
+""".strip()
+        )
 
     workflow = get_workflow(const.TRAIN, lang=args.lang, project=args.project)
 

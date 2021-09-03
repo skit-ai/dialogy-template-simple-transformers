@@ -13,16 +13,17 @@ Options:
     --version   Show version.
 """
 import argparse
-import pandas as pd
 
-from sklearn.metrics import classification_report, confusion_matrix
+import pandas as pd
+import semver
 from dialogy.utils import create_timestamps_path
+from sklearn.metrics import classification_report, confusion_matrix
 from tabulate import tabulate
 
 from slu import constants as const
 from slu.src.controller.prediction import get_workflow
-from slu.utils.config import Config, YAMLLocalConfig
 from slu.utils import logger
+from slu.utils.config import Config, YAMLLocalConfig
 
 
 def zoom_out_labels(labels):
@@ -86,6 +87,10 @@ def test_classifier(args: argparse.Namespace):
     dataset = args.file
     project_config_map = YAMLLocalConfig().generate()
     config: Config = list(project_config_map.values()).pop()
+    if version:
+        semver.VersionInfo.parse(version)
+        config.version = version
+        config.save()
 
     workflow = get_workflow(const.TEST, lang=args.lang, project=args.project)
 
