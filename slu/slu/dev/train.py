@@ -96,6 +96,17 @@ slu dir-setup --version {str(ver_.bump_patch())}
     test.to_csv(os.path.join(dest, f"{const.TEST}.csv"), index=False)
 
 
+def merge_datasets(args: argparse.Namespace) -> None:
+    """
+    Merge the datasets.
+    """
+    data_files = args.files
+    file_name = args.out
+
+    data_frames = pd.concat([pd.read_csv(data_file) for data_file in data_files])
+    data_frames.to_csv(file_name, index=False)
+
+
 def train_intent_classifier(args: argparse.Namespace) -> None:
     version = args.version
     dataset = args.file
