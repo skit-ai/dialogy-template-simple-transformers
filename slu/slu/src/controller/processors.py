@@ -1,18 +1,23 @@
 import os
-from typing import Dict, List
+from typing import List
+
 from dialogy import plugins
 from dialogy.base.plugin import Plugin
 
-from slu.dev.plugin_parse import plugin_functions
 from slu import constants as const
+from slu.dev.plugin_parse import plugin_functions
 from slu.utils.config import Config
 
 
-def get_preprocessors(config: Config) -> List[Plugin]:
+def get_plugins(purpose, config: Config) -> List[Plugin]:
+    debug = os.environ.get("ENVIRONMENT") != const.PRODUCTION
+
     merge_asr_output = plugins.MergeASROutputPlugin(
         access=plugin_functions.access(const.INPUT, const.S_CLASSIFICATION_INPUT),
-        mutate=plugin_functions.mutate(const.INPUT, const.S_CLASSIFICATION_INPUT),
-    )()
+        mutate=plugin_functions.mutate(const.INPUT, const.S_CLASSIFICATION_INPUT, action=const.REPLACE),
+        data_column=const.ALTERNATIVES,
+        debug=debug
+    )
 
     duckling_plugin = plugins.DucklingPlugin(
         access=plugin_functions.access(
@@ -23,17 +28,29 @@ def get_preprocessors(config: Config) -> List[Plugin]:
         locale="en_IN",
         timezone="Asia/Kolkata",
         timeout=0.5,
-        # Works only in development mode. You need to set this in k8s configs.
+
+        # url works only in development mode.
+        # You need to set its real value in k8s configs or wherever you keep your
+        # env-vars safe.
         url=os.environ.get("DUCKLING_URL", "http://localhost:8000/parse/"),
-    )()
+        debug=False
+    )
 
-    wer_calibration = plugins.WERCalibrationPlugin(config=config.calibration, access=None, mutate=None)()
-    return [wer_calibration, merge_asr_output, duckling_plugin]
+    xlmr_clf = plugins.XLMRMultiClass(
+        model_dir=config.get_model_dir(const.CLASSIFICATION),
+        access=plugin_functions.access(const.INPUT, const.S_CLASSIFICATION_INPUT),
+        mutate=plugin_functions.mutate(const.OUTPUT, const.INTENTS),
+        threshold=config.get_model_confidence_threshold(const.CLASSIFICATION),
+        score_round_off=5,
+        purpose=purpose,
+        args_map=config.get_model_args(const.CLASSIFICATION),
+        debug=debug
+    )
 
-
-def get_postprocessors(config: Config) -> List[Plugin]:
     slot_filler = plugins.RuleBasedSlotFillerPlugin(
-        access=plugin_functions.access(const.OUTPUT, const.INTENT, const.ENTITIES),
+        access=plugin_functions.access(const.OUTPUT, const.INTENTS, const.ENTITIES),
         rules=config.slots,
-    )()
-    return [slot_filler]
+        debug=debug
+    )
+
+    return [merge_asr_output, duckling_plugin, xlmr_clf, slot_filler]
