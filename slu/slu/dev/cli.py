@@ -49,31 +49,37 @@ def build_train_cli(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
         help="A csv dataset containing utterances and labels.",
     )
     parser.add_argument("--lang", help="The language of the dataset.")
-    parser.add_argument("--project", help="The project scope to which the dataset belongs.")
     parser.add_argument(
-        "--version",
-        help="The dataset version, which will also be the model's version."
+        "--project", help="The project scope to which the dataset belongs."
+    )
+    parser.add_argument(
+        "--version", help="The dataset version, which will also be the model's version."
     )
     return parser
 
 
 def build_test_cli(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     parser.add_argument(
-        "--file",
-        help="A csv dataset containing utterances and labels."
+        "--file", help="A csv dataset containing utterances and labels."
     )
     parser.add_argument("--lang", help="The language of the dataset.")
-    parser.add_argument("--project", help="The project scope to which the dataset belongs.")
+    parser.add_argument(
+        "--project", help="The project scope to which the dataset belongs."
+    )
     parser.add_argument(
         "--version",
-        help="The dataset version, which will also be the report's version."
+        help="The dataset version, which will also be the report's version.",
     )
     return parser
 
 
 def build_clone_cli(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
-    parser.add_argument("--source", required=True, help="The version of the source data directory.")
-    parser.add_argument("--dest", required=True, help="The version of the destination data directory.")
+    parser.add_argument(
+        "--source", required=True, help="The version of the source data directory."
+    )
+    parser.add_argument(
+        "--dest", required=True, help="The version of the destination data directory."
+    )
     return parser
 
 
@@ -85,30 +91,38 @@ def build_release_cli(parser: argparse.ArgumentParser) -> argparse.ArgumentParse
     )
     return parser
 
+
 def build_repl_cli(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     parser.add_argument(
-        "--lang",
-        help="Run the models and pre-processing for the given language code."
+        "--lang", help="Run the models and pre-processing for the given language code."
     )
     return parser
 
 
 def parse_commands(command_string: Optional[str] = None) -> argparse.Namespace:
-    parser              = argparse.ArgumentParser()
-    command_parsers     = parser.add_subparsers(dest="command", help="Project utilities.")
-    dir_cli_parser      = command_parsers.add_parser("dir-setup", help="Create base directory structure.")
-    train_cli_parser    = command_parsers.add_parser("train", help="Train a workflow.")
-    test_cli_parser     = command_parsers.add_parser("test", help="Test a workflow.")
-    clone_cli_parser    = command_parsers.add_parser("clone", help="Clone a version of the data directory.")
-    release_cli_parser  = command_parsers.add_parser("release", help="Release a version of the project.")
-    repl_cli_parser     = command_parsers.add_parser("repl", help="Read Eval Print Loop for a trained workflow.")
+    parser = argparse.ArgumentParser()
+    command_parsers = parser.add_subparsers(dest="command", help="Project utilities.")
+    dir_cli_parser = command_parsers.add_parser(
+        "dir-setup", help="Create base directory structure."
+    )
+    train_cli_parser = command_parsers.add_parser("train", help="Train a workflow.")
+    test_cli_parser = command_parsers.add_parser("test", help="Test a workflow.")
+    clone_cli_parser = command_parsers.add_parser(
+        "clone", help="Clone a version of the data directory."
+    )
+    release_cli_parser = command_parsers.add_parser(
+        "release", help="Release a version of the project."
+    )
+    repl_cli_parser = command_parsers.add_parser(
+        "repl", help="Read Eval Print Loop for a trained workflow."
+    )
 
-    dir_cli_parser      = build_dir_cli(dir_cli_parser)
-    train_cli_parser    = build_train_cli(train_cli_parser)
-    test_cli_parser     = build_test_cli(test_cli_parser)
-    clone_cli_parser    = build_clone_cli(clone_cli_parser)
-    release_cli_parser  = build_release_cli(release_cli_parser)
-    repl_cli_parser     = build_repl_cli(repl_cli_parser)
+    dir_cli_parser = build_dir_cli(dir_cli_parser)
+    train_cli_parser = build_train_cli(train_cli_parser)
+    test_cli_parser = build_test_cli(test_cli_parser)
+    clone_cli_parser = build_clone_cli(clone_cli_parser)
+    release_cli_parser = build_release_cli(release_cli_parser)
+    repl_cli_parser = build_repl_cli(repl_cli_parser)
 
     command = command_string.split() if command_string else None
     return parser.parse_args(command)

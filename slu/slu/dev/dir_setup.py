@@ -48,9 +48,7 @@ def create_data_directory(args: argparse.Namespace) -> None:
 
     for subdir in depth_level_1:
         for childdir in depth_level_2:
-            os.makedirs(
-                os.path.join(base_module_path, subdir, childdir), exist_ok=True
-            )
+            os.makedirs(os.path.join(base_module_path, subdir, childdir), exist_ok=True)
 
 
 def copy_data_directory(args: argparse.Namespace) -> None:

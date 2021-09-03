@@ -9,6 +9,7 @@ def access(node: str, *attributes: str):
     def read(workflow):
         workflow_io = getattr(workflow, node)
         return (workflow_io[attribute] for attribute in attributes)
+
     return read
 
 
@@ -19,6 +20,7 @@ def mutate(node: str, attribute: str, action=const.EXTEND):
             workflow_io[attribute] = value
         elif action == const.EXTEND:
             workflow_io[attribute].extend(value)
+
     return write
 
 

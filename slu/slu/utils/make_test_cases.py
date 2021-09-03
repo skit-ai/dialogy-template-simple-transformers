@@ -18,7 +18,9 @@ def build_test_case(inputs_, outputs) -> None:
     if os.environ.get("ENVIRONMENT") == const.PRODUCTION:
         return
 
-    with open(os.path.join("tests", "test_controller", "test_cases.yaml"), "r") as handle:
+    with open(
+        os.path.join("tests", "test_controller", "test_cases.yaml"), "r"
+    ) as handle:
         test_cases = yaml.load(handle, Loader=yaml.SafeLoader)
 
     if not test_cases:
@@ -32,11 +34,15 @@ def build_test_case(inputs_, outputs) -> None:
         if last_signature == signature:
             return
 
-    with open(os.path.join("tests", "test_controller", "test_cases.yaml"), "w") as handle:
-        test_cases.append({
-            "input": inputs_,
-            "output": json.loads(json.dumps(outputs)),
-            "signature": signature
-        })
+    with open(
+        os.path.join("tests", "test_controller", "test_cases.yaml"), "w"
+    ) as handle:
+        test_cases.append(
+            {
+                "input": inputs_,
+                "output": json.loads(json.dumps(outputs)),
+                "signature": signature,
+            }
+        )
 
         yaml.dump(test_cases, handle, default_flow_style=False)

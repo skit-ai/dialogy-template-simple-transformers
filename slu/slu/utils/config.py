@@ -29,6 +29,7 @@ class Task:
         validator=attr.validators.optional(attr.validators.instance_of(str)),
     )
 
+
 @attr.s
 class Tasks:
     classification = attr.ib(
@@ -66,6 +67,7 @@ class Config:
     - Load models and their configurations
     - Save pickled objects.
     """
+
     model_name = attr.ib(
         type=str, kw_only=True, validator=attr.validators.instance_of(str)
     )
@@ -88,20 +90,28 @@ class Config:
         semver.VersionInfo.parse(self.version)
         for purpose in self.tasks.classification.model_args:
             purpose_args = self.tasks.classification.model_args[purpose]
-            purpose_args[const.BEST_MODEL_DIR] = self.get_model_dir(const.CLASSIFICATION)
+            purpose_args[const.BEST_MODEL_DIR] = self.get_model_dir(
+                const.CLASSIFICATION
+            )
             purpose_args[const.OUTPUT_DIR] = self.get_model_dir(const.CLASSIFICATION)
 
     def _get_data_dir(self, task_name: str, version=None) -> str:
         return os.path.join(const.DATA, self.version, task_name)
 
     def get_metrics_dir(self, task_name: str, version=None) -> str:
-        return os.path.join(self._get_data_dir(task_name, version=version), const.METRICS)
+        return os.path.join(
+            self._get_data_dir(task_name, version=version), const.METRICS
+        )
 
     def get_model_dir(self, task_name: str, version=None) -> str:
-        return os.path.join(self._get_data_dir(task_name, version=version), const.MODELS)
+        return os.path.join(
+            self._get_data_dir(task_name, version=version), const.MODELS
+        )
 
     def get_dataset(self, task_name: str, file_name: str, version=None) -> Any:
-        return os.path.join(self._get_data_dir(task_name, version=version), const.DATASETS, file_name)
+        return os.path.join(
+            self._get_data_dir(task_name, version=version), const.DATASETS, file_name
+        )
 
     def get_model_args(self, task_name: str) -> Dict[str, Any]:
         if task_name == const.CLASSIFICATION:

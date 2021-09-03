@@ -14,9 +14,11 @@ def get_plugins(purpose, config: Config) -> List[Plugin]:
 
     merge_asr_output = plugins.MergeASROutputPlugin(
         access=plugin_functions.access(const.INPUT, const.S_CLASSIFICATION_INPUT),
-        mutate=plugin_functions.mutate(const.INPUT, const.S_CLASSIFICATION_INPUT, action=const.REPLACE),
+        mutate=plugin_functions.mutate(
+            const.INPUT, const.S_CLASSIFICATION_INPUT, action=const.REPLACE
+        ),
         data_column=const.ALTERNATIVES,
-        debug=debug
+        debug=debug,
     )
 
     duckling_plugin = plugins.DucklingPlugin(
@@ -28,12 +30,11 @@ def get_plugins(purpose, config: Config) -> List[Plugin]:
         locale="en_IN",
         timezone="Asia/Kolkata",
         timeout=0.5,
-
         # url works only in development mode.
         # You need to set its real value in k8s configs or wherever you keep your
         # env-vars safe.
         url=os.environ.get("DUCKLING_URL", "http://localhost:8000/parse/"),
-        debug=False
+        debug=False,
     )
 
     xlmr_clf = plugins.XLMRMultiClass(
@@ -44,13 +45,13 @@ def get_plugins(purpose, config: Config) -> List[Plugin]:
         score_round_off=5,
         purpose=purpose,
         args_map=config.get_model_args(const.CLASSIFICATION),
-        debug=debug
+        debug=debug,
     )
 
     slot_filler = plugins.RuleBasedSlotFillerPlugin(
         access=plugin_functions.access(const.OUTPUT, const.INTENTS, const.ENTITIES),
         rules=config.slots,
-        debug=debug
+        debug=debug,
     )
 
     return [merge_asr_output, duckling_plugin, xlmr_clf, slot_filler]

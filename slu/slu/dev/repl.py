@@ -77,7 +77,7 @@ def repl(args: argparse.Namespace) -> None:
             raw = prompt(
                 repl_prompt(separator=separator, show_help=show_help),
                 multiline=True,
-                auto_suggest=auto_suggest
+                auto_suggest=auto_suggest,
             )
 
             if raw == "--help":

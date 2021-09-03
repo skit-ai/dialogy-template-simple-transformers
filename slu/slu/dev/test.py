@@ -35,14 +35,16 @@ def zoom_out_labels(labels):
     for label in labels:
         if label == "_oos_":
             labels_.append("out-of-scope")
-        elif (label.startswith("_") and label.endswith("_")):
+        elif label.startswith("_") and label.endswith("_"):
             labels_.append(label)
         else:
             labels_.append("in-scope")
     return labels_
 
 
-def make_classification_report(config: Config, version: str, test_df: pd.DataFrame, predictions_df: pd.DataFrame):
+def make_classification_report(
+    config: Config, version: str, test_df: pd.DataFrame, predictions_df: pd.DataFrame
+):
     result_dict = classification_report(
         test_df[const.INTENT],
         predictions_df[const.INTENT],
@@ -54,17 +56,29 @@ def make_classification_report(config: Config, version: str, test_df: pd.DataFra
     table = tabulate(result_df, headers="keys", tablefmt="github")
     logger.info(f"classification report:\n{table}")
 
-    result_df.to_csv(create_timestamps_path(config.get_metrics_dir(const.CLASSIFICATION, version=version), "classification_report.csv"))
+    result_df.to_csv(
+        create_timestamps_path(
+            config.get_metrics_dir(const.CLASSIFICATION, version=version),
+            "classification_report.csv",
+        )
+    )
 
 
-def make_confusion_matrix(config: Config, version: str, test_df: pd.DataFrame, predictions_df: pd.DataFrame):
+def make_confusion_matrix(
+    config: Config, version: str, test_df: pd.DataFrame, predictions_df: pd.DataFrame
+):
     true_labels = zoom_out_labels(test_df[const.INTENT])
     pred_labels = zoom_out_labels(predictions_df[const.INTENT])
     labels = sorted(true_labels + pred_labels)
     cm = confusion_matrix(true_labels, pred_labels, labels=labels)
     logger.info(f"Confusion matrix.\n{cm}")
     cm_df = pd.DataFrame(cm, index=labels, columns=labels)
-    cm_df.to_csv(create_timestamps_path(config.get_metrics_dir(const.CLASSIFICATION, version=version), "confusion_matrix.csv"))
+    cm_df.to_csv(
+        create_timestamps_path(
+            config.get_metrics_dir(const.CLASSIFICATION, version=version),
+            "confusion_matrix.csv",
+        )
+    )
 
 
 def test_classifier(args: argparse.Namespace):

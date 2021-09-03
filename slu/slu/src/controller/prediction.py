@@ -48,7 +48,7 @@ def get_predictions(purpose, **kwargs):
         intents_info: Optional[List[Dict[str, Any]]] = None,
         history: Optional[List[Any]] = None,
         lang: Optional[str] = None,
-        **kwargs
+        **kwargs,
     ):
         """
         Produce intent and entities for a given utterance.
@@ -59,9 +59,9 @@ def get_predictions(purpose, **kwargs):
         context = context or {}
         history = history or []
         start_time = time.perf_counter()
-        reference_time = datetime\
-            .now(pytz.timezone("Asia/Kolkata"))\
-            .replace(hour=0, minute=0, second=0, microsecond=0)
+        reference_time = datetime.now(pytz.timezone("Asia/Kolkata")).replace(
+            hour=0, minute=0, second=0, microsecond=0
+        )
 
         reference_time_as_unix_epoch = int(reference_time.timestamp() * 1000)
         if not lang:
@@ -90,11 +90,14 @@ def get_predictions(purpose, **kwargs):
 
         logger.debug(f"Output:\n{output}")
         logger.info(f"Duration: {time.perf_counter() - start_time}s")
-        build_test_case({
-            "alternatives": alternatives,
-            "context": context,
-            "lang": lang,
-        }, output)
+        build_test_case(
+            {
+                "alternatives": alternatives,
+                "context": context,
+                "lang": lang,
+            },
+            output,
+        )
         return output
 
     return predict
