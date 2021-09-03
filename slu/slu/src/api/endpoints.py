@@ -1,22 +1,22 @@
 import os
 import traceback
-from datetime import datetime
 from typing import Any, Dict, List
 
 import sentry_sdk
-from dialogy.plugins.preprocess.text.normalize_utterance import normalize
 from flask import jsonify, request
 from sentry_sdk.integrations.flask import FlaskIntegration
 
 from slu import constants as const
 from slu.src.api import app
-from slu.src.controller.prediction import predict_wrapper
+from slu.src.controller.prediction import get_predictions
 from slu.utils import error_response
-from slu.utils.config import YAMLLocalConfig
+from slu.utils.config import Config, YAMLLocalConfig
 from slu.utils.sentry import capture_exception
 
-CLIENT_CONFIGS = YAMLLocalConfig().generate()
-PREDICT_API = predict_wrapper(CLIENT_CONFIGS)
+
+CONFIG_MAP = YAMLLocalConfig().generate()
+CONFIG: Config = list(CONFIG_MAP.values()).pop()
+PREDICT_API = get_predictions(const.PRODUCTION, config=CONFIG)
 
 
 if os.environ.get(const.ENVIRONMENT) == const.PRODUCTION:
@@ -54,11 +54,7 @@ def slu(lang: str, model_name: str):
 
     Produces a json response containing intents and entities.
     """
-    config = CLIENT_CONFIGS.get(model_name, None)
-
-    if config is None:
-        return error_response.missing_project_name(model_name)
-
+    config: Config = list(CONFIG_MAP.values()).pop()
     if lang not in config.get_supported_languages():
         return error_response.invalid_language(lang)
 
@@ -69,7 +65,7 @@ def slu(lang: str, model_name: str):
         return error_response.invalid_input(request.json)
 
     try:
-        maybe_utterance: Any = request.json.get(const.ALTERNATIVES) or request.json.get(
+        utterance: Any = request.json.get(const.ALTERNATIVES) or request.json.get(
             const.TEXT
         )
 
@@ -77,14 +73,14 @@ def slu(lang: str, model_name: str):
         intents_info: List[Dict[str, Any]] = (
             request.json.get(const.S_INTENTS_INFO) or []
         )
+        history: List[Any] = request.json.get(const.HISTORY) or []
 
         try:
             response = PREDICT_API(
-                maybe_utterance,
-                context,
+                alternatives=utterance,
+                context=context,
                 intents_info=intents_info,
-                reference_time=int(datetime.now().timestamp() * 1000),
-                locale=const.LANG_TO_LOCALES[lang],
+                history=history,
                 lang=lang,
             )
             return jsonify(status="ok", response=response), 200
