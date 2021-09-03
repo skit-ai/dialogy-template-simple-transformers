@@ -57,8 +57,7 @@ Data already exists in {dest} You should create a new version using:
 ```shell
 slu dir-setup --version {str(ver_.bump_patch())}
 ```
-""".strip()
-        )
+""".strip())
 
     if not os.path.isdir(dest):
         raise ValueError(
@@ -129,8 +128,7 @@ You should create a new version using:
 ```shell
 slu dir-setup --version {str(ver_.bump_patch())}
 ```
-""".strip()
-        )
+""".strip())
 
     workflow = get_workflow(const.TRAIN, lang=args.lang, project=args.project)
 
