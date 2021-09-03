@@ -125,16 +125,16 @@ def parse_commands(command_string: Optional[str] = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     command_parsers = parser.add_subparsers(dest="command", help="Project utilities.")
     dir_cli_parser = command_parsers.add_parser(
-        "dir-setup", help="Create base directory structure."
+        "setup-dirs", help="Create base directory structure."
     )
     data_split_cli_parser = command_parsers.add_parser(
-        "data-split", help="Split a dataset into train-test datasets for given ratio."
+        "split-data", help="Split a dataset into train-test datasets for given ratio."
+    )
+    data_combine_cli_parser = command_parsers.add_parser(
+        "combine-data", help="Combine datasets into a single file."
     )
     train_cli_parser = command_parsers.add_parser("train", help="Train a workflow.")
     test_cli_parser = command_parsers.add_parser("test", help="Test a workflow.")
-    clone_cli_parser = command_parsers.add_parser(
-        "clone", help="Clone a version of the data directory."
-    )
     release_cli_parser = command_parsers.add_parser(
         "release", help="Release a version of the project."
     )
@@ -144,9 +144,9 @@ def parse_commands(command_string: Optional[str] = None) -> argparse.Namespace:
 
     dir_cli_parser = build_dir_cli(dir_cli_parser)
     data_split_cli_parser = build_split_data_cli(data_split_cli_parser)
+    data_combine_cli_parser = build_data_combine_cli(data_combine_cli_parser)
     train_cli_parser = build_train_cli(train_cli_parser)
     test_cli_parser = build_test_cli(test_cli_parser)
-    clone_cli_parser = build_clone_cli(clone_cli_parser)
     release_cli_parser = build_release_cli(release_cli_parser)
     repl_cli_parser = build_repl_cli(repl_cli_parser)
 
@@ -156,9 +156,9 @@ def parse_commands(command_string: Optional[str] = None) -> argparse.Namespace:
 
 def main(command_string: Optional[str] = None) -> None:
     args = parse_commands(command_string=command_string)
-    if args.command == "dir-setup":
+    if args.command == "setup-dirs":
         create_data_directory(args)
-    elif args.command == "data-split":
+    elif args.command == "split-data":
         create_data_splits(args)
     elif args.command == "train":
         train_intent_classifier(args)
