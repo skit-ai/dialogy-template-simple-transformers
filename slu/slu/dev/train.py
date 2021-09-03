@@ -26,6 +26,7 @@ from slu import constants as const
 from slu.src.controller.prediction import get_workflow
 from slu.utils import logger
 from slu.utils.config import Config, YAMLLocalConfig
+from slu.dev.version import check_version_save_config
 
 
 def create_data_splits(args: argparse.Namespace) -> None:
@@ -111,10 +112,7 @@ def train_intent_classifier(args: argparse.Namespace) -> None:
     dataset = args.file
     project_config_map = YAMLLocalConfig().generate()
     config: Config = list(project_config_map.values()).pop()
-    if version:
-        semver.VersionInfo.parse(version)
-        config.version = version
-        config.save()
+    check_version_save_config(config, version)
 
     model_dir = config.get_model_dir(const.CLASSIFICATION)
     if os.listdir(model_dir):

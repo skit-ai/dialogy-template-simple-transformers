@@ -5,7 +5,6 @@ import argparse
 import json
 from pprint import pprint
 
-import semver
 from dialogy.utils import normalize
 from prompt_toolkit import PromptSession
 from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
@@ -15,6 +14,7 @@ import slu.constants as const
 from slu.src.controller.prediction import get_predictions
 from slu.utils import logger
 from slu.utils.config import Config, YAMLLocalConfig
+from slu.dev.version import check_version_save_config
 
 
 def repl_prompt(separator="", show_help=True):
@@ -64,10 +64,7 @@ def repl(args: argparse.Namespace) -> None:
     lang = args.lang
     project_config_map = YAMLLocalConfig().generate()
     config: Config = list(project_config_map.values()).pop()
-    if version:
-        semver.VersionInfo.parse(version)
-        config.version = version
-        config.save()
+    check_version_save_config(config, version)
 
     separator = "-" * 100
     show_help = True
