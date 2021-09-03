@@ -44,6 +44,8 @@ def get_plugins(purpose, config: Config) -> List[Plugin]:
         threshold=config.get_model_confidence_threshold(const.CLASSIFICATION),
         score_round_off=5,
         purpose=purpose,
+        data_column=const.ALTERNATIVES,
+        label_column=const.INTENT,
         args_map=config.get_model_args(const.CLASSIFICATION),
         debug=debug,
     )
