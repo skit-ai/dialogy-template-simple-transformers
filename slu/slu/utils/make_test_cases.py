@@ -7,7 +7,7 @@ import yaml
 import slu.constants as const
 
 
-def build_test_case(inputs_, outputs) -> None:
+def build_test_case(inputs_, outputs, ignore_test_case=False) -> None:
     """
     Build a test case from the given input and output data.
 
@@ -15,6 +15,8 @@ def build_test_case(inputs_, outputs) -> None:
     :param outputs: The output data for the test case.
     :return: A dictionary representing the test case.
     """
+    if ignore_test_case:
+        return None
     message = hashlib.sha256()
     if os.environ.get("ENVIRONMENT") == const.PRODUCTION:
         return
