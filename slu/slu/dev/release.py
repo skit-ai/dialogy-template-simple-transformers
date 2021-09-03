@@ -22,6 +22,7 @@ To ensure this works correctly, we need to check:
 """
 import os
 import shutil
+import argparse
 import subprocess
 from configparser import ConfigParser
 from datetime import datetime
@@ -35,7 +36,7 @@ from prompt_toolkit import HTML, print_formatted_text, prompt
 
 from slu import constants as const
 from slu.utils.config import Config
-from slu.utils.logger import log
+from slu.utils import logger
 
 
 def update_project_version_toml(version: str) -> None:
@@ -45,7 +46,7 @@ def update_project_version_toml(version: str) -> None:
     Args:
         version (str): Current semver.
     """
-    log.debug("Updating pyproject.toml")
+    logger.debug("Updating pyproject.toml")
     project_toml_path = const.S_PROJECT_TOML
 
     with open(project_toml_path, "r") as toml_handle:
@@ -82,7 +83,7 @@ def remove_older_data_versions(current_version: str) -> None:
     """
     for version_module in glob(os.path.join(const.DATA, "**")):
         if current_version not in version_module:
-            log.debug("Removing %s to keep the tag light.", version_module)
+            logger.debug("Removing %s to keep the tag light.", version_module)
             shutil.rmtree(version_module)
 
 
@@ -175,7 +176,7 @@ def update_changelog(version: str) -> str:
     return changelog_body
 
 
-def release(version: str) -> None:
+def release(args: argparse.Namespace) -> None:
     """
     Update data directory via version control utils.
 
@@ -184,6 +185,7 @@ def release(version: str) -> None:
     Args:
         version (str): Semver for the dataset, model and metrics.
     """
+    version = args.version
     # Ensure `version` is a valid semver.
     semver.VersionInfo.parse(version)
 
@@ -192,7 +194,7 @@ def release(version: str) -> None:
 
     # Check for unstaged or uncommitted changes.
     if repo.is_dirty():
-        log.error("There are unstaged / uncommitted changes.")
+        logger.error("There are unstaged / uncommitted changes.")
         return None
 
     active_branch = repo.active_branch.name
@@ -203,7 +205,7 @@ def release(version: str) -> None:
 
     tags = [tag.name for tag in TagReference.list_items(repo)]
     if version in tags:
-        log.error(
+        logger.error(
             "Version %s already exists. Use `git tag` or `git tag -l %s` to verify.",
             version,
             version,
@@ -211,7 +213,7 @@ def release(version: str) -> None:
         return None
 
     if not is_dvc_remote_set():
-        log.error(
+        logger.error(
             "Looks like dvc remote is not set. We won't be able to push code."
             "\nRun:\n\ndvc remote add -d s3remote s3://bucket_name/path/to/dir\n\n... to use this command."
         )
