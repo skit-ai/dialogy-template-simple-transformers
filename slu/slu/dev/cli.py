@@ -24,7 +24,7 @@ from slu.dev.dir_setup import copy_data_directory, create_data_directory
 from slu.dev.release import release
 from slu.dev.repl import repl
 from slu.dev.test import test_classifier
-from slu.dev.train import create_data_splits, train_intent_classifier
+from slu.dev.train import create_data_splits, train_intent_classifier, merge_datasets
 
 
 def build_dir_cli(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
@@ -58,6 +58,11 @@ def build_split_data_cli(parser: argparse.ArgumentParser) -> argparse.ArgumentPa
         " Provide the column-name in the dataset that contains class names.",
     )
     parser.add_argument("--dest", help="The destination directory for the split data.")
+    return parser
+
+def build_data_combine_cli(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
+    parser.add_argument("--out", help="The output file.", required=True)
+    parser.add_argument("files", nargs="*", help="The files to be combined.")
     return parser
 
 
@@ -160,6 +165,8 @@ def main(command_string: Optional[str] = None) -> None:
         create_data_directory(args)
     elif args.command == "split-data":
         create_data_splits(args)
+    elif args.command == "combine-data":
+        merge_datasets(args)
     elif args.command == "train":
         train_intent_classifier(args)
     elif args.command == "test":
