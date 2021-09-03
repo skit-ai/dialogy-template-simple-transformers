@@ -20,9 +20,9 @@ To ensure this works correctly, we need to check:
 3. dvc remote is configured.
 4. A tag with the same version doesn't already exist.
 """
+import argparse
 import os
 import shutil
-import argparse
 import subprocess
 from configparser import ConfigParser
 from datetime import datetime
@@ -35,8 +35,8 @@ from git.refs.tag import TagReference
 from prompt_toolkit import HTML, print_formatted_text, prompt
 
 from slu import constants as const
-from slu.utils.config import Config
 from slu.utils import logger
+from slu.utils.config import Config
 
 
 def update_project_version_toml(version: str) -> None:
