@@ -2,6 +2,7 @@ import os
 from typing import Any
 
 from dialogy.workflow import Workflow
+from slu import constants as const
 
 
 def access(node: str, *attributes: str):
@@ -12,19 +13,13 @@ def access(node: str, *attributes: str):
     return read
 
 
-def mutate(node: str, *attributes: str):
-    attribute = attributes[0]
-
+def mutate(node: str, attribute: str, action=const.EXTEND):
     def write(workflow: Workflow, value: Any):
         workflow_io = getattr(workflow, node)
-        container = workflow_io[attribute]
-        if isinstance(container, list):
-            if isinstance(value, list):
-                container += value
-            else:
-                container.append(value)
-        else:
+        if action == const.REPLACE:
             workflow_io[attribute] = value
+        elif action == const.EXTEND:
+            workflow_io[attribute].extend(value)
 
     return write
 

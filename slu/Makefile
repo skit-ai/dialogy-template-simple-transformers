@@ -7,7 +7,7 @@ lint:
 	@black slu
 
 test: lint ## Run the tests.
-	@pytest --cov=src --cov-report html --cov-report term:skip-covered tests/
+	@pytest --cov=slu --cov-report html --cov-report term:skip-covered tests/
 	@echo -e "The tests pass!" 
 
 all: test
