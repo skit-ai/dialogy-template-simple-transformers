@@ -85,7 +85,7 @@ def build_test_cli(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     parser.add_argument(
         "--file", help="A csv dataset containing utterances and labels."
     )
-    parser.add_argument("--lang", help="The language of the dataset.")
+    parser.add_argument("--lang", help="The language of the dataset.", required=True)
     parser.add_argument(
         "--project", help="The project scope to which the dataset belongs."
     )
