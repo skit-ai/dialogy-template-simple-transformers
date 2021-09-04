@@ -23,21 +23,20 @@ To ensure this works correctly, we need to check:
 import argparse
 import os
 import shutil
-
 from datetime import datetime
 from glob import glob
 
 import semver
 import toml
 from dvc.repo import Repo as DVCRepo
-from git import Repo, Actor
+from git import Actor, Repo
 from git.refs.tag import TagReference
 from prompt_toolkit import HTML, print_formatted_text, prompt
 
 from slu import constants as const
+from slu.dev.version import check_version_save_config
 from slu.utils import logger
 from slu.utils.config import Config, YAMLLocalConfig
-from slu.dev.version import check_version_save_config
 
 
 def update_project_version_toml(version: str) -> None:
@@ -85,7 +84,14 @@ def vcs(repo: Repo, version: str, changelog_body: str, active_branch: str) -> No
 
     # Stage
     index = repo.index
-    index.add(["data.dvc", "pyproject.toml", "CHANGELOG.md", os.path.join("config", "config.yaml")])
+    index.add(
+        [
+            "data.dvc",
+            "pyproject.toml",
+            "CHANGELOG.md",
+            os.path.join("config", "config.yaml"),
+        ]
+    )
     last_commit_author: Actor = repo.head.commit.author
     logger.info(f"Using {last_commit_author} for creating commits.")
 

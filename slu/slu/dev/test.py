@@ -12,20 +12,20 @@ Options:
     -h --help   Show this screen.
     --version   Show version.
 """
-import json
 import argparse
+import json
 
 import pandas as pd
-from tqdm import tqdm
 from dialogy.utils import create_timestamps_path
 from sklearn.metrics import classification_report, confusion_matrix
 from tabulate import tabulate
+from tqdm import tqdm
 
 from slu import constants as const
+from slu.dev.version import check_version_save_config
 from slu.src.controller.prediction import get_predictions
 from slu.utils import logger
 from slu.utils.config import Config, YAMLLocalConfig
-from slu.dev.version import check_version_save_config
 
 
 def zoom_out_labels(labels):
@@ -66,13 +66,18 @@ def make_classification_report(
         )
     )
 
+
 def make_errors_report(
     config: Config, version: str, test_df: pd.DataFrame, predictions_df: pd.DataFrame
 ):
     logger.info(f"{test_df.head()}")
     test_df_ = test_df.copy()
-    merged_df = pd.merge(test_df_, predictions_df, on="data_id", suffixes=("_test", "_pred"))
-    errors_df = merged_df[merged_df[f"{const.INTENT}_test"] != merged_df[f"{const.INTENT}_pred"]].copy()
+    merged_df = pd.merge(
+        test_df_, predictions_df, on="data_id", suffixes=("_test", "_pred")
+    )
+    errors_df = merged_df[
+        merged_df[f"{const.INTENT}_test"] != merged_df[f"{const.INTENT}_pred"]
+    ].copy()
     errors_df.to_csv(
         create_timestamps_path(
             config.get_metrics_dir(const.CLASSIFICATION, version=version),
@@ -125,12 +130,14 @@ def test_classifier(args: argparse.Namespace):
     logger.disable("slu")
 
     for i, row in tqdm(test_df.iterrows(), total=test_df.shape[0]):
-        output = predict_api(**{
-            const.ALTERNATIVES: json.loads(row[const.ALTERNATIVES]),
-            const.CONTEXT: {},
-            const.LANG: lang,
-            "ignore_test_case": True,
-        })
+        output = predict_api(
+            **{
+                const.ALTERNATIVES: json.loads(row[const.ALTERNATIVES]),
+                const.CONTEXT: {},
+                const.LANG: lang,
+                "ignore_test_case": True,
+            }
+        )
         intents = output.get(const.INTENTS, [])
         predictions.append(
             {

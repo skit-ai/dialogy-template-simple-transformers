@@ -15,20 +15,20 @@ Options:
     -h --help     Show this screen.
     --version     Show version.
 """
-import os
 import argparse
 import json
+import os
 
 import pandas as pd
 import semver
-from tqdm import tqdm
 from sklearn.model_selection import train_test_split
+from tqdm import tqdm
 
 from slu import constants as const
+from slu.dev.version import check_version_save_config
 from slu.src.controller.prediction import get_workflow
 from slu.utils import logger
 from slu.utils.config import Config, YAMLLocalConfig
-from slu.dev.version import check_version_save_config
 
 
 def make_label_column_uniform(data_frame: pd.DataFrame) -> None:
@@ -41,7 +41,9 @@ def make_label_column_uniform(data_frame: pd.DataFrame) -> None:
     elif const.TAG in data_frame.columns:
         column = const.TAG
     else:
-        raise ValueError(f"Expected one of {const.INTENT}, {const.LABELS}, {const.TAG} to be present in the dataset.")
+        raise ValueError(
+            f"Expected one of {const.INTENT}, {const.LABELS}, {const.TAG} to be present in the dataset."
+        )
     data_frame.rename(columns={column: const.INTENT}, inplace=True)
 
 
@@ -51,14 +53,20 @@ def make_data_column_uniform(data_frame: pd.DataFrame) -> None:
     elif const.DATA in data_frame.columns:
         column = const.DATA
     else:
-        raise ValueError(f"Expected one of {const.ALTERNATIVES}, {const.DATA} to be present in the dataset.")
+        raise ValueError(
+            f"Expected one of {const.ALTERNATIVES}, {const.DATA} to be present in the dataset."
+        )
     data_frame.rename(columns={column: const.ALTERNATIVES}, inplace=True)
 
-    for i, row in tqdm(data_frame.iterrows(), total=len(data_frame), desc="Fixing data structure"):
+    for i, row in tqdm(
+        data_frame.iterrows(), total=len(data_frame), desc="Fixing data structure"
+    ):
         if isinstance(row[const.ALTERNATIVES], str):
             data = json.loads(row[const.ALTERNATIVES])
             if const.ALTERNATIVES in data:
-                data_frame.loc[i, const.ALTERNATIVES] = json.dumps(data[const.ALTERNATIVES])
+                data_frame.loc[i, const.ALTERNATIVES] = json.dumps(
+                    data[const.ALTERNATIVES]
+                )
 
 
 def create_data_splits(args: argparse.Namespace) -> None:
@@ -87,7 +95,8 @@ Data already exists in {dest} You should create a new version using:
 ```shell
 slu dir-setup --version {str(ver_.bump_patch())}
 ```
-""".strip())
+""".strip()
+        )
 
     if not os.path.isdir(dest):
         raise ValueError(
@@ -159,7 +168,8 @@ You should create a new version using:
 ```shell
 slu dir-setup --version {str(ver_.bump_patch())}
 ```
-""".strip())
+""".strip()
+        )
 
     workflow = get_workflow(const.TRAIN, lang=args.lang, project=args.project)
 

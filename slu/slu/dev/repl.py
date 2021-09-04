@@ -11,10 +11,10 @@ from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
 from prompt_toolkit.history import FileHistory
 
 import slu.constants as const
+from slu.dev.version import check_version_save_config
 from slu.src.controller.prediction import get_predictions
 from slu.utils import logger
 from slu.utils.config import Config, YAMLLocalConfig
-from slu.dev.version import check_version_save_config
 
 
 def repl_prompt(separator="", show_help=True):

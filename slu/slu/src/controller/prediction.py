@@ -98,7 +98,7 @@ def get_predictions(purpose, **kwargs):
                 "lang": lang,
             },
             output,
-            **kargs
+            **kargs,
         )
         return output
 

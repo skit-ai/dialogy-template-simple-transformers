@@ -24,7 +24,7 @@ from slu.dev.dir_setup import copy_data_directory, create_data_directory
 from slu.dev.release import release
 from slu.dev.repl import repl
 from slu.dev.test import test_classifier
-from slu.dev.train import create_data_splits, train_intent_classifier, merge_datasets
+from slu.dev.train import create_data_splits, merge_datasets, train_intent_classifier
 
 
 def build_dir_cli(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
@@ -32,7 +32,7 @@ def build_dir_cli(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
         "--version",
         default="0.0.1",
         help="The version of the dataset, model, metrics to use. Defaults to the latest version.",
-        required=True
+        required=True,
     )
     return parser
 
@@ -60,6 +60,7 @@ def build_split_data_cli(parser: argparse.ArgumentParser) -> argparse.ArgumentPa
     )
     parser.add_argument("--dest", help="The destination directory for the split data.")
     return parser
+
 
 def build_data_combine_cli(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     parser.add_argument("--out", help="The output file.", required=True)
