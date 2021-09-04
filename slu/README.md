@@ -48,7 +48,7 @@ The questions here help:
 ### 2. Install
 
 ```shell
-cd slu
+cd hello-world
 poetry install
 make lint
 git init
@@ -63,10 +63,18 @@ git commit -m "add: initial commit."
 We use [`dvc`](https://dvc.org/doc/install) for dataset and model versioning.
 s3 is the preferred remote to save project level data that are not fit for tracking via git.
 
+```shell
+# from project root.
+dvc init
+dvc add data
+dvc remote add -d myremote s3://bucket/path/to/some/dir
+git add data.dvc
+```
+
 ### 4. Project setup
 
 The `poetry install` step takes care of dvc installation. You need to create a project on github, gitlab, bitbucket, etc.
-set the remote. Once you are done with the installation, you can perform `slu -h`
+set the remote. Once you are done with the installation, you can perform `slu -h`.
 
 ```shell
 > slu -h
@@ -148,7 +156,7 @@ data
 
 ### 7. Train
 
-To train an classifier, we run `slu train`
+To train an classifier, we run `slu train`.
 
 ```shell
 slu train -h
@@ -236,7 +244,7 @@ To run your models to see how they perform on live inputs, you have two options:
 ### 7. Releases
 
 Once the model performance achieves a satisfactory metric, we want to release and persist the dataset, models and reports.
-To do this, we meet the final command `slu release --version VERSION`
+To do this, we meet the final command `slu release --version VERSION`.
 
 ```shell
 slu release -h
@@ -345,10 +353,3 @@ These are the APIs which are being used.
     ```python
     @app.route("/predict/<lang>/slu/", methods=["POST"])
     ```
-
-## Customization
-
-The best place to setup custom code is the `src` dir. The existing `workflow` would
-usually be modified to have api level changes. The API itself can be modified via `api/endpoints.py`.
-
-To modify configuration edit `config/config.yaml`.

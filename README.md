@@ -35,7 +35,7 @@ Make sure you have `git`, `python==^3.8`, [`poetry`](https://python-poetry.org/d
 
 To create a project using this template, run:
 
-```
+```shell
 pip install dialogy
 dialogy create hello-world
 ```
@@ -47,7 +47,7 @@ The questions here help:
 
 ### 2. Install
 
-```
+```shell
 cd hello-world
 poetry install
 make lint
@@ -63,12 +63,20 @@ git commit -m "add: initial commit."
 We use [`dvc`](https://dvc.org/doc/install) for dataset and model versioning.
 s3 is the preferred remote to save project level data that are not fit for tracking via git.
 
+```shell
+# from project root.
+dvc init
+dvc add data
+dvc remote add -d myremote s3://bucket/path/to/some/dir
+git add data.dvc
+```
+
 ### 4. Project setup
 
 The `poetry install` step takes care of dvc installation. You need to create a project on github, gitlab, bitbucket, etc.
-set the remote. Once you are done with the installation, you can perform `slu -h`
+set the remote. Once you are done with the installation, you can perform `slu -h`.
 
-```
+```shell
 > slu -h
 usage: slu [-h] {setup-dirs,split-data,combine-data,train,test,release,repl} ...
 
@@ -91,7 +99,7 @@ optional arguments:
 
 Let's start with dataset, model and report management command `slu setup-dirs --version=0.0.1`.
 
-```
+```shell
 slu setup-dirs -h
 usage: slu setup-dirs [-h] [--version VERSION]
 
@@ -102,7 +110,7 @@ optional arguments:
 
 This creates a data directory with the following structure:
 
-```
+```shell
 data
 +---0.0.1
     +---classification
@@ -117,7 +125,7 @@ Assuming we have a labeled dataset, we are ready to execute the next command `sl
 this puts a `train.csv` and `test.csv` at a desired `--dest` or the project default places within
 `data/0.0.1/classification/datasets`.
 
-```
+```shell
 slu split-data -h
 usage: slu split-data [-h] [--version VERSION] --file FILE (--train-size TRAIN_SIZE | --test-size TEST_SIZE)
                       [--stratify STRATIFY] [--dest DEST]
@@ -135,7 +143,7 @@ optional arguments:
   --dest DEST           The destination directory for the split data.
 ```
 
-```
+```shell
 data
 +---0.0.1
     +---classification
@@ -148,9 +156,9 @@ data
 
 ### 7. Train
 
-To train an classifier, we run `slu train`
+To train an classifier, we run `slu train`.
 
-```
+```shell
 slu train -h
 usage: slu train [-h] [--file FILE] [--lang LANG] [--project PROJECT] [--version VERSION]
 
@@ -165,7 +173,7 @@ optional arguments:
 Not providing the `--file` argument will pick a `train.csv` from `data/0.0.1/classification/datasets`.
 Once the training is complete, you would notice the models would be populated:
 
-```
+```shell
 data
 +---0.0.1
     +---classification
@@ -191,7 +199,7 @@ data
 We evaluate all the plugins in the workflow using `slu test --lang=LANG`.
 Not providing the `--file` argument will pick a `test.csv` from `data/0.0.1/classification/datasets`.
 
-```
+```shell
 slu test -h
 usage: slu test [-h] [--file FILE] --lang LANG [--project PROJECT] [--version VERSION]
 
@@ -217,7 +225,7 @@ To run your models to see how they perform on live inputs, you have two options:
 
 1. `slu repl`
 
-    ```
+    ```shell
     slu repl -h
     usage: slu repl [-h] [--version VERSION] [--lang LANG]
 
@@ -236,7 +244,7 @@ To run your models to see how they perform on live inputs, you have two options:
 ### 7. Releases
 
 Once the model performance achieves a satisfactory metric, we want to release and persist the dataset, models and reports.
-To do this, we meet the final command `slu release --version VERSION`
+To do this, we meet the final command `slu release --version VERSION`.
 
 ```shell
 slu release -h
@@ -273,9 +281,9 @@ languages:
 - en
 model_name: slu
 slots:                      # Arbitrary slot filing rule to serve as an example.
-  _cancel_:                 # Intent name
-    number_slot:            # Slot name
-    - number                # Entity type
+  _cancel_:
+    number_slot:
+    - number
 tasks:
   classification:
     alias: {}
@@ -345,10 +353,3 @@ These are the APIs which are being used.
     ```python
     @app.route("/predict/<lang>/slu/", methods=["POST"])
     ```
-
-## Customization
-
-The best place to setup custom code is the `src` dir. The existing `workflow` would
-usually be modified to have api level changes. The API itself can be modified via `api/endpoints.py`.
-
-To modify configuration edit `config/config.yaml`.
