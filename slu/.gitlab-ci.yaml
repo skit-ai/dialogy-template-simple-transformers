@@ -1,0 +1,63 @@
+image: "python:3.8"                         # base dockerimage on which the stages will run. Can be different for each stage.
+
+stages:                                     # each stage runs on a new Docker image. data is not persisted between stages by default.
+  - publish_image                           # build docker image and push to registry
+  - update_chart_and_deploy_to_production   # deploy the tagged dockerimage to production cluster
+
+build and push docker image:        
+  stage: publish_image
+  only:                                    # only runs the step when git tag is done and it matches one of the mentioned regex patterns 
+    variables:
+        - $CI_COMMIT_TAG =~ /^[0-9]+\.[0-9]+\.[0-9]+-[0-9]+\.[0-9]+\.[0-9]+$/ 
+        - $CI_COMMIT_TAG =~ /^[0-9]+\.[0-9]+\.[0-9]+$/     
+  variables:
+    APP_NAME: $APPLICATION_PATH/$CI_PROJECT_NAME
+  image: 
+    name: amazon/aws-cli
+    entrypoint: [""]
+  services:
+    - docker:dind 
+  before_script:
+    - echo "$CI_COMMIT_TAG"
+    - amazon-linux-extras install docker
+  script:
+    - PRE_RELEASE_VERSION=$(echo $CI_COMMIT_TAG | grep -E '^[0-9]+\.[0-9]+\.[0-9]+-[0-9]+\.[0-9]+\.[0-9]+$ || :')
+    - RELEASE_VERSION=$(echo $CI_COMMIT_TAG | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' || :)
+    - if [[ ! -z "${PRE_RELEASE_VERSION}" ]]; then DOCKER_TAG=latest ; fi;
+    - if [[ ! -z "${RELEASE_VERSION}" ]]; then DOCKER_TAG=master ; fi;
+    - docker info | grep Registry
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+    - docker build -t $DOCKER_REGISTRY/$APP_NAME:$CI_COMMIT_TAG -t $DOCKER_REGISTRY/$APP_NAME:$DOCKER_TAG .
+    - aws ecr get-login-password | docker login --username AWS --password-stdin $DOCKER_REGISTRY 
+    - docker push $DOCKER_REGISTRY/$APP_NAME:$CI_COMMIT_TAG
+    - docker push $DOCKER_REGISTRY/$APP_NAME:$DOCKER_TAG
+
+update chart and deploy to production:
+  stage: update_chart_and_deploy_to_production
+  variables:
+    VALUES_YAML: values.yaml
+  rules:
+    - if: '$CI_COMMIT_TAG =~ /^[0-9]+\.[0-9]+\.[0-9]+$/'  
+      when: manual                                         # this stage requires manual approval to run
+  image: 
+    name: amazon/aws-cli:amd64
+    entrypoint: [""]
+  script:
+    - curl -LO https://storage.googleapis.com/kubernetes-release/release/v1.16.0/bin/linux/amd64/kubectl && chmod +x kubectl && mv kubectl /usr/local/bin/
+    - aws eks --region ap-south-1 update-kubeconfig --name production-cluster
+    - yum install tar -y
+    - yum -y install bzip2
+    - yum -y install gzip
+    - yum -y install git
+    - yum -y install git
+    - yum -y install wget
+    - curl -L https://storage.googleapis.com/kubernetes-helm/helm-v2.17.0-linux-amd64.tar.gz | tar xz && mv linux-amd64/helm /bin/helm && rm -rf linux-amd64
+    - helm init --client-only
+    - helm repo add cm $CHARTMUSEUM_HOST --username $CHARTMUSEUM_USERNAME --password $CHARTMUSEUM_PASSWORD
+    - helm repo update
+    - helm fetch cm/$CI_PROJECT_NAME --untar
+    - "sed -i -e '0,/tag.*/s//tag: '$CI_COMMIT_TAG'/' $CI_PROJECT_NAME/$VALUES_YAML"
+    - helm plugin install https://github.com/chartmuseum/helm-push.git
+    - helm push $CI_PROJECT_NAME cm
+    - sed -i -e 's|DOCKER_IMAGE_TAG|'$CI_COMMIT_TAG'|g' "$CI_PROJECT_NAME"/application-production.yaml
+    - kubectl apply -f "$CI_PROJECT_NAME"/application-production.yaml
