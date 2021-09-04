@@ -8,6 +8,7 @@ lint:
 
 test: lint ## Run the tests.
 	@pytest --cov=slu --cov-report html --cov-report term:skip-covered tests/
-	@echo -e "The tests pass!" 
+	@echo -e "The tests pass!"
 
-all: test
+build: test
+	@bash build.sh $1
