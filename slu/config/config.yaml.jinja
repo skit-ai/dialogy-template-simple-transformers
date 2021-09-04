@@ -2,10 +2,9 @@ model_name: slu
 tasks:
   classification:
     use: true
-    format: "csv"
     threshold: 0.1
     alias: {}
-    skip:
+    skip:                 # Skip the intents that are not required.
      - audio_noisy
     model_args:
       train:
@@ -42,51 +41,9 @@ tasks:
         output_dir: null
         best_model_dir: null
         reprocess_input_data: true
-  ner:
-    use: [[ use_ner ]]
-    format: "csv"
-    threshold: 0.6
-    model_args:
-      train:
-        output_dir: null
-        best_model_dir: null
-        evaluate_during_training_steps: 1080
-        evaluate_during_training: false
-        eval_batch_size: 8
-        save_model_every_epoch: false
-        save_eval_checkpoints: false
-        reprocess_input_data: true
-        num_train_epochs: 10
-        overwrite_output_dir: true
-        fp16: false
-        classification_report: true
-      test:
-        output_dir: null
-        best_model_dir: null
-        classification_report: true
-      production:
-        output_dir: null
-        best_model_dir: null
-        output_dir: null
-        best_model_dir: null
-        use_multiprocessing: false # Setting this to true hurts performance!
-        eval_batch_size: 1 # same as the number of inputs going into the model.
-        max_seq_length: 128 # reduce this to boost performance.
-        reprocess_input_data: true
-        no_cache: true
-        thread_count: 1
-        silent: true
-        dynamic_quantize: true
-slots:
-  intent_name:
-    slot_name:
-      - name: "entity_name"
-        params: {}
-        parser: "plugin_name"
-languages:
+slots:                # Just an example, please change this to your own slots.
+  _cancel_:           # Intent name
+    number_slot:      # slot name
+    - number          # entity types
   - en
-calibration:
-  en:
-    - threshold: 0.9
-    - vectorizer_path: "../../asr-calib/new-intents/axis-dialogy/calibration/vec.pkl"
-    - classifier_path: "../../asr-calib/new-intents/axis-dialogy/calibration/vec-xgb.pkl"
+calibration: {}
