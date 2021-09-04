@@ -32,6 +32,7 @@ def build_dir_cli(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
         "--version",
         default="0.0.1",
         help="The version of the dataset, model, metrics to use. Defaults to the latest version.",
+        required=True
     )
     return parser
 
