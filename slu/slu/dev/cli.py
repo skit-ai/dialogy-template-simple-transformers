@@ -1,21 +1,5 @@
 """
-Usage:
-  __init__.py (train|test) [--version=<version>] [--file-format=<file_format>]
-  __init__.py (train|test) (classification|ner) [--version=<version>] [--file-format=<file_format>] [--file=<test_file>]
-  __init__.py data --version=<version> [--force]
-  __init__.py clone <from_version> <to_version> [--force]
-  __init__.py release --version=<version>
-  __init__.py repl
-  __init__.py (-h | --help)
-
-Options:
-    <from_version>              The source data directory; models, datasets, metrics will be copied from here.
-    <to_version>                The destination data directory; models, datasets, metrics will be copied here.
-    --version=<version>         The version of the dataset, model, metrics to use.
-    --file-format=<file_format> One of "csv" or "sqlite".
-    --file=<test_file>          A file to be tested separately.
-    --force                     Pass this flag to overwrite existing directories.
-    -h --help                   Show this screen.
+[summary]
 """
 import argparse
 from typing import Optional
