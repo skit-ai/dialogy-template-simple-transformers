@@ -241,7 +241,7 @@ To run your models to see how they perform on live inputs, you have two options:
 
     This is a uwsgi server that provides the same interface as your production applications.
 
-### 7. Releases
+### 10. Releases
 
 Once the model performance achieves a satisfactory metric, we want to release and persist the dataset, models and reports.
 To do this, we meet the final command `slu release --version VERSION`.
@@ -270,6 +270,11 @@ This command takes care of the following acts:
 6. Pushes the data to dvc remote.
 
 7. Pushes the code and tag to git remote.
+
+## 11. Build
+
+Finally, we are ready to build a Docker image for our service for production runs. We use Makefiles to ensure a bit of hygiene checks.
+Run `make <image-name>` to check if the image builds in your local environment. If you have CI-CD enabled, that should do it for you.
 
 ## Config
 
