@@ -15,11 +15,13 @@ Options:
     -h --help     Show this screen.
     --version     Show version.
 """
-import argparse
 import os
+import argparse
+import json
 
 import pandas as pd
 import semver
+from tqdm import tqdm
 from sklearn.model_selection import train_test_split
 
 from slu import constants as const
@@ -27,6 +29,36 @@ from slu.src.controller.prediction import get_workflow
 from slu.utils import logger
 from slu.utils.config import Config, YAMLLocalConfig
 from slu.dev.version import check_version_save_config
+
+
+def make_label_column_uniform(data_frame: pd.DataFrame) -> None:
+    if const.INTENT in data_frame.columns:
+        column = const.INTENT
+    elif const.INTENTS in data_frame.columns:
+        column = const.INTENTS
+    elif const.LABELS in data_frame.columns:
+        column = const.LABELS
+    elif const.TAG in data_frame.columns:
+        column = const.TAG
+    else:
+        raise ValueError(f"Expected one of {const.INTENT}, {const.LABELS}, {const.TAG} to be present in the dataset.")
+    data_frame.rename(columns={column: const.INTENT}, inplace=True)
+
+
+def make_data_column_uniform(data_frame: pd.DataFrame) -> None:
+    if const.ALTERNATIVES in data_frame.columns:
+        column = const.ALTERNATIVES
+    elif const.DATA in data_frame.columns:
+        column = const.DATA
+    else:
+        raise ValueError(f"Expected one of {const.ALTERNATIVES}, {const.DATA} to be present in the dataset.")
+    data_frame.rename(columns={column: const.ALTERNATIVES}, inplace=True)
+
+    for i, row in tqdm(data_frame.iterrows(), total=len(data_frame), desc="Fixing data structure"):
+        if isinstance(row[const.ALTERNATIVES], str):
+            data = json.loads(row[const.ALTERNATIVES])
+            if const.ALTERNATIVES in data:
+                data_frame.loc[i, const.ALTERNATIVES] = json.dumps(data[const.ALTERNATIVES])
 
 
 def create_data_splits(args: argparse.Namespace) -> None:
@@ -37,10 +69,7 @@ def create_data_splits(args: argparse.Namespace) -> None:
     version = args.version
     project_config_map = YAMLLocalConfig().generate()
     config: Config = list(project_config_map.values()).pop()
-    if version:
-        semver.VersionInfo.parse(version)
-        config.version = version
-        config.save()
+    check_version_save_config(config, version)
 
     dataset_file = args.file
     train_size = args.train_size
@@ -68,6 +97,10 @@ slu dir-setup --version {str(ver_.bump_patch())}
     data_frame = pd.read_csv(dataset_file)
     logger.debug(f"Data frame: {data_frame.shape}")
     skip_list = config.get_skip_list(const.CLASSIFICATION)
+
+    make_label_column_uniform(data_frame)
+    make_data_column_uniform(data_frame)
+
     skip_filter = data_frame[const.INTENT].isin(skip_list)
     failed_transcripts = data_frame[const.ALTERNATIVES].isin(["[[]]", "[]"])
     non_empty_transcripts = data_frame[const.ALTERNATIVES].isna()
