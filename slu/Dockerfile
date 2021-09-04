@@ -1,9 +1,8 @@
 FROM vernacularai/ubuntu-pyenv:2.0.0
 
 
-ARG PYTHON_VER=3.8.6
+ARG PYTHON_VER=3.8.2
 ARG POETRY_VER=1.0.10
-ARG VERSION
 
 WORKDIR /home/slu
 
@@ -20,16 +19,11 @@ RUN poetry install --no-dev && \
     rm -rf /root/.cache && pip3 uninstall --yes poetry
 
 COPY ./slu ./slu
-COPY ./data/${VERSION}/models ./data/${VERSION}/models
+COPY ./data ./data
 COPY ./uwsgi.ini ./uwsgi.ini
 COPY ./config ./config
 
-ENV GOOGLE_API_KEY="" \
-    DUCKLING_URL="" \
-    ENVIRONMENT="production" \
-    GOOGLE_API_KEY="" \
-    SENTRY_DSN=""
-
+ENV ENVIRONMENT="production"
 EXPOSE 8005
 
 CMD ["/bin/sh", "-ec", "while :; do echo '.'; sleep 5 ; done"]
