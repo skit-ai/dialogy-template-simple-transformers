@@ -60,7 +60,7 @@ def get_predictions(purpose, **kwargs):
         context = context or {}
         history = history or []
         start_time = time.perf_counter()
-        reference_time = datetime.now(pytz.timezone("Asia/Kolkata")).replace(
+        default_reftime = datetime.now(pytz.timezone("Asia/Kolkata")).replace(
             hour=0, minute=0, second=0, microsecond=0
         )
 
