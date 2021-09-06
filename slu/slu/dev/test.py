@@ -91,10 +91,10 @@ def make_confusion_matrix(
 ):
     true_labels = zoom_out_labels(test_df[const.INTENT])
     pred_labels = zoom_out_labels(predictions_df[const.INTENT])
-    labels = sorted(true_labels + pred_labels)
+    labels = sorted(set(true_labels + pred_labels))
     cm = confusion_matrix(true_labels, pred_labels, labels=labels)
-    logger.info(f"Confusion matrix.\n{cm}")
     cm_df = pd.DataFrame(cm, index=labels, columns=labels)
+    logger.info(f"Confusion matrix.\n{cm_df}")
     cm_df.to_csv(
         create_timestamps_path(
             config.get_metrics_dir(const.CLASSIFICATION, version=version),
