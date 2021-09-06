@@ -4,7 +4,6 @@ This module offers an interactive repl to run a Workflow.
 import re
 import argparse
 import json
-from pprint import pprint
 
 from dialogy.utils import normalize
 from prompt_toolkit import PromptSession
@@ -97,7 +96,8 @@ def repl(args: argparse.Namespace) -> None:
                 **input_,
                 lang=lang,
             )
-            pprint(response)
+            response_json = json.dumps(response, indent=2)
+            logger.info(f"Output: \n{response_json}")
             show_help = False
     except KeyboardInterrupt:
         logger.info("Exiting...")
