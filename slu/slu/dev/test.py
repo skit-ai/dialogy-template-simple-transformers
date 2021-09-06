@@ -121,7 +121,7 @@ def test_classifier(args: argparse.Namespace):
     config: Config = list(project_config_map.values()).pop()
     check_version_save_config(config, version)
 
-    predict_api = get_predictions(const.PRODUCTION, config=config, debug=False)
+    predict_api = get_predictions(const.TEST, config=config, debug=False)
     dataset = dataset or config.get_dataset(const.CLASSIFICATION, f"{const.TEST}.csv")
     test_df = pd.read_csv(dataset)
 
