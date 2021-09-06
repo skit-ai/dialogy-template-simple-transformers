@@ -64,6 +64,11 @@ def get_predictions(purpose, **kwargs):
             hour=0, minute=0, second=0, microsecond=0
         )
 
+        try:
+            reference_time = datetime.fromisoformat(context[const.REFERENCE_TIME])
+        except (KeyError, ValueError, TypeError):
+            reference_time = default_reftime
+
         reference_time_as_unix_epoch = int(reference_time.timestamp() * 1000)
         if not lang:
             raise ValueError(f"Expected {lang} to be a ISO-639-1 code.")
