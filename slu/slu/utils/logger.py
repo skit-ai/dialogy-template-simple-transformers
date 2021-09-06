@@ -2,7 +2,9 @@ import sys
 
 from loguru import logger
 
-import slu.constants as const
+
+
+sys.stdout.reconfigure(encoding="utf-8", errors="backslashreplace")
 
 config = {
     "handlers": [
@@ -23,6 +25,7 @@ FILE: {name}:L{line} <blue>{function}(...)</blue>
             "sink": "file.log",
             "rotation": "500MB",
             "retention": "10 days",
+            "encoding": "utf8",
             "format": """
 -------------------------------------------------------
 <level>{level}</level>
@@ -35,6 +38,7 @@ FILE: {name}:L{line} <blue>{function}(...)</blue>
         },
     ]
 }
+
 
 logger.configure(**config)
 logger.enable("slu")
