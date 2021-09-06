@@ -42,7 +42,7 @@ def get_plugins(purpose, config: Config, debug=False) -> List[Plugin]:
         threshold=config.get_model_confidence_threshold(const.CLASSIFICATION),
         score_round_off=5,
         purpose=purpose,
-        use_cuda=purpose == const.PRODUCTION,
+        use_cuda=purpose != const.PRODUCTION,
         data_column=const.ALTERNATIVES,
         label_column=const.INTENT,
         args_map=config.get_model_args(const.CLASSIFICATION),
