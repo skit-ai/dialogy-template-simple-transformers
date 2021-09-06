@@ -20,8 +20,8 @@ from slu.utils.make_test_cases import build_test_case
 
 
 def get_workflow(purpose, **kwargs):
-    if "config" in kwargs:
-        config = kwargs["config"]
+    if const.CONFIG in kwargs:
+        config = kwargs[const.CONFIG]
     else:
         project_config_map = YAMLLocalConfig().generate()
         config: Config = list(project_config_map.values()).pop()
@@ -36,8 +36,8 @@ def get_predictions(purpose, **kwargs):
     Ensures that the workflow is loaded just once without creating global variables for it.
     This can also be made into a class if needed.
     """
-    if "config" in kwargs:
-        config = kwargs["config"]
+    if const.CONFIG in kwargs:
+        config = kwargs[const.CONFIG]
     else:
         project_config_map = YAMLLocalConfig().generate()
         config: Config = list(project_config_map.values()).pop()
@@ -98,9 +98,9 @@ def get_predictions(purpose, **kwargs):
         logger.info(f"Duration: {time.perf_counter() - start_time}s")
         build_test_case(
             {
-                "alternatives": alternatives,
-                "context": context,
-                "lang": lang,
+                const.ALTERNATIVES: alternatives,
+                const.CONTEXT: context,
+                const.LANG: lang,
             },
             output,
             **kargs,
