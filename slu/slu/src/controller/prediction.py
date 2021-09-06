@@ -69,12 +69,12 @@ def get_predictions(purpose, **kwargs):
             raise ValueError(f"Expected {lang} to be a ISO-639-1 code.")
 
         input_ = {
-            const.S_CLASSIFICATION_INPUT: alternatives,
-            const.S_CONTEXT: context,
-            const.S_INTENTS_INFO: intents_info,
-            const.S_NER_INPUT: normalize(alternatives),
-            const.S_REFERENCE_TIME: reference_time_as_unix_epoch,
-            const.S_LOCALE: const.LANG_TO_LOCALES[lang],
+            const.CLASSIFICATION_INPUT: alternatives,
+            const.CONTEXT: context,
+            const.INTENTS_INFO: intents_info,
+            const.NER_INPUT: normalize(alternatives),
+            const.REFERENCE_TIME: reference_time_as_unix_epoch,
+            const.LOCALE: const.LANG_TO_LOCALES[lang],
         }
 
         logger.debug(f"Input:\n{pformat(input_)}")

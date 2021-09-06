@@ -70,7 +70,7 @@ def slu(lang: str, model_name: str):
 
         context: str = request.json.get(const.CONTEXT) or {}  # type: ignore
         intents_info: List[Dict[str, Any]] = (
-            request.json.get(const.S_INTENTS_INFO) or []
+            request.json.get(const.INTENTS_INFO) or []
         )
         history: List[Any] = request.json.get(const.HISTORY) or []
 

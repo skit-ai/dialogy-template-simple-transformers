@@ -84,7 +84,7 @@ def save_report(classification_report_output, metrics_dir):
     """
     report = pd.DataFrame(classification_report_output).T
     report.index.names = [const.METRICS]
-    report.to_csv(os.path.join(metrics_dir, const.S_REPORT))
+    report.to_csv(os.path.join(metrics_dir, const.REPORT))
 
 
 def save_classification_report(true_labels, pred_labels, metrics_dir):

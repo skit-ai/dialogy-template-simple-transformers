@@ -16,7 +16,7 @@ def get_plugins(purpose, config: Config, debug=False) -> List[Plugin]:
     merge_asr_output = plugins.MergeASROutputPlugin(
         access=plugin_functions.access(const.INPUT, const.S_CLASSIFICATION_INPUT),
         mutate=plugin_functions.mutate(
-            const.INPUT, const.S_CLASSIFICATION_INPUT, action=const.REPLACE
+            const.INPUT, const.CLASSIFICATION_INPUT, action=const.REPLACE
         ),
         data_column=const.ALTERNATIVES,
         debug=debug,
@@ -24,7 +24,7 @@ def get_plugins(purpose, config: Config, debug=False) -> List[Plugin]:
 
     duckling_plugin = plugins.DucklingPlugin(
         access=plugin_functions.access(
-            const.INPUT, const.S_NER_INPUT, const.S_REFERENCE_TIME, const.S_LOCALE
+            const.INPUT, const.NER_INPUT, const.REFERENCE_TIME, const.LOCALE
         ),
         mutate=plugin_functions.mutate(const.OUTPUT, const.ENTITIES),
         dimensions=["people", "number", "time", "duration"],
