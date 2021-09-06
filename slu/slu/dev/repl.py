@@ -1,6 +1,7 @@
 """
 This module offers an interactive repl to run a Workflow.
 """
+import re
 import argparse
 import json
 from pprint import pprint
@@ -56,6 +57,7 @@ def make_input(input_string):
         else:
             return {const.ALTERNATIVES: payload}
     except json.JSONDecodeError:
+        input_string = re.sub(r"(\s+|\n+)", " ", input_string).strip()
         return {const.ALTERNATIVES: normalize(input_string)}
 
 
