@@ -1,12 +1,12 @@
 # SLU
 
-Made with Dialogy Template with Simple Transformers
+A template for SLU projects at [skit.ai](https://skit.ai/).
 
 ## Features
 
 1. XLMRWorkflow uses "xlm-roberta-base" for both classification and ner tasks.
-2. Flask integration.
-3. Sentry integration.
+2. Flask APIs.
+3. Sentry for error monitoring.
 
 ## Directory Structure
 
@@ -58,20 +58,7 @@ git commit -m "add: initial commit."
 
 **Please look at `"languages"` key in `config.yaml`. Update this with supported languages to prevent hiccups!**
 
-### 3. Version control
-
-We use [`dvc`](https://dvc.org/doc/install) for dataset and model versioning.
-s3 is the preferred remote to save project level data that are not fit for tracking via git.
-
-```shell
-# from project root.
-dvc init
-dvc add data
-dvc remote add -d myremote s3://bucket/path/to/some/dir
-git add data.dvc
-```
-
-### 4. Project setup
+### 3. Project setup
 
 The `poetry install` step takes care of dvc installation. You need to create a project on github, gitlab, bitbucket, etc.
 set the remote. Once you are done with the installation, you can perform `slu -h`.
@@ -95,7 +82,7 @@ optional arguments:
   -h, --help            show this help message and exit
 ```
 
-### 5. Data setup
+### 4. Data setup
 
 Let's start with dataset, model and report management command `slu setup-dirs --version=0.0.1`.
 
@@ -117,6 +104,19 @@ data
         +---datasets
         +---metrics
         +---models
+```
+
+### 5. Version control
+
+We use [`dvc`](https://dvc.org/doc/install) for dataset and model versioning.
+s3 is the preferred remote to save project level data that are not fit for tracking via git.
+
+```shell
+# from project root.
+dvc init
+dvc add data
+dvc remote add -d myremote s3://bucket/path/to/some/dir
+git add data.dvc
 ```
 
 ### 6. Data Preparation
