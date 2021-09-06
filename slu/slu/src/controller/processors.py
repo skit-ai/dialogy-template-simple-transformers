@@ -10,11 +10,8 @@ from slu.utils.config import Config
 
 
 def get_plugins(purpose, config: Config, debug=False) -> List[Plugin]:
-    if os.environ.get("ENVIRONMENT") != const.PRODUCTION:
-        debug = False
-
     merge_asr_output = plugins.MergeASROutputPlugin(
-        access=plugin_functions.access(const.INPUT, const.S_CLASSIFICATION_INPUT),
+        access=plugin_functions.access(const.INPUT, const.CLASSIFICATION_INPUT),
         mutate=plugin_functions.mutate(
             const.INPUT, const.CLASSIFICATION_INPUT, action=const.REPLACE
         ),
@@ -35,16 +32,17 @@ def get_plugins(purpose, config: Config, debug=False) -> List[Plugin]:
         # You need to set its real value in k8s configs or wherever you keep your
         # env-vars safe.
         url=os.environ.get("DUCKLING_URL", "http://localhost:8000/parse/"),
-        debug=False,
+        debug=debug,
     )
 
     xlmr_clf = plugins.XLMRMultiClass(
         model_dir=config.get_model_dir(const.CLASSIFICATION),
-        access=plugin_functions.access(const.INPUT, const.S_CLASSIFICATION_INPUT),
+        access=plugin_functions.access(const.INPUT, const.CLASSIFICATION_INPUT),
         mutate=plugin_functions.mutate(const.OUTPUT, const.INTENTS),
         threshold=config.get_model_confidence_threshold(const.CLASSIFICATION),
         score_round_off=5,
         purpose=purpose,
+        use_cuda=purpose == const.PRODUCTION,
         data_column=const.ALTERNATIVES,
         label_column=const.INTENT,
         args_map=config.get_model_args(const.CLASSIFICATION),
