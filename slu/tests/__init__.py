@@ -7,5 +7,4 @@ def load_tests(test_type, current_path):
     test_dir = pathlib.Path(current_path).parent
     test_cases_path = os.path.join(test_dir, f"test_{test_type}.yaml")
     with open(test_cases_path, "r") as handle:
-        test_cases = yaml.load(handle, Loader=yaml.SafeLoader)
-    return test_cases
+        return yaml.load(handle, Loader=yaml.SafeLoader).values()
