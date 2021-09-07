@@ -9,7 +9,7 @@ description = "An SLU core project."
 authors = ["ltbringer <amresh.venugopal@gmail.com>",]
 
 [tool.poetry.dependencies]
-python = ">=3.8,<4.0"
+python = ">=3.8,<3.10"
 simpletransformers = "^0.60.6"
 coloredlogs = "^15.0"
 PyYAML = "5.4.1"
