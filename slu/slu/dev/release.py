@@ -40,7 +40,7 @@ def update_project_version_toml(version: str) -> None:
         version (str): Current semver.
     """
     logger.debug("Updating pyproject.toml")
-    project_toml_path = const.S_PROJECT_TOML
+    project_toml_path = const.PROJECT_TOML
 
     with open(project_toml_path, "r") as toml_handle:
         toml_content = toml.load(toml_handle)
@@ -80,8 +80,8 @@ def vcs(repo: Repo, version: str, changelog_body: str, active_branch: str) -> No
     index.add(
         [
             "data.dvc",
-            "pyproject.toml",
-            "CHANGELOG.md",
+            const.PROJECT_TOML,
+            const.CHANGELOG,
             os.path.join("config", "config.yaml"),
         ]
     )
@@ -131,7 +131,7 @@ def update_changelog(version: str) -> str:
     changelog_body = raw_changelog.strip()
     changelog = f"# {version} | {timestamp}\n\n{changelog_body}"
 
-    with open(const.S_CHANGELOG, "r+") as changelog_handle:
+    with open(const.CHANGELOG, "r+") as changelog_handle:
         previous_logs = changelog_handle.read().strip()
         changelog_handle.seek(0, 0)
         content = changelog + "\n\n" + previous_logs
