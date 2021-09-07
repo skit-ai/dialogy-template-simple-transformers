@@ -33,9 +33,8 @@ def build_test_case(inputs_, outputs, ignore_test_case=False) -> None:
     signature = message.hexdigest()
 
     if test_cases:
-        last_signature = test_cases[-1]["signature"]
-        if last_signature == signature:
-            return
+        if any(signature == case["signature"] for case in test_cases):
+            return None
 
     with open(
         os.path.join("tests", "test_controller", "test_cases.yaml"), "w"
