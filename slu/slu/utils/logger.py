@@ -2,8 +2,6 @@ import sys
 
 from loguru import logger
 
-
-
 sys.stdout.reconfigure(encoding="utf-8", errors="backslashreplace")
 
 config = {

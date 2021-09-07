@@ -48,7 +48,9 @@ def build_split_data_cli(parser: argparse.ArgumentParser) -> argparse.ArgumentPa
 
 def build_data_combine_cli(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     parser.add_argument("--out", help="The csv file.", required=True)
-    parser.add_argument("files", nargs="*", help="The path of the files to be combined into one.")
+    parser.add_argument(
+        "files", nargs="*", help="The path of the files to be combined into one."
+    )
     return parser
 
 
@@ -57,7 +59,9 @@ def build_train_cli(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
         "--file",
         help="The path of a csv dataset containing utterances and labels. If not provided, we look for files in data/<version/classification/datasets.",
     )
-    parser.add_argument("--lang", help="The language code to use for the dataset.", required=True)
+    parser.add_argument(
+        "--lang", help="The language code to use for the dataset.", required=True
+    )
     parser.add_argument(
         "--project", help="The project scope to which the dataset belongs."
     )
@@ -69,9 +73,12 @@ def build_train_cli(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
 
 def build_test_cli(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     parser.add_argument(
-        "--file", help="The path of a csv dataset containing utterances and labels. If not provided, we look for files in data/<version/classification/datasets."
+        "--file",
+        help="The path of a csv dataset containing utterances and labels. If not provided, we look for files in data/<version/classification/datasets.",
     )
-    parser.add_argument("--lang", help="The language code to use for the dataset.", required=True)
+    parser.add_argument(
+        "--lang", help="The language code to use for the dataset.", required=True
+    )
     parser.add_argument(
         "--project", help="The project scope to which the dataset belongs."
     )
@@ -97,8 +104,9 @@ def build_repl_cli(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
         help="The version of the dataset, model, metrics to use. Defaults to the latest version.",
     )
     parser.add_argument(
-        "--lang", help="Run the models and pre-processing for the given language code.",
-        required=True
+        "--lang",
+        help="Run the models and pre-processing for the given language code.",
+        required=True,
     )
     return parser
 
@@ -118,7 +126,8 @@ def parse_commands(command_string: Optional[str] = None) -> argparse.Namespace:
     train_cli_parser = command_parsers.add_parser("train", help="Train a workflow.")
     test_cli_parser = command_parsers.add_parser("test", help="Test a workflow.")
     release_cli_parser = command_parsers.add_parser(
-        "release", help="Release a version for the project. Commit the model, datasets and reports."
+        "release",
+        help="Release a version for the project. Commit the model, datasets and reports.",
     )
     repl_cli_parser = command_parsers.add_parser(
         "repl", help="Read Eval Print Loop for a trained workflow."

@@ -89,7 +89,11 @@ def vcs(repo: Repo, version: str, changelog_body: str, active_branch: str) -> No
     logger.info(f"Using {last_commit_author} for creating commits.")
 
     # Commit
-    index.commit(f"update: {changelog_body}", author=last_commit_author, committer=last_commit_author)
+    index.commit(
+        f"update: {changelog_body}",
+        author=last_commit_author,
+        committer=last_commit_author,
+    )
 
     # Tag version
     tag = repo.create_tag(version, message=f"{changelog_body}")

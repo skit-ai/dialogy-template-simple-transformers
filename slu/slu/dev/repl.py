@@ -1,9 +1,9 @@
 """
 This module offers an interactive repl to run a Workflow.
 """
-import re
 import argparse
 import json
+import re
 
 from dialogy.utils import normalize
 from prompt_toolkit import PromptSession
