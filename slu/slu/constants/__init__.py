@@ -126,4 +126,6 @@ TEXTS_TO_IGNORE = {"<UNK>"}
 SCORE = "score"
 REFERENCE_TIME = "reftime"
 CONFIG = "config"
-CUDA_WITH_DYNAMIC_QUANTIZATION_MESSAGE = "Could not run 'quantized::linear_dynamic' with arguments from the 'CUDA' backend"
+CUDA_WITH_DYNAMIC_QUANTIZATION_MESSAGE = (
+    "Could not run 'quantized::linear_dynamic' with arguments from the 'CUDA' backend"
+)

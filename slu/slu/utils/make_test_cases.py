@@ -27,24 +27,21 @@ def build_test_case(inputs_, outputs, ignore_test_case=False) -> None:
         test_cases = yaml.load(handle, Loader=yaml.SafeLoader)
 
     if not test_cases:
-        test_cases = []
+        test_cases = {}
 
     message.update(str.encode(json.dumps(inputs_)))
     signature = message.hexdigest()
 
     if test_cases:
-        if any(signature == case["signature"] for case in test_cases):
+        if signature in test_cases:
             return None
 
     with open(
         os.path.join("tests", "test_controller", "test_cases.yaml"), "w"
     ) as handle:
-        test_cases.append(
-            {
-                "input": inputs_,
-                "output": json.loads(json.dumps(outputs)),
-                "signature": signature,
-            }
-        )
+        test_cases[signature] = {
+            "input": inputs_,
+            "output": json.loads(json.dumps(outputs)),
+        }
 
         yaml.dump(test_cases, handle, default_flow_style=False)
