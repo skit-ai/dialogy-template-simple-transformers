@@ -175,9 +175,11 @@ slu dir-setup --version {str(ver_.bump_patch())}
 
     logger.info("Preparing dataset.")
     dataset = dataset or config.get_dataset(const.CLASSIFICATION, f"{const.TRAIN}.csv")
-    train_df = pd.read_csv(dataset)
+    data_frame = pd.read_csv(dataset)
+    make_label_column_uniform(data_frame)
+    make_data_column_uniform(data_frame)
 
     logger.info("Training started.")
-    workflow.train(train_df)
+    workflow.train(data_frame)
     config.save()
     logger.debug("Finished!")
