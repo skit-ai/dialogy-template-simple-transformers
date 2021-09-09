@@ -123,7 +123,7 @@ slu dir-setup --version {str(ver_.bump_patch())}
     )
 
     if stratify:
-        labels = data_frame[stratify].unique()
+        labels = data_frame[const.INTENT][~invalid_samples]
     else:
         labels = None
 

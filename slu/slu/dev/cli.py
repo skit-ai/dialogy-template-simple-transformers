@@ -39,8 +39,8 @@ def build_split_data_cli(parser: argparse.ArgumentParser) -> argparse.ArgumentPa
     )
     parser.add_argument(
         "--stratify",
+        action="store_true",
         help="Data is split in a stratified fashion, using the class labels."
-        " Provide the column-name in the dataset that contains class names.",
     )
     parser.add_argument("--dest", help="The destination directory for the split data.")
     return parser
