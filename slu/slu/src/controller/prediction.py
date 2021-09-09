@@ -2,8 +2,10 @@
 This module provides a simple interface to provide text features
 and receive Intent and Entities.
 """
+import os
 import copy
 import time
+from requests import exceptions
 from datetime import datetime
 from pprint import pformat
 from typing import Any, Dict, List, Optional
@@ -83,7 +85,14 @@ def get_predictions(purpose, **kwargs):
         }
 
         logger.debug(f"Input:\n{pformat(input_)}")
-        output = workflow.run(input_=copy.deepcopy(input_))
+        try:
+            output = workflow.run(input_=copy.deepcopy(input_))
+        except exceptions.ConnectionError as error:
+            if os.environ.get("ENVIRONMENT") == const.PRODUCTION:
+                message = "Could not connect to duckling."
+            else:
+                message = "Could not connect to duckling. If you don't need duckling then it seems safe to remove it in this environment."
+            raise exceptions.ConnectionError(message) from error
 
         intent = output[const.INTENTS][0].json()
         entities = output[const.ENTITIES]
