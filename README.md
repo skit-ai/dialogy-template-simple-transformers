@@ -358,3 +358,53 @@ These are the APIs which are being used.
     ```python
     @app.route("/predict/<lang>/slu/", methods=["POST"])
     ```
+
+## Entities
+
+We have already covered commands for training, evaluating and interacting with an intent classifier using this project. Covering the types of entities that are supported with the project here.
+
+| Entity Type         | Plugin                                                                                                      | Entity Description |
+|---------------------|-------------------------------------------------------------------------------------------------------------|--------------------|
+| [NumericalEntity](https://github.com/skit-ai/dialogy/blob/master/dialogy/types/entity/numerical_entity.py) | [DucklingPlugin](https://github.com/skit-ai/dialogy/tree/master/dialogy/plugins/text/duckling_plugin)       | Numbers and numerals, like: 4, four, 35th and sixth |
+| [TimeEntity](https://github.com/skit-ai/dialogy/blob/master/dialogy/types/entity/time_entity.py) | [DucklingPlugin](https://github.com/skit-ai/dialogy/tree/master/dialogy/plugins/text/duckling_plugin)       | Now, Today, Tomorrow, Yesterday, 25th September, four January, 3 o clock, 5 pm |
+| [DurationEntity](https://github.com/skit-ai/dialogy/blob/master/dialogy/types/entity/duration_entity.py) | [DucklingPlugin](https://github.com/skit-ai/dialogy/tree/master/dialogy/plugins/text/duckling_plugin)       | for 2h |
+| [TimeIntervalEntity](https://github.com/skit-ai/dialogy/blob/master/dialogy/types/entity/time_interval_entity.py) | [DucklingPlugin](https://github.com/skit-ai/dialogy/tree/master/dialogy/plugins/text/duckling_plugin)    | after 8 pm, before 6 am, 2 to 3 pm |
+| [PeopleEntity](https://github.com/skit-ai/dialogy/blob/master/dialogy/types/entity/people_entity.py) | [DucklingPlugin](https://github.com/skit-ai/dialogy/tree/master/dialogy/plugins/text/duckling_plugin)       | 5 people, a couple |
+| [CurrencyEntity](https://github.com/skit-ai/dialogy/blob/master/dialogy/types/entity/currency_entity.py) | [DucklingPlugin](https://github.com/skit-ai/dialogy/tree/master/dialogy/plugins/text/duckling_plugin)       | $45, 80 rupees |
+| [KeywordEntity](https://github.com/skit-ai/dialogy/blob/master/dialogy/types/entity/keyword_entity.py) | [ListEntityPlugin](https://github.com/skit-ai/dialogy/tree/master/dialogy/plugins/text/list_entity_plugin)  | Any pattern based entity `r"(pine)?apple"` |
+
+We have provided both [DucklingPlugin](https://github.com/skit-ai/dialogy/tree/master/dialogy/plugins/text/duckling_plugin) and [ListEntityPlugin](https://github.com/skit-ai/dialogy/tree/master/dialogy/plugins/text/list_entity_plugin) readily initialized as [processors](https://github.com/skit-ai/dialogy-template-simple-transformers/blob/main/slu/slu/src/controller/processors.py) but these are not opted into the list of plugin objects that the function returns.
+
+To use these plugins:
+
+```python
+
+# If no entities are required:
+def get_plugins(purpose, config: Config, debug=False) -> List[Plugin]:
+    ...
+    return [merge_asr_output, xlmr_clf, slot_filler] # this list must change
+
+# If only duckling plugin is required:
+def get_plugins(purpose, config: Config, debug=False) -> List[Plugin]:
+    ...
+    return [merge_asr_output, duckling_plugin, xlmr_clf, slot_filler] # this list must change
+
+# If only list entity plugin is required:
+def get_plugins(purpose, config: Config, debug=False) -> List[Plugin]:
+    ...
+    return [merge_asr_output, list_entity_plugin, xlmr_clf, slot_filler] # this list must change
+
+# If both duckling_plugin and list entity plugin are required.
+def get_plugins(purpose, config: Config, debug=False) -> List[Plugin]:
+    ...
+    return [merge_asr_output, duckling_plugin, list_entity_plugin, xlmr_clf, slot_filler] # this list must change
+```
+
+These plugins come with scoring and aggregation logic that can be utilised by their threshold property.
+The threshold here is the proportion of the entity with respect to transcripts.
+
+- If only one entity is detected over 3 transcripts, then the score for the entity is 0.33. As long as the `score > threshold`, the entity is produced.
+
+- If entities with same value and type are produced in the same transcript multiple times, they are counted only once. Assuming the speaker is repeating the entity.
+
+- If entities with same value and type are produced in across different transcripts then they are once per transcript.
