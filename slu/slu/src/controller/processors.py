@@ -35,6 +35,15 @@ def get_plugins(purpose, config: Config, debug=False) -> List[Plugin]:
         debug=debug,
     )
 
+    list_entity_plugin = plugins.ListEntityPlugin(
+        access=plugin_functions.access(const.INPUT, const.NER_INPUT),
+        mutate=plugin_functions.mutate(const.OUTPUT, const.ENTITIES),
+        style=const.REGEX,
+        candidates=config.entity_patterns,
+        threshold=0.1,
+        debug=debug,
+    )
+
     xlmr_clf = plugins.XLMRMultiClass(
         model_dir=config.get_model_dir(const.CLASSIFICATION),
         access=plugin_functions.access(const.INPUT, const.CLASSIFICATION_INPUT),
@@ -55,4 +64,4 @@ def get_plugins(purpose, config: Config, debug=False) -> List[Plugin]:
         debug=debug,
     )
 
-    return [merge_asr_output, duckling_plugin, xlmr_clf, slot_filler]
+    return [merge_asr_output, xlmr_clf, slot_filler]
