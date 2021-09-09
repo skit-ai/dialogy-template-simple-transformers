@@ -85,6 +85,7 @@ class Config:
     languages = attr.ib(type=List[str], kw_only=True)
     slots: Dict[str, Dict[str, Any]] = attr.ib(factory=dict, kw_only=True)
     calibration = attr.ib(type=Dict[str, Any], kw_only=True)
+    entity_patterns = attr.ib(type=Dict[str, List[str]], kw_only=True)
 
     def __attrs_post_init__(self) -> None:
         """
