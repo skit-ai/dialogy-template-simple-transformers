@@ -12,6 +12,7 @@ Options:
     -h --help   Show this screen.
     --version   Show version.
 """
+import os
 import argparse
 import json
 
@@ -46,7 +47,7 @@ def zoom_out_labels(labels):
 
 
 def make_classification_report(
-    config: Config, version: str, test_df: pd.DataFrame, predictions_df: pd.DataFrame
+    config: Config, version: str, test_df: pd.DataFrame, predictions_df: pd.DataFrame, dir_path: str
 ):
     result_dict = classification_report(
         test_df[const.INTENT],
@@ -59,16 +60,11 @@ def make_classification_report(
     table = tabulate(result_df, headers="keys", tablefmt="github")
     logger.info(f"classification report:\n{table}")
 
-    result_df.to_csv(
-        create_timestamps_path(
-            config.get_metrics_dir(const.CLASSIFICATION, version=version),
-            "classification_report.csv",
-        )
-    )
+    result_df.to_csv(os.path.join(dir_path, "classification_report.csv"))
 
 
 def make_errors_report(
-    config: Config, version: str, test_df: pd.DataFrame, predictions_df: pd.DataFrame
+    config: Config, version: str, test_df: pd.DataFrame, predictions_df: pd.DataFrame, dir_path: str
 ):
     logger.info(f"{test_df.head()}")
     test_df_ = test_df.copy()
@@ -78,16 +74,11 @@ def make_errors_report(
     errors_df = merged_df[
         merged_df[f"{const.INTENT}_test"] != merged_df[f"{const.INTENT}_pred"]
     ].copy()
-    errors_df.to_csv(
-        create_timestamps_path(
-            config.get_metrics_dir(const.CLASSIFICATION, version=version),
-            "error_report.csv",
-        )
-    )
+    errors_df.to_csv(os.path.join(dir_path, "error_report.csv"))
 
 
 def make_confusion_matrix(
-    config: Config, version: str, test_df: pd.DataFrame, predictions_df: pd.DataFrame
+    config: Config, version: str, test_df: pd.DataFrame, predictions_df: pd.DataFrame, dir_path: str
 ):
     true_labels = zoom_out_labels(test_df[const.INTENT])
     pred_labels = zoom_out_labels(predictions_df[const.INTENT])
@@ -95,12 +86,7 @@ def make_confusion_matrix(
     cm = confusion_matrix(true_labels, pred_labels, labels=labels)
     cm_df = pd.DataFrame(cm, index=labels, columns=labels)
     logger.info(f"Confusion matrix.\n{cm_df}")
-    cm_df.to_csv(
-        create_timestamps_path(
-            config.get_metrics_dir(const.CLASSIFICATION, version=version),
-            "confusion_matrix.csv",
-        )
-    )
+    cm_df.to_csv(os.path.join(dir_path, "confusion_matrix.csv"))
 
 
 def test_classifier(args: argparse.Namespace):
@@ -149,6 +135,10 @@ def test_classifier(args: argparse.Namespace):
 
     logger.enable("slu")
     predictions_df = pd.DataFrame(predictions)
-    make_errors_report(config, version, test_df, predictions_df)
-    make_classification_report(config, version, test_df, predictions_df)
-    make_confusion_matrix(config, version, test_df, predictions_df)
+    dir_path = create_timestamps_path(
+        config.get_metrics_dir(const.CLASSIFICATION, version=version),
+        "",
+    )
+    make_errors_report(config, version, test_df, predictions_df, dir_path=dir_path)
+    make_classification_report(config, version, test_df, predictions_df, dir_path=dir_path)
+    make_confusion_matrix(config, version, test_df, predictions_df, dir_path=dir_path)
