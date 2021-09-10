@@ -5,8 +5,9 @@ and receive Intent and Entities.
 import os
 import copy
 import time
+import operator
 from requests import exceptions
-from datetime import datetime
+from datetime import datetime, timedelta
 from pprint import pformat
 from typing import Any, Dict, List, Optional
 
@@ -29,6 +30,33 @@ def get_workflow(purpose, **kwargs):
         config: Config = list(project_config_map.values()).pop()
     debug = kwargs.get("debug", False)
     return Workflow(get_plugins(purpose, config, debug=debug), debug=debug)
+
+
+def get_reftime(config: Config, context: Dict[str, Any], lang: str):
+    default_reftime = datetime.now(pytz.timezone("Asia/Kolkata")).replace(
+        hour=0, minute=0, second=0, microsecond=0
+    )
+
+    try:
+        reference_time = datetime.fromisoformat(context[const.REFERENCE_TIME])
+    except (KeyError, ValueError, TypeError):
+        reference_time = default_reftime
+
+    current_state = context.get(const.CURRENT_STATE)
+
+    if current_state in config.datetime_rules:
+        if const.REWIND not in config.datetime_rules[current_state] and const.FORWARD not in config.datetime_rules[current_state]:
+            raise NotImplementedError(f"Expected either {const.FORWARD} or {const.REWIND} in {config.datetime_rules}")
+
+        if const.REWIND in config.datetime_rules[current_state]:
+            operation = operator.sub
+            kwargs = config.datetime_rules[current_state][const.REWIND]
+        elif const.FORWARD in config.datetime_rules[current_state]:
+            operation = operator.add
+            kwargs = config.datetime_rules[current_state][const.FORWARD]
+        reference_time = operation(reference_time, timedelta(**kwargs))
+
+    return int(reference_time.timestamp() * 1000)
 
 
 def get_predictions(purpose, **kwargs):
@@ -61,19 +89,11 @@ def get_predictions(purpose, **kwargs):
         """
         context = context or {}
         history = history or []
-        start_time = time.perf_counter()
-        default_reftime = datetime.now(pytz.timezone("Asia/Kolkata")).replace(
-            hour=0, minute=0, second=0, microsecond=0
-        )
-
-        try:
-            reference_time = datetime.fromisoformat(context[const.REFERENCE_TIME])
-        except (KeyError, ValueError, TypeError):
-            reference_time = default_reftime
-
-        reference_time_as_unix_epoch = int(reference_time.timestamp() * 1000)
         if not lang:
             raise ValueError(f"Expected {lang} to be a ISO-639-1 code.")
+
+        start_time = time.perf_counter()
+        reference_time_as_unix_epoch = get_reftime(config, context, lang)
 
         input_ = {
             const.CLASSIFICATION_INPUT: alternatives,

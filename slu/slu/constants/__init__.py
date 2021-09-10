@@ -88,6 +88,8 @@ BEST_MODEL_DIR = "best_model_dir"
 EXTEND = "extend"
 REPLACE = "replace"
 HISTORY = "history"
+REWIND = "rewind"
+FORWARD = "forward"
 
 TRAIN_DATA = "train.csv"
 TEST_DATA = "test.csv"
@@ -117,6 +119,7 @@ ERRORS = "errors.csv"
 INTENTS_INFO = "intents_info"
 REFERENCE_TIME = "reference_time"
 LOCALE = "locale"
+CURRENT_STATE = "current_state"
 
 LANG_TO_LOCALES = {"en": "en_IN", "hi": "hi_IN"}  # This should be set via config
 
