@@ -153,7 +153,7 @@ class Config:
 
     def save(self) -> None:
         with open(os.path.join("config", "config.yaml"), "w") as handle:
-            yaml.dump(self.json(), handle)
+            yaml.dump(self.json(), handle, allow_unicode=True)
 
 
 class ConfigDataProviderInterface(metaclass=abc.ABCMeta):
