@@ -86,6 +86,7 @@ def build_test_cli(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
         "--version",
         help="The dataset version, which will also be the report's version.",
     )
+    parser.add_argument("--tune-threshold", action="store_true", help="Tune the classifier's threshold based on test results.")
     return parser
 
 
