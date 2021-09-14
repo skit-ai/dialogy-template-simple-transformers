@@ -18,6 +18,7 @@ import json
 
 import pandas as pd
 from dialogy.utils import create_timestamps_path
+from pandas.core.reshape.merge import merge
 from sklearn.metrics import classification_report, confusion_matrix
 from tabulate import tabulate
 from tqdm import tqdm
@@ -44,6 +45,20 @@ def zoom_out_labels(labels):
         else:
             labels_.append("in-scope")
     return labels_
+
+
+def update_confidence_scores(config: Config, test_df: pd.DataFrame, predictions_df: pd.DataFrame):
+    """
+    Update the confidence scores in the config as per test results.
+    """
+    merged_df = pd.merge(
+        test_df, predictions_df, on="data_id", suffixes=("_test", "_pred")
+    )
+    valid_inputs = merged_df[~merged_df.alternatives.isin(["[]", "[[]]"])]
+    correct_items = valid_inputs[valid_inputs.intent_test == valid_inputs.intent_pred]
+    incorrect_items = valid_inputs[valid_inputs.intent_test != valid_inputs.intent_pred]
+    logger.info(f"{correct_items.score.describe()}")
+    logger.info(f"{incorrect_items.score.describe()}")
 
 
 def make_classification_report(
@@ -114,6 +129,7 @@ def test_classifier(args: argparse.Namespace):
     logger.info("Running predictions")
     predictions = []
     logger.disable("slu")
+    config.tasks.classification.threshold = 0
 
     for i, row in tqdm(test_df.iterrows(), total=test_df.shape[0]):
         output = predict_api(
@@ -139,6 +155,7 @@ def test_classifier(args: argparse.Namespace):
         config.get_metrics_dir(const.CLASSIFICATION, version=version),
         "",
     )
+    update_confidence_scores(config, test_df, predictions_df)
     make_errors_report(config, version, test_df, predictions_df, dir_path=dir_path)
     make_classification_report(config, version, test_df, predictions_df, dir_path=dir_path)
     make_confusion_matrix(config, version, test_df, predictions_df, dir_path=dir_path)
