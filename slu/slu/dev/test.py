@@ -15,6 +15,7 @@ Options:
 import os
 import argparse
 import json
+from typing import List
 
 import pandas as pd
 from dialogy.utils import create_timestamps_path
@@ -30,7 +31,7 @@ from slu.utils import logger
 from slu.utils.config import Config, YAMLLocalConfig
 
 
-def zoom_out_labels(labels):
+def zoom_out_labels(labels: List[str]):
     """
 
     :param labels: [description]
@@ -61,9 +62,7 @@ def update_confidence_scores(config: Config, test_df: pd.DataFrame, predictions_
     logger.info(f"{incorrect_items.score.describe()}")
 
 
-def make_classification_report(
-    config: Config, version: str, test_df: pd.DataFrame, predictions_df: pd.DataFrame, dir_path: str
-):
+def make_classification_report(test_df: pd.DataFrame, predictions_df: pd.DataFrame, dir_path: str):
     result_dict = classification_report(
         test_df[const.INTENT],
         predictions_df[const.INTENT],
@@ -78,9 +77,7 @@ def make_classification_report(
     result_df.to_csv(os.path.join(dir_path, "classification_report.csv"))
 
 
-def make_errors_report(
-    config: Config, version: str, test_df: pd.DataFrame, predictions_df: pd.DataFrame, dir_path: str
-):
+def make_errors_report(test_df: pd.DataFrame, predictions_df: pd.DataFrame, dir_path: str):
     logger.info(f"{test_df.head()}")
     test_df_ = test_df.copy()
     merged_df = pd.merge(
@@ -89,19 +86,18 @@ def make_errors_report(
     errors_df = merged_df[
         merged_df[f"{const.INTENT}_test"] != merged_df[f"{const.INTENT}_pred"]
     ].copy()
+    true_labels = errors_df[f"{const.INTENT}_test"].tolist()
+    pred_labels = errors_df[f"{const.INTENT}_pred"].tolist()
+    make_confusion_matrix(true_labels, pred_labels, dir_path, prefix="errors")
     errors_df.to_csv(os.path.join(dir_path, "error_report.csv"))
 
 
-def make_confusion_matrix(
-    config: Config, version: str, test_df: pd.DataFrame, predictions_df: pd.DataFrame, dir_path: str
-):
-    true_labels = zoom_out_labels(test_df[const.INTENT])
-    pred_labels = zoom_out_labels(predictions_df[const.INTENT])
+def make_confusion_matrix(true_labels: List[str], pred_labels: List[str], dir_path: str, prefix=""):
     labels = sorted(set(true_labels + pred_labels))
     cm = confusion_matrix(true_labels, pred_labels, labels=labels)
     cm_df = pd.DataFrame(cm, index=labels, columns=labels)
     logger.info(f"Confusion matrix.\n{cm_df}")
-    cm_df.to_csv(os.path.join(dir_path, "confusion_matrix.csv"))
+    cm_df.to_csv(os.path.join(dir_path, f"{prefix}_confusion_matrix.csv"))
 
 
 def test_classifier(args: argparse.Namespace):
@@ -131,7 +127,7 @@ def test_classifier(args: argparse.Namespace):
     logger.disable("slu")
     config.tasks.classification.threshold = 0
 
-    for i, row in tqdm(test_df.iterrows(), total=test_df.shape[0]):
+    for _, row in tqdm(test_df.iterrows(), total=test_df.shape[0]):
         output = predict_api(
             **{
                 const.ALTERNATIVES: json.loads(row[const.ALTERNATIVES]),
@@ -156,6 +152,12 @@ def test_classifier(args: argparse.Namespace):
         "",
     )
     update_confidence_scores(config, test_df, predictions_df)
-    make_errors_report(config, version, test_df, predictions_df, dir_path=dir_path)
-    make_classification_report(config, version, test_df, predictions_df, dir_path=dir_path)
-    make_confusion_matrix(config, version, test_df, predictions_df, dir_path=dir_path)
+    make_errors_report(test_df, predictions_df, dir_path=dir_path)
+    make_classification_report(test_df, predictions_df, dir_path=dir_path)
+
+    true_labels = test_df[const.INTENT].tolist()
+    pred_labels = predictions_df[const.INTENT].tolist()
+    zoomed_true_label = zoom_out_labels(true_labels)
+    zoomed_predicted_label = zoom_out_labels(pred_labels)
+    make_confusion_matrix(zoomed_true_label, zoomed_predicted_label, dir_path=dir_path, prefix="zoomed")
+    make_confusion_matrix(true_labels, pred_labels, dir_path=dir_path, prefix="full")
