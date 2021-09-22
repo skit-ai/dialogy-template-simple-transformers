@@ -80,7 +80,8 @@ def slu(lang: str, model_name: str):
                 history=history,
                 lang=lang,
             )
-            return jsonify(status="ok", response=response), 200
+            history.append(response)
+            return jsonify(status="ok", response=response, history=history), 200
         except OSError as os_error:
             return error_response.missing_models(os_error)
 
