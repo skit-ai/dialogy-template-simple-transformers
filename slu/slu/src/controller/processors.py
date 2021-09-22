@@ -6,19 +6,11 @@ from dialogy.base.plugin import Plugin
 
 from slu import constants as const
 from slu.dev.plugin_parse import plugin_functions
+from slu.src.controller.custom_plugins import ContextualIntentSwap
 from slu.utils.config import Config
 
 
 def get_plugins(purpose, config: Config, debug=False) -> List[Plugin]:
-    merge_asr_output = plugins.MergeASROutputPlugin(
-        access=plugin_functions.access(const.INPUT, const.CLASSIFICATION_INPUT),
-        mutate=plugin_functions.mutate(
-            const.INPUT, const.CLASSIFICATION_INPUT, action=const.REPLACE
-        ),
-        data_column=const.ALTERNATIVES,
-        debug=debug,
-    )
-
     duckling_plugin = plugins.DucklingPlugin(
         access=plugin_functions.access(
             const.INPUT, const.NER_INPUT, const.REFERENCE_TIME, const.LOCALE
@@ -28,10 +20,13 @@ def get_plugins(purpose, config: Config, debug=False) -> List[Plugin]:
         locale="en_IN",
         timezone="Asia/Kolkata",
         timeout=0.5,
+        input_column=const.ALTERNATIVES,
+        output_column=const.ENTITIES,
         # url works only in development mode.
         # You need to set its real value in k8s configs or wherever you keep your
         # env-vars safe.
         url=os.environ.get("DUCKLING_URL", "http://localhost:8000/parse/"),
+        use_transform=True,
         debug=debug,
     )
 
@@ -41,6 +36,29 @@ def get_plugins(purpose, config: Config, debug=False) -> List[Plugin]:
         style=const.REGEX,
         candidates=config.entity_patterns,
         threshold=0.1,
+        input_column=const.ALTERNATIVES,
+        output_column=const.ENTITIES,
+        use_transform=True,
+        debug=debug,
+    )
+
+    canonicalizer = plugins.CanonicalizationPlugin(
+        input_column=const.ALTERNATIVES,
+        entity_column=const.ENTITIES,
+        use_transform=True,
+        access=lambda w: (w.output[const.ENTITIES], w.input[const.NER_INPUT]),
+        mutate=plugin_functions.mutate(
+            const.INPUT, const.CLASSIFICATION_INPUT, action=const.REPLACE
+        )
+    )
+
+    merge_asr_output = plugins.MergeASROutputPlugin(
+        access=plugin_functions.access(const.INPUT, const.CLASSIFICATION_INPUT),
+        mutate=plugin_functions.mutate(
+            const.INPUT, const.CLASSIFICATION_INPUT, action=const.REPLACE
+        ),
+        use_transform=True,
+        input_column=const.ALTERNATIVES,
         debug=debug,
     )
 
@@ -56,6 +74,10 @@ def get_plugins(purpose, config: Config, debug=False) -> List[Plugin]:
         label_column=const.INTENT,
         args_map=config.get_model_args(const.CLASSIFICATION),
         debug=debug,
+    )
+
+    contextual_name_swapper = ContextualIntentSwap(
+        access=lambda w: (w.output[const.INTENTS], w.input[const.CONTEXT], w.output[const.ENTITIES]),
     )
 
     slot_filler = plugins.RuleBasedSlotFillerPlugin(
