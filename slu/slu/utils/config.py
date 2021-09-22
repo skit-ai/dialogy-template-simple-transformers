@@ -169,7 +169,7 @@ class YAMLLocalConfig(ConfigDataProviderInterface):
         )
 
     def generate(self) -> Dict[str, Config]:
-        with open(self.config_path, "r") as handle:
+        with open(self.config_path, "r", encoding="utf8") as handle:
             config_dict = yaml.safe_load(handle)
             config = Config(**config_dict)
         return {config_dict[const.MODEL_NAME]: config}
