@@ -18,8 +18,10 @@ Options:
 import argparse
 import json
 import os
+from datetime import datetime
 
 import pandas as pd
+from scipy.sparse import data
 import semver
 from sklearn.model_selection import train_test_split
 from tqdm import tqdm
@@ -45,6 +47,18 @@ def make_label_column_uniform(data_frame: pd.DataFrame) -> None:
             f"Expected one of {const.INTENT}, {const.LABELS}, {const.TAG} to be present in the dataset."
         )
     data_frame.rename(columns={column: const.INTENT}, inplace=True)
+
+def make_reftime_column_uniform(data_frame: pd.DataFrame) -> None:
+    if const.REFERENCE_TIME not in data_frame.columns:
+        return
+    for i, row in tqdm(data_frame.iterrows(), total=len(data_frame), desc="Fixing reference time"):
+        try:
+            datetime.fromisoformat(row["reftime"])
+        except ValueError:
+            try:
+                data_frame.loc[i, "reftime"] = datetime.strptime(row["reftime"], '%Y-%m-%d %H:%M:%S.%f %z %Z').isoformat()
+            except ValueError:
+                data_frame.loc[i, "reftime"] = datetime.strptime(row["reftime"], '%Y-%m-%dT%H:%M:%SZ').isoformat()
 
 
 def make_data_column_uniform(data_frame: pd.DataFrame) -> None:
@@ -109,6 +123,7 @@ slu dir-setup --version {str(ver_.bump_patch())}
 
     make_label_column_uniform(data_frame)
     make_data_column_uniform(data_frame)
+    make_reftime_column_uniform(data_frame)
 
     skip_filter = data_frame[const.INTENT].isin(skip_list)
     failed_transcripts = data_frame[const.ALTERNATIVES].isin(["[[]]", "[]"])
@@ -178,6 +193,7 @@ slu dir-setup --version {str(ver_.bump_patch())}
     data_frame = pd.read_csv(dataset)
     make_label_column_uniform(data_frame)
     make_data_column_uniform(data_frame)
+    make_reftime_column_uniform(data_frame)
 
     logger.info("Training started.")
     workflow.train(data_frame)
