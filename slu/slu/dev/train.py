@@ -18,10 +18,10 @@ Options:
 import argparse
 import json
 import os
+import functools
 from datetime import datetime
 
 import pandas as pd
-from scipy.sparse import data
 import semver
 from sklearn.model_selection import train_test_split
 from tqdm import tqdm
@@ -48,17 +48,28 @@ def make_label_column_uniform(data_frame: pd.DataFrame) -> None:
         )
     data_frame.rename(columns={column: const.INTENT}, inplace=True)
 
+
+def reftime_patterns(reftime: str):
+    time_fns = [
+        datetime.fromisoformat,
+        lambda date_string: datetime.strptime(date_string, '%Y-%m-%d %H:%M:%S.%f %z %Z'),
+        lambda date_string: datetime.strptime(date_string, '%Y-%m-%dT%H:%M:%SZ'),
+        lambda date_string: datetime.strptime(date_string, '%Y-%m-%dT%H:%M:%S.%f%z')
+    ]
+    for time_fn in time_fns:
+        try:
+            return time_fn(reftime)
+        except ValueError:
+            continue
+    raise ValueError(f"Could not parse reftime {reftime}")
+
+
 def make_reftime_column_uniform(data_frame: pd.DataFrame) -> None:
     if const.REFERENCE_TIME not in data_frame.columns:
         return
+
     for i, row in tqdm(data_frame.iterrows(), total=len(data_frame), desc="Fixing reference time"):
-        try:
-            datetime.fromisoformat(row["reftime"])
-        except ValueError:
-            try:
-                data_frame.loc[i, "reftime"] = datetime.strptime(row["reftime"], '%Y-%m-%d %H:%M:%S.%f %z %Z').isoformat()
-            except ValueError:
-                data_frame.loc[i, "reftime"] = datetime.strptime(row["reftime"], '%Y-%m-%dT%H:%M:%SZ').isoformat()
+        data_frame.loc[i, const.REFERENCE_TIME] = reftime_patterns(row[const.REFERENCE_TIME]).isoformat()
 
 
 def make_data_column_uniform(data_frame: pd.DataFrame) -> None:
