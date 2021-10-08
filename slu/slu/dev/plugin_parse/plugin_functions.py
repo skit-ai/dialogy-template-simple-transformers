@@ -28,3 +28,9 @@ def mutate(node: str, attribute: str, action=const.EXTEND):
 def env(*attributes: str) -> Any:
     attribute = attributes[0]
     return os.environ.get(attribute)
+
+
+def duckling_access(w: Workflow):
+    current_state = w.input[const.CONTEXT].get(const.CURRENT_STATE)
+    use_latent = current_state in []
+    return w.input[const.NER_INPUT], w.input[const.REFERENCE_TIME], w.input[const.LOCALE], use_latent

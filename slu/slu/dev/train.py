@@ -69,7 +69,8 @@ def make_reftime_column_uniform(data_frame: pd.DataFrame) -> None:
         return
 
     for i, row in tqdm(data_frame.iterrows(), total=len(data_frame), desc="Fixing reference time"):
-        data_frame.loc[i, const.REFERENCE_TIME] = reftime_patterns(row[const.REFERENCE_TIME]).isoformat()
+        if row[const.REFERENCE_TIME] is not None and not pd.isna(row[const.REFERENCE_TIME]):
+            data_frame.loc[i, const.REFERENCE_TIME] = reftime_patterns(row[const.REFERENCE_TIME]).isoformat()
 
 
 def make_data_column_uniform(data_frame: pd.DataFrame) -> None:

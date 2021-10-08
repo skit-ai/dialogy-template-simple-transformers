@@ -3,6 +3,7 @@ from typing import List
 
 from dialogy import plugins
 from dialogy.base.plugin import Plugin
+from dialogy.workflow import Workflow
 
 from slu import constants as const
 from slu.dev.plugin_parse import plugin_functions
@@ -12,9 +13,7 @@ from slu.utils.config import Config
 
 def get_plugins(purpose, config: Config, debug=False) -> List[Plugin]:
     duckling_plugin = plugins.DucklingPlugin(
-        access=plugin_functions.access(
-            const.INPUT, const.NER_INPUT, const.REFERENCE_TIME, const.LOCALE
-        ),
+        access=plugin_functions.duckling_access,
         mutate=plugin_functions.mutate(const.OUTPUT, const.ENTITIES),
         dimensions=["people", "number", "time", "duration"],
         locale="en_IN",
