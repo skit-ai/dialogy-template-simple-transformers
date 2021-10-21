@@ -77,6 +77,25 @@ def make_classification_report(test_df: pd.DataFrame, predictions_df: pd.DataFra
     result_df.to_csv(os.path.join(dir_path, "classification_report.csv"))
 
 
+def make_critical_intent_report(test_df: pd.DataFrame, predictions_df: pd.DataFrame, critical_intents: List[str], dir_path: str):
+    merged_df = pd.merge(
+        test_df, predictions_df, on="data_id", suffixes=("_test", "_pred")
+    )
+    merged_df = merged_df[(merged_df.intent_test.isin(critical_intents)) | (merged_df.intent_pred.isin(critical_intents))]
+    result_dict = classification_report(
+        merged_df.intent_test,
+        merged_df.intent_pred,
+        labels=critical_intents,
+        zero_division=0,
+        output_dict=True,
+    )
+    result_df = pd.DataFrame(result_dict).T
+    logger.info("saving report.")
+    table = tabulate(result_df, headers="keys", tablefmt="github")
+    logger.info(f"classification report:\n{table}")
+    result_df.to_csv(os.path.join(dir_path, "critical_intent_classification_report.csv"))
+
+
 def make_errors_report(test_df: pd.DataFrame, predictions_df: pd.DataFrame, dir_path: str):
     logger.info(f"{test_df.head()}")
     test_df_ = test_df.copy()
@@ -154,6 +173,7 @@ def test_classifier(args: argparse.Namespace):
     update_confidence_scores(config, test_df, predictions_df)
     make_errors_report(test_df, predictions_df, dir_path=dir_path)
     make_classification_report(test_df, predictions_df, dir_path=dir_path)
+    make_critical_intent_report(test_df, predictions_df, config.critical_intents, dir_path=dir_path)
 
     true_labels = test_df[const.INTENT].tolist()
     pred_labels = predictions_df[const.INTENT].tolist()
