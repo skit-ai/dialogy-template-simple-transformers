@@ -3,6 +3,7 @@
 """
 import abc
 import os
+import types
 from typing import Any, Dict, List, Optional, Set
 
 import attr
@@ -87,6 +88,7 @@ class Config:
     calibration = attr.ib(factory=dict, type=Dict[str, Any], kw_only=True)
     entity_patterns = attr.ib(factory=dict, type=Dict[str, List[str]], kw_only=True)
     datetime_rules = attr.ib(factory=dict, type=Dict[str, Dict[str, Dict[str, int]]], kw_only=True)
+    critical_intents = attr.ib(factory=list, type=List[str], kw_only=True)
 
     def __attrs_post_init__(self) -> None:
         """
