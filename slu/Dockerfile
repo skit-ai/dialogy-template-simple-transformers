@@ -2,7 +2,7 @@ FROM vernacularai/ubuntu-pyenv:2.0.0
 
 
 ARG PYTHON_VER=3.8.2
-ARG POETRY_VER=1.0.10
+ARG POETRY_VER=1.1.11
 
 WORKDIR /home/slu
 
