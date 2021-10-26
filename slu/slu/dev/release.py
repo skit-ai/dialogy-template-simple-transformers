@@ -157,7 +157,6 @@ def release(args: argparse.Namespace) -> None:
     semver.VersionInfo.parse(version)
     project_config_map = YAMLLocalConfig().generate()
     config: Config = list(project_config_map.values()).pop()
-    check_version_save_config(config, version)
 
     # Interact with the git repo, assumes the script root contains the repo.
     repo = Repo(".")
@@ -187,6 +186,7 @@ def release(args: argparse.Namespace) -> None:
 
     # Update pyproject.toml to contain the release version.
     update_project_version_toml(version)
+    check_version_save_config(config, version)
 
     # Maintain changelog.
     changelog_body = update_changelog(version)
