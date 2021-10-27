@@ -18,7 +18,7 @@ def build_test_case(inputs_, outputs, ignore_test_case=False) -> None:
     if ignore_test_case:
         return None
     message = hashlib.sha256()
-    if os.environ.get("ENVIRONMENT") == const.PRODUCTION:
+    if os.environ.get("ENVIRONMENT") in [const.PRODUCTION, const.STAGING]:
         return
 
     with open(
