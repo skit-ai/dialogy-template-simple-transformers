@@ -34,9 +34,7 @@ from slu.utils.config import Config, YAMLLocalConfig
 
 
 def make_label_column_uniform(data_frame: pd.DataFrame) -> None:
-    if const.INTENT in data_frame.columns:
-        column = const.INTENT
-    elif const.INTENTS in data_frame.columns:
+    if const.INTENTS in data_frame.columns:
         column = const.INTENTS
     elif const.LABELS in data_frame.columns:
         column = const.LABELS
@@ -44,9 +42,9 @@ def make_label_column_uniform(data_frame: pd.DataFrame) -> None:
         column = const.TAG
     else:
         raise ValueError(
-            f"Expected one of {const.INTENT}, {const.LABELS}, {const.TAG} to be present in the dataset."
+            f"Expected one of {const.LABELS}, {const.TAG} to be present in the dataset."
         )
-    data_frame.rename(columns={column: const.INTENT}, inplace=True)
+    data_frame.rename(columns={column: const.TAG}, inplace=True)
 
 
 def reftime_patterns(reftime: str):
@@ -137,7 +135,7 @@ slu dir-setup --version {str(ver_.bump_patch())}
     make_data_column_uniform(data_frame)
     make_reftime_column_uniform(data_frame)
 
-    skip_filter = data_frame[const.INTENT].isin(skip_list)
+    skip_filter = data_frame[const.TAG].isin(skip_list)
     failed_transcripts = data_frame[const.ALTERNATIVES].isin(["[[]]", "[]"])
     non_empty_transcripts = data_frame[const.ALTERNATIVES].isna()
     invalid_samples = skip_filter | non_empty_transcripts | failed_transcripts
@@ -150,7 +148,7 @@ slu dir-setup --version {str(ver_.bump_patch())}
     )
 
     if stratify:
-        labels = data_frame[const.INTENT][~invalid_samples]
+        labels = data_frame[const.TAG][~invalid_samples]
     else:
         labels = None
 

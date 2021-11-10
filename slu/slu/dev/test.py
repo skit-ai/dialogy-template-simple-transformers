@@ -56,15 +56,15 @@ def update_confidence_scores(config: Config, test_df: pd.DataFrame, predictions_
         test_df, predictions_df, on="data_id", suffixes=("_test", "_pred")
     )
     valid_inputs = merged_df[~merged_df.alternatives.isin(["[]", "[[]]"])]
-    correct_items = valid_inputs[valid_inputs.intent_test == valid_inputs.intent_pred]
-    incorrect_items = valid_inputs[valid_inputs.intent_test != valid_inputs.intent_pred]
+    correct_items = valid_inputs[valid_inputs.tag == valid_inputs.intent_pred]
+    incorrect_items = valid_inputs[valid_inputs.tag != valid_inputs.intent_pred]
     logger.info(f"{correct_items.score.describe()}")
     logger.info(f"{incorrect_items.score.describe()}")
 
 
 def make_classification_report(test_df: pd.DataFrame, predictions_df: pd.DataFrame, dir_path: str):
     result_dict = classification_report(
-        test_df[const.INTENT],
+        test_df[const.TAG],
         predictions_df[const.INTENT],
         zero_division=0,
         output_dict=True,
@@ -81,9 +81,9 @@ def make_critical_intent_report(test_df: pd.DataFrame, predictions_df: pd.DataFr
     merged_df = pd.merge(
         test_df, predictions_df, on="data_id", suffixes=("_test", "_pred")
     )
-    merged_df = merged_df[(merged_df.intent_test.isin(critical_intents)) | (merged_df.intent_pred.isin(critical_intents))]
+    merged_df = merged_df[(merged_df.tag.isin(critical_intents)) | (merged_df.intent_pred.isin(critical_intents))]
     result_dict = classification_report(
-        merged_df.intent_test,
+        merged_df.tag,
         merged_df.intent_pred,
         labels=critical_intents,
         zero_division=0,
@@ -103,9 +103,9 @@ def make_errors_report(test_df: pd.DataFrame, predictions_df: pd.DataFrame, dir_
         test_df_, predictions_df, on="data_id", suffixes=("_test", "_pred")
     )
     errors_df = merged_df[
-        merged_df[f"{const.INTENT}_test"] != merged_df[f"{const.INTENT}_pred"]
+        merged_df[f"{const.TAG}"] != merged_df[f"{const.INTENT}_pred"]
     ].copy()
-    true_labels = errors_df[f"{const.INTENT}_test"].tolist()
+    true_labels = errors_df[f"{const.TAG}"].tolist()
     pred_labels = errors_df[f"{const.INTENT}_pred"].tolist()
     make_confusion_matrix(true_labels, pred_labels, dir_path, prefix="errors")
     errors_df.to_csv(os.path.join(dir_path, "error_report.csv"))
@@ -175,7 +175,7 @@ def test_classifier(args: argparse.Namespace):
     make_classification_report(test_df, predictions_df, dir_path=dir_path)
     make_critical_intent_report(test_df, predictions_df, config.critical_intents, dir_path=dir_path)
 
-    true_labels = test_df[const.INTENT].tolist()
+    true_labels = test_df[const.TAG].tolist()
     pred_labels = predictions_df[const.INTENT].tolist()
     zoomed_true_label = zoom_out_labels(true_labels)
     zoomed_predicted_label = zoom_out_labels(pred_labels)
