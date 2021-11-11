@@ -70,7 +70,7 @@ def get_plugins(purpose, config: Config, debug=False) -> List[Plugin]:
         purpose=purpose,
         use_cuda=purpose != const.PRODUCTION,
         data_column=const.ALTERNATIVES,
-        label_column=const.INTENT,
+        label_column=const.TAG,
         args_map=config.get_model_args(const.CLASSIFICATION),
         debug=debug,
     )
