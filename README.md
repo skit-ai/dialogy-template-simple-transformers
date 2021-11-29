@@ -276,6 +276,44 @@ This command takes care of the following acts:
 Finally, we are ready to build a Docker image for our service for production runs. We use Makefiles to ensure a bit of hygiene checks.
 Run `make <image-name>` to check if the image builds in your local environment. If you have CI-CD enabled, that should do it for you.
 
+## 12. Enabling CI/CD
+CI/CD automates the entire Docker Image build and deployment steps to staging & production. Pipeline is triggered whenever a new tag is released (recommendeded way to create and push tags is `slu release --version VERSION`). 
+[.gitlab-ci.yml](.gitlab-ci.yml) pipeline includes the following stages. 
+
+  1. `publish_image`                           # build docker image and push to registry
+  2. `update_chart_and_deploy_to_staging`      # deploy the tagged dockerimage to staging cluster
+  3. `update_chart_and_deploy_to_production`   # deploy the tagged dockerimage to production cluster
+
+`update_chart_and_deploy_to_production` stage requires manual approval for running.
+
+For a clean CI/CD setup, following conditions should be met.
+  1. Project name should be same for Gitlab Repository and Amazon ECR folder. 
+  2. [k8s-configs/ai/clients](https://gitlab.com/vernacularai/kubernetes/k8s-configs/-/tree/master/ai/clients) project folder should follow the following file structure:
+      - values-staging.yaml  #values for staging
+      - values-production.yaml #values for prod
+      - application-production.yaml # deploys app to prod
+      - application-staging.yaml  #deploys to staging
+      
+  3. dvc shouldn't be a dev-dependencies. 
+
+        replace this:
+        ```
+        [tool.poetry.dev-dependencies.dvc]
+        extras = [ "s3",]
+        version = "^2.6.4"
+        ```
+        with:
+        ```  
+          [tool.poetry.dependencies.dvc]
+          extras = [ "s3",]
+          version = "^2.6.4"
+        ```
+        in pyproject.toml.
+
+  4. poetry.lock should be a git tracked file. Ensure it is not present inside `.gitignore`.
+  5. Remove `.dvc` if present inside `.dockerignore` and replace it with `.dvc/cache/`.
+
+
 ## Config
 
 The config manages paths for artifacts, arguments for models and rules for plugins.
