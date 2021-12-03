@@ -34,6 +34,35 @@ tasks:
         early_stopping_patience: 3
         eval_batch_size: 8
         fp16: false
+        gridsearch_hyperparams:
+          use: true                            # bool indicating usage of gridsearch for hyperparameter tuning if using MLPMultiClass plugin
+          verbose_level: 2                     # GridSearchCV verbosity from sklearn docs
+          cv: 2                                # Cross validation split
+          params:                              # All params name, definitions and possible values according to sklearn tfidfvectorizer and mlpclassifier docs
+            activation:
+            - relu
+            - tanh
+            alpha:
+            - 0.0001
+            - 0.005
+            batch_size:
+            - auto
+            early_stopping:
+            - false
+            - true
+            hidden_layer_sizes:
+            - (100, )
+            - (200, 10, 2)
+            - (40, 20)
+            learning_rate:
+            - constant
+            max_iter:
+            - 25
+            - 40
+            ngram_range:
+            - (1, 1)
+            solver:
+            - adam
         num_train_epochs: 1
         output_dir: null
         overwrite_output_dir: true
