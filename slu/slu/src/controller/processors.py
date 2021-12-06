@@ -83,6 +83,7 @@ def get_plugins(purpose, config: Config, debug=False) -> List[Plugin]:
         access=plugin_functions.access(const.OUTPUT, const.INTENTS, const.ENTITIES),
         rules=config.slots,
         debug=debug,
+        fill_multiple=True,
     )
 
     return [merge_asr_output, xlmr_clf, slot_filler]
