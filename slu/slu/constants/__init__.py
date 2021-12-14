@@ -134,3 +134,8 @@ CONFIG = "config"
 CUDA_WITH_DYNAMIC_QUANTIZATION_MESSAGE = (
     "Could not run 'quantized::linear_dynamic' with arguments from the 'CUDA' backend"
 )
+
+LOW = "low"
+MEDIUM = "medium"
+HIGH = "high"
+CONFIDENCE_LEVEL = "confidence_level"

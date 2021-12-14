@@ -14,6 +14,7 @@ from typing import Any, Dict, List, Optional
 import pytz
 from dialogy.utils import normalize
 from dialogy.workflow import Workflow
+from dialogy.types import Intent
 
 from slu import constants as const
 from slu.src.controller.processors import get_plugins
@@ -114,12 +115,23 @@ def get_predictions(purpose, **kwargs):
                 message = "Could not connect to duckling. If you don't need duckling then it seems safe to remove it in this environment."
             raise exceptions.ConnectionError(message) from error
 
-        intent = output[const.INTENTS][0].json()
+        intent: Intent = output[const.INTENTS][0]
+        intent_json = intent.json()
         entities = output[const.ENTITIES]
+
+        confidence_levels = config.tasks.classification.confidence_levels
+        if confidence_levels:
+            low, high = confidence_levels
+            if intent.score <= low:
+                intent_json[const.CONFIDENCE_LEVEL] = const.LOW
+            elif intent.score <= high:
+                intent_json[const.CONFIDENCE_LEVEL] = const.MEDIUM
+            else: 
+                intent_json[const.CONFIDENCE_LEVEL] = const.HIGH
 
         output = {
             const.VERSION: config.version,
-            const.INTENTS: [intent],
+            const.INTENTS: [intent_json],
             const.ENTITIES: [entity.json() for entity in entities],
         }
 

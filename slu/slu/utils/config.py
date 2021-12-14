@@ -28,6 +28,9 @@ class Task:
     skip = attr.ib(
         factory=list, kw_only=True, validator=attr.validators.instance_of(list)
     )
+    confidence_levels = attr.ib(
+        factory=list, kw_only=True, validator=attr.validators.instance_of(list)
+    )
     format = attr.ib(
         factory=str,
         kw_only=True,
