@@ -1,4 +1,4 @@
-FROM vernacularai/ubuntu-pyenv:2.0.0
+FROM 536612919621.dkr.ecr.ap-south-1.amazonaws.com/ubuntu-pyenv:latest
 
 
 ARG PYTHON_VER=3.8.2
