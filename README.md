@@ -2,6 +2,9 @@
 
 A template for SLU projects at [skit.ai](https://skit.ai/).
 
+- This template is automatically to create an slu microservice.
+- Don't clone this project for building microservices, use the `dialogy create <project_name>` to create projects.
+
 ## Features
 
 1. XLMRWorkflow uses "xlm-roberta-base" for both classification and ner tasks.
