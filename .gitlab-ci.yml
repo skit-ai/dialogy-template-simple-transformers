@@ -28,8 +28,8 @@ build and push docker image:
     - if [[ ! -z "${RELEASE_VERSION}" ]]; then DOCKER_TAG=master ; fi;
     - docker info | grep Registry
     - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
-    - docker build --build-arg CI_PROJECT_NAME=$CI_PROJECT_NAME -t $DOCKER_REGISTRY/$APP_NAME:$CI_COMMIT_TAG -t $DOCKER_REGISTRY/$APP_NAME:$DOCKER_TAG .
     - aws ecr get-login-password | docker login --username AWS --password-stdin $DOCKER_REGISTRY 
+    - docker build --build-arg CI_PROJECT_NAME=$CI_PROJECT_NAME -t $DOCKER_REGISTRY/$APP_NAME:$CI_COMMIT_TAG -t $DOCKER_REGISTRY/$APP_NAME:$DOCKER_TAG .
     - docker push $DOCKER_REGISTRY/$APP_NAME:$CI_COMMIT_TAG
     - docker push $DOCKER_REGISTRY/$APP_NAME:$DOCKER_TAG
 
