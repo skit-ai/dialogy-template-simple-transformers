@@ -115,23 +115,24 @@ def get_predictions(purpose, **kwargs):
                 message = "Could not connect to duckling. If you don't need duckling then it seems safe to remove it in this environment."
             raise exceptions.ConnectionError(message) from error
 
-        intent: Intent = output[const.INTENTS][0]
-        intent_json = intent.json()
+        intents: List[Intent] = output[const.INTENTS]
+        intents_json = [intent.json() for intent in output[const.INTENTS]]
         entities = output[const.ENTITIES]
 
         confidence_levels = config.tasks.classification.confidence_levels
         if confidence_levels:
-            low, high = confidence_levels
-            if intent.score <= low:
-                intent_json[const.CONFIDENCE_LEVEL] = const.LOW
-            elif intent.score <= high:
-                intent_json[const.CONFIDENCE_LEVEL] = const.MEDIUM
-            else: 
-                intent_json[const.CONFIDENCE_LEVEL] = const.HIGH
+            for idx in range(len(intents)):
+                low, high = confidence_levels
+                if intents[idx].score <= low:
+                    intents_json[idx][const.CONFIDENCE_LEVEL] = const.LOW
+                elif intents[idx].score <= high:
+                    intents_json[idx][const.CONFIDENCE_LEVEL] = const.MEDIUM
+                else: 
+                    intents_json[idx][const.CONFIDENCE_LEVEL] = const.HIGH
 
         output = {
             const.VERSION: config.version,
-            const.INTENTS: [intent_json],
+            const.INTENTS: intents_json,
             const.ENTITIES: [entity.json() for entity in entities],
         }
 
