@@ -12,6 +12,7 @@ from pprint import pformat
 from typing import Any, Dict, List, Optional
 
 import pytz
+from dialogy.base import Input
 from dialogy.utils import normalize
 from dialogy.workflow import Workflow
 from dialogy.types import Intent
@@ -96,18 +97,20 @@ def get_predictions(purpose, **kwargs):
         start_time = time.perf_counter()
         reference_time_as_unix_epoch = get_reftime(config, context, lang)
 
-        input_ = {
-            const.CLASSIFICATION_INPUT: alternatives,
-            const.CONTEXT: context,
-            const.INTENTS_INFO: intents_info,
-            const.NER_INPUT: normalize(alternatives),
-            const.REFERENCE_TIME: reference_time_as_unix_epoch,
-            const.LOCALE: const.LANG_TO_LOCALES[lang],
-        }
+        input_ = Input(
+            utterances=alternatives,
+            reference_time=reference_time_as_unix_epoch,
+            locale=const.LANG_TO_LOCALES[lang],
+            lang=lang,
+            slot_tracker=intents_info,
+            timezone="Asia/Kolkata",
+            current_state=context.get(const.CURRENT_STATE),
+            previous_intent=context.get(const.CURRENT_INTENT),
+        )
 
         logger.debug(f"Input:\n{pformat(input_)}")
         try:
-            output = workflow.run(input_=copy.deepcopy(input_))
+            _, output = workflow.run(input_)
         except exceptions.ConnectionError as error:
             if os.environ.get("ENVIRONMENT") == const.PRODUCTION:
                 message = "Could not connect to duckling."
@@ -115,26 +118,22 @@ def get_predictions(purpose, **kwargs):
                 message = "Could not connect to duckling. If you don't need duckling then it seems safe to remove it in this environment."
             raise exceptions.ConnectionError(message) from error
 
-        intents: List[Intent] = output[const.INTENTS]
-        intents_json = [intent.json() for intent in output[const.INTENTS]]
-        entities = output[const.ENTITIES]
+        intents = output.get(const.INTENTS, [])
+        entities = output.gett(const.ENTITIES, [])
 
         confidence_levels = config.tasks.classification.confidence_levels
-        if confidence_levels:
-            for idx in range(len(intents)):
-                low, high = confidence_levels
-                if intents[idx].score <= low:
-                    intents_json[idx][const.CONFIDENCE_LEVEL] = const.LOW
-                elif intents[idx].score <= high:
-                    intents_json[idx][const.CONFIDENCE_LEVEL] = const.MEDIUM
-                else: 
-                    intents_json[idx][const.CONFIDENCE_LEVEL] = const.HIGH
 
-        output = {
-            const.VERSION: config.version,
-            const.INTENTS: intents_json,
-            const.ENTITIES: [entity.json() for entity in entities],
-        }
+        if confidence_levels:
+            for intent in intents:
+                low, high = confidence_levels
+                if intent[const.SCORE] <= low:
+                    intent[const.CONFIDENCE_LEVEL] = const.LOW
+                elif intent[const.SCORE] <= high:
+                    intent[const.CONFIDENCE_LEVEL] = const.MEDIUM
+                else: 
+                    intent[const.CONFIDENCE_LEVEL] = const.HIGH
+
+        output[const.VERSION] = config.version,
 
         logger.debug(f"Output:\n{output}")
         logger.info(f"Duration: {time.perf_counter() - start_time}s")

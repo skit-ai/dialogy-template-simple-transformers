@@ -44,4 +44,4 @@ def build_test_case(inputs_, outputs, ignore_test_case=False) -> None:
             "output": json.loads(json.dumps(outputs)),
         }
 
-        yaml.dump(test_cases, handle, default_flow_style=False)
+        yaml.dump(test_cases, handle, default_flow_style=False, allow_unicode=True)

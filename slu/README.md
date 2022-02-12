@@ -408,3 +408,21 @@ The threshold here is the proportion of the entity with respect to transcripts.
 - If entities with same value and type are produced in the same transcript multiple times, they are counted only once. Assuming the speaker is repeating the entity.
 
 - If entities with same value and type are produced in across different transcripts then they are once per transcript.
+
+## Testing 
+
+```bash
+make test
+```
+
+The project automatically stores all unique inputs. However, it is hard to know the correct intent value 
+or entity value for a given input. So these test only check if there has been a change since the time of 
+recording. Feel free to drop cases that are irrelevant.
+
+## Misc
+
+Creating a new environment with pyenv and running poetry install can lead to [#56](https://github.com/skit-ai/dialogy-template-simple-transformers/issues/56).
+
+```bash
+pip install --upgrade pip
+```

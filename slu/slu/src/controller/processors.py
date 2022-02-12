@@ -3,7 +3,6 @@ from typing import List
 
 from dialogy import plugins
 from dialogy.base.plugin import Plugin
-from dialogy.workflow import Workflow
 
 from slu import constants as const
 from slu.dev.plugin_parse import plugin_functions
@@ -13,8 +12,7 @@ from slu.utils.config import Config
 
 def get_plugins(purpose, config: Config, debug=False) -> List[Plugin]:
     duckling_plugin = plugins.DucklingPlugin(
-        access=plugin_functions.duckling_access,
-        mutate=plugin_functions.mutate(const.OUTPUT, const.ENTITIES),
+        dest="output.entities",
         dimensions=["people", "number", "time", "duration"],
         locale="en_IN",
         timezone="Asia/Kolkata",
@@ -30,8 +28,7 @@ def get_plugins(purpose, config: Config, debug=False) -> List[Plugin]:
     )
 
     list_entity_plugin = plugins.ListEntityPlugin(
-        access=plugin_functions.access(const.INPUT, const.NER_INPUT),
-        mutate=plugin_functions.mutate(const.OUTPUT, const.ENTITIES),
+        dest="output.entities",
         style=const.REGEX,
         candidates=config.entity_patterns,
         threshold=0.1,
@@ -41,30 +38,16 @@ def get_plugins(purpose, config: Config, debug=False) -> List[Plugin]:
         debug=debug,
     )
 
-    canonicalizer = plugins.CanonicalizationPlugin(
-        input_column=const.ALTERNATIVES,
-        entity_column=const.ENTITIES,
-        use_transform=True,
-        access=lambda w: (w.output[const.ENTITIES], w.input[const.NER_INPUT]),
-        mutate=plugin_functions.mutate(
-            const.INPUT, const.CLASSIFICATION_INPUT, action=const.REPLACE
-        )
-    )
-
     merge_asr_output = plugins.MergeASROutputPlugin(
-        access=plugin_functions.access(const.INPUT, const.CLASSIFICATION_INPUT),
-        mutate=plugin_functions.mutate(
-            const.INPUT, const.CLASSIFICATION_INPUT, action=const.REPLACE
-        ),
+        dest="input.clf_feature",
         use_transform=True,
         input_column=const.ALTERNATIVES,
         debug=debug,
     )
 
     xlmr_clf = plugins.XLMRMultiClass(
+        dest="output.intents",
         model_dir=config.get_model_dir(const.CLASSIFICATION),
-        access=plugin_functions.access(const.INPUT, const.CLASSIFICATION_INPUT),
-        mutate=plugin_functions.mutate(const.OUTPUT, const.INTENTS),
         threshold=config.get_model_confidence_threshold(const.CLASSIFICATION),
         score_round_off=5,
         purpose=purpose,
@@ -75,12 +58,8 @@ def get_plugins(purpose, config: Config, debug=False) -> List[Plugin]:
         debug=debug,
     )
 
-    contextual_name_swapper = ContextualIntentSwap(
-        access=lambda w: (w.output[const.INTENTS], w.input[const.CONTEXT], w.output[const.ENTITIES]),
-    )
-
     slot_filler = plugins.RuleBasedSlotFillerPlugin(
-        access=plugin_functions.access(const.OUTPUT, const.INTENTS, const.ENTITIES),
+        dest="output.intents",
         rules=config.slots,
         debug=debug,
         fill_multiple=True,

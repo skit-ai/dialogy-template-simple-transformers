@@ -117,7 +117,7 @@ def create_data_splits(args: argparse.Namespace) -> None:
 Data already exists in {dest} You should create a new version using:
 
 ```shell
-slu dir-setup --version {str(ver_.bump_patch())}
+slu setup-dirs --version {str(ver_.bump_patch())}
 ```
 """.strip()
         )
@@ -191,7 +191,7 @@ Model already exists in {model_dir}.
 You should create a new version using:
 
 ```shell
-slu dir-setup --version {str(ver_.bump_patch())}
+slu setup-dirs --version {str(ver_.bump_patch())}
 ```
 """.strip()
         )

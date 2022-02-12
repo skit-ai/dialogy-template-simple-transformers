@@ -39,7 +39,7 @@ def zoom_out_labels(labels: List[str]):
     """
     labels_ = []
     for label in labels:
-        if label == "_oos_":
+        if label == const.INTENT_OOS:
             labels_.append("out-of-scope")
         elif label.startswith("_") and label.endswith("_"):
             labels_.append(label)
@@ -107,6 +107,8 @@ def make_errors_report(test_df: pd.DataFrame, predictions_df: pd.DataFrame, dir_
     ].copy()
     true_labels = errors_df[f"{const.TAG}"].tolist()
     pred_labels = errors_df[f"{const.INTENT}_pred"].tolist()
+    if not true_labels and not pred_labels:
+        return
     make_confusion_matrix(true_labels, pred_labels, dir_path, prefix="errors")
     errors_df.to_csv(os.path.join(dir_path, "error_report.csv"))
 

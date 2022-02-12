@@ -9,4 +9,4 @@ def load_tests(test_type, current_path):
     with open(test_cases_path, "r") as handle:
         test_cases = yaml.load(handle, Loader=yaml.SafeLoader)
         if isinstance(test_cases, dict):
-            return test_cases.values()
+            return zip(test_cases.keys(), test_cases.values())
