@@ -1,4 +1,4 @@
-FROM vernacularai/ubuntu-pyenv:2.0.0
+FROM 536612919621.dkr.ecr.ap-south-1.amazonaws.com/ubuntu-pyenv:latest
 
 
 ARG PYTHON_VER=3.8.2
@@ -13,13 +13,17 @@ RUN apt-get update && apt-get install -y gcc g++ && \
 
 RUN poetry config virtualenvs.create false
 
-COPY pyproject.toml poetry.lock /home/slu/
+COPY pyproject.toml poetry.lock data.dvc /home/slu/
 
 RUN poetry install --no-dev && \
     rm -rf /root/.cache && pip3 uninstall --yes poetry
 
+COPY ./.dvc ./.dvc
+
+RUN dvc config core.no_scm true
+RUN dvc pull
+
 COPY ./slu ./slu
-COPY ./data ./data
 COPY ./uwsgi.ini ./uwsgi.ini
 COPY ./config ./config
 

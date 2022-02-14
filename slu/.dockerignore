@@ -1,7 +1,6 @@
 data/**/metrics
 data/**/datasets
 cache_dir
-.dvc
 .git/
 *.log
 *.csv
