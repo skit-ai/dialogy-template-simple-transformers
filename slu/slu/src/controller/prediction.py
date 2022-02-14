@@ -119,7 +119,6 @@ def get_predictions(purpose, **kwargs):
             raise exceptions.ConnectionError(message) from error
 
         intents = output.get(const.INTENTS, [])
-        entities = output.gett(const.ENTITIES, [])
 
         confidence_levels = config.tasks.classification.confidence_levels
 
