@@ -5,8 +5,6 @@ from dialogy import plugins
 from dialogy.base.plugin import Plugin
 
 from slu import constants as const
-from slu.dev.plugin_parse import plugin_functions
-from slu.src.controller.custom_plugins import ContextualIntentSwap
 from slu.utils.config import Config
 
 
