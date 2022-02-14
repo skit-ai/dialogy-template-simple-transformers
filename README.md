@@ -2,6 +2,7 @@
 
 A template for SLU projects at [skit.ai](https://skit.ai/).
 
+- Built using [dialogy](https://skit-ai.github.io/dialogy/)
 - This template is automatically to create an slu microservice.
 - Don't clone this project for building microservices, use the `dialogy create <project_name>` to create projects.
 
@@ -47,6 +48,7 @@ The questions here help:
 
 - Populate your [`pyproject.toml`](https://python-poetry.org/docs/pyproject/) since we use [`poetry`](https://python-poetry.org/docs/) for managing dependencies.
 - Create a repository and python package with the scaffolding you need.
+- Remove `poetry.lock` it may affect package installation. It will be removed in a previous version.
 
 ### 2. Install
 
