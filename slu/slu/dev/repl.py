@@ -96,7 +96,8 @@ def repl(args: argparse.Namespace) -> None:
                 **input_,
                 lang=lang,
             )
-            response_json = json.dumps(response, indent=2)
+            response["intents"] = response["intents"][:1]
+            response_json = json.dumps(response, indent=2, ensure_ascii=False)
             logger.info(f"Output: \n{response_json}")
             show_help = False
     except KeyboardInterrupt:
