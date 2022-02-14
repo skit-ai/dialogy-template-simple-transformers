@@ -154,4 +154,4 @@ slu/config/*.json
 *.yaml
 *.json
 *.csv
-poetry.lock
+*/**/poetry.lock
