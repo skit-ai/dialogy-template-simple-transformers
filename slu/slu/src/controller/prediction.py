@@ -133,6 +133,8 @@ def get_predictions(purpose, **kwargs):
                     intent[const.CONFIDENCE_LEVEL] = const.HIGH
 
         output[const.VERSION] = config.version,
+        if intents and purpose == const.PRODUCTION:
+            output[const.INTENTS] = intents[:1]
 
         logger.debug(f"Output:\n{output}")
         logger.info(f"Duration: {time.perf_counter() - start_time}s")
