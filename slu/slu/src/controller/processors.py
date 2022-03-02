@@ -6,7 +6,7 @@ from dialogy.base.plugin import Plugin
 
 from slu import constants as const
 from slu.utils.config import Config
-
+from slu.src.controller.custom_plugins import OOSFilterPlugin
 
 def get_plugins(purpose, config: Config, debug=False) -> List[Plugin]:
     duckling_plugin = plugins.DucklingPlugin(
@@ -46,7 +46,6 @@ def get_plugins(purpose, config: Config, debug=False) -> List[Plugin]:
     xlmr_clf = plugins.XLMRMultiClass(
         dest="output.intents",
         model_dir=config.get_model_dir(const.CLASSIFICATION),
-        threshold=config.get_model_confidence_threshold(const.CLASSIFICATION),
         score_round_off=5,
         purpose=purpose,
         use_cuda=purpose != const.PRODUCTION,
@@ -56,6 +55,13 @@ def get_plugins(purpose, config: Config, debug=False) -> List[Plugin]:
         debug=debug,
     )
 
+    oos_filter = OOSFilterPlugin(
+        dest="output.intents",
+        threshold=config.get_model_confidence_threshold(const.CLASSIFICATION),
+        replace_output=True,
+        guards= [lambda i, o: purpose != const.PRODUCTION]
+    )
+
     slot_filler = plugins.RuleBasedSlotFillerPlugin(
         dest="output.intents",
         rules=config.slots,
@@ -63,4 +69,4 @@ def get_plugins(purpose, config: Config, debug=False) -> List[Plugin]:
         fill_multiple=True,
     )
 
-    return [merge_asr_output, xlmr_clf, slot_filler]
+    return [merge_asr_output, xlmr_clf, oos_filter, slot_filler]

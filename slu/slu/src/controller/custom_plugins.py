@@ -5,6 +5,18 @@ from dialogy.types import Intent, BaseEntity
 
 import slu.constants as const
 
+class OOSFilterPlugin(Plugin):
+    def __init__(self, dest=None, guards=None, threshold=None, **kwargs) -> None:
+        super().__init__(dest=dest, guards=guards, **kwargs)
+        self.threshold = threshold
+
+    def set_oos_intent(self, intents: List[Intent]) -> Any:
+        if intents[0].score < self.threshold:
+            intents[0].name = const.INTENT_OOS
+        return intents
+
+    def utility(self, input_: Input, output: Output) -> Any:
+        return self.set_oos_intent(output.intents)
 
 class ContextualIntentSwap(Plugin):
     def __init__(self, dest=None, **kwargs) -> None:
