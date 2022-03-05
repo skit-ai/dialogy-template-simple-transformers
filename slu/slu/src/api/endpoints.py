@@ -2,6 +2,7 @@ import os
 import traceback
 from typing import Any, Dict, List
 
+import uwsgi
 import sentry_sdk
 from flask import jsonify, request
 from sentry_sdk.integrations.flask import FlaskIntegration
@@ -73,6 +74,7 @@ def slu(lang: str, model_name: str):
         history: List[Any] = request.json.get(const.HISTORY) or []
 
         try:
+            uwsgi.lock()
             response = PREDICT_API(
                 alternatives=utterance,
                 context=context,
@@ -80,6 +82,7 @@ def slu(lang: str, model_name: str):
                 history=history,
                 lang=lang,
             )
+            uwsgi.unlock()
             history.append(response)
             return jsonify(status="ok", response=response, history=history), 200
         except OSError as os_error:
