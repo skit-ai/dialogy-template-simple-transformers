@@ -92,6 +92,9 @@ class Config:
     entity_patterns = attr.ib(factory=dict, type=Dict[str, List[str]], kw_only=True)
     datetime_rules = attr.ib(factory=dict, type=Dict[str, Dict[str, Dict[str, int]]], kw_only=True)
     critical_intents = attr.ib(factory=list, type=List[str], kw_only=True)
+    timerange_constraints = attr.ib(
+        factory=dict, type=Dict[str, Dict[str, Dict[str, Dict[str, int]]]], kw_only=True
+    )
 
     def __attrs_post_init__(self) -> None:
         """

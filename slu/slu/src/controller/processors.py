@@ -17,6 +17,7 @@ def get_plugins(purpose, config: Config, debug=False) -> List[Plugin]:
         timeout=0.5,
         input_column=const.ALTERNATIVES,
         output_column=const.ENTITIES,
+        constraints=config.timerange_constraints,
         # url works only in development mode.
         # You need to set its real value in k8s configs or wherever you keep your
         # env-vars safe.

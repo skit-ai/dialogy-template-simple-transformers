@@ -4,6 +4,14 @@ slots:                # Just an example, please change this to your own slots.
   _cancel_:           # Intent name
     number_slot:      # slot name
     - number          # entity types
+timerange_constraints:
+  time:
+    lte:
+      hour: 23
+      minute: 59
+    gte:
+      hour: 0
+      minute: 0
 tasks:
   classification:
     confidence_levels: []
