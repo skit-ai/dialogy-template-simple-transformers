@@ -139,4 +139,4 @@ CUDA_WITH_DYNAMIC_QUANTIZATION_MESSAGE = (
 LOW = "low"
 MEDIUM = "medium"
 HIGH = "high"
-CONFIDENCE_LEVEL = "confidence_level"
+CONFIDENCE_LEVEL = "confidence_levels"
