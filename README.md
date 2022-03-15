@@ -33,7 +33,7 @@ A template for SLU projects at [skit.ai](https://skit.ai/).
 
 ## Getting started
 
-Make sure you have `git`, `python==^3.8`, [`poetry`](https://python-poetry.org/docs/#installation) installed. Preferably within a virtual environment.
+Make sure you have `git`, `python==^3.8`, [`poetry`](https://python-poetry.org/docs/#installation) installed. Preferably within a virtual environment. You would also need to have `cmake` installed if you are on Mac OS. Run the command `brew install cmake` to install cmake.
 
 ### 1. Boilerplate
 
