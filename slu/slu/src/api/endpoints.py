@@ -2,21 +2,19 @@ import os
 import traceback
 from typing import Any, Dict, List
 
-import uwsgi
 import sentry_sdk
 from flask import jsonify, request
 from sentry_sdk.integrations.flask import FlaskIntegration
 
 from slu import constants as const
 from slu.src.api import app
-from slu.src.controller.prediction import get_predictions
+from slu.src.api.thread_safe import ThreadSafePredictAPI
 from slu.utils import error_response
 from slu.utils.config import Config, YAMLLocalConfig
 from slu.utils.sentry import capture_exception
 
+
 CONFIG_MAP = YAMLLocalConfig().generate()
-CONFIG: Config = list(CONFIG_MAP.values()).pop()
-PREDICT_API = get_predictions(const.PRODUCTION, config=CONFIG)
 
 
 if os.environ.get(const.ENVIRONMENT) == const.PRODUCTION:
@@ -73,20 +71,16 @@ def slu(lang: str, model_name: str):
         intents_info: List[Dict[str, Any]] = request.json.get(const.INTENTS_INFO) or []
         history: List[Any] = request.json.get(const.HISTORY) or []
 
-        try:
-            uwsgi.lock()
-            response = PREDICT_API(
-                alternatives=utterance,
-                context=context,
-                intents_info=intents_info,
-                history=history,
-                lang=lang,
-            )
-            uwsgi.unlock()
+        with ThreadSafePredictAPI(
+            utterance,
+            lang,
+            config,
+            context=context,
+            intents_info=intents_info,
+            history=history
+        ) as response:
             history.append(response)
             return jsonify(status="ok", response=response, history=history), 200
-        except OSError as os_error:
-            return error_response.missing_models(os_error)
 
     except Exception as exc:
         # Update this section to:
