@@ -5,33 +5,25 @@ and receive Intent and Entities.
 import os
 import copy
 import time
+import pytz
 import operator
 from requests import exceptions
 from datetime import datetime, timedelta
 from pprint import pformat
 from typing import Any, Dict, List, Optional
 
-import pytz
 from dialogy.base import Input
 from dialogy.utils import normalize
 from dialogy.workflow import Workflow
+from dialogy import plugins
 from dialogy.types import Intent
 
 from slu import constants as const
-from slu.src.controller.processors import get_plugins
+from slu.src.controller.processors import SLUPipeline
 from slu.utils import logger
 from slu.utils.config import Config, YAMLLocalConfig
 from slu.utils.make_test_cases import build_test_case
 
-
-def get_workflow(purpose, **kwargs):
-    if const.CONFIG in kwargs:
-        config = kwargs[const.CONFIG]
-    else:
-        project_config_map = YAMLLocalConfig().generate()
-        config: Config = list(project_config_map.values()).pop()
-    debug = kwargs.get("debug", False)
-    return Workflow(get_plugins(purpose, config, debug=debug), debug=debug)
 
 
 def get_reftime(config: Config, context: Dict[str, Any], lang: str):
@@ -66,19 +58,15 @@ def get_reftime(config: Config, context: Dict[str, Any], lang: str):
     return int(reference_time.timestamp() * 1000)
 
 
-def get_predictions(purpose, **kwargs):
+def get_predictions(purpose, final_plugin=None, **kwargs):
     """
     Create a closure for the predict function.
 
     Ensures that the workflow is loaded just once without creating global variables for it.
     This can also be made into a class if needed.
     """
-    if const.CONFIG in kwargs:
-        config = kwargs[const.CONFIG]
-    else:
-        project_config_map = YAMLLocalConfig().generate()
-        config: Config = list(project_config_map.values()).pop()
-    workflow = get_workflow(purpose, **kwargs)
+    pipeline = SLUPipeline(**kwargs)
+    workflow = pipeline.get_workflow(purpose, final_plugin)
 
     def predict(
         alternatives: Any,
@@ -100,7 +88,7 @@ def get_predictions(purpose, **kwargs):
             raise ValueError(f"Expected {lang} to be a ISO-639-1 code.")
 
         start_time = time.perf_counter()
-        reference_time_as_unix_epoch = get_reftime(config, context, lang)
+        reference_time_as_unix_epoch = get_reftime(pipeline.config, context, lang)
 
         input_ = Input(
             utterances=alternatives,
@@ -125,7 +113,7 @@ def get_predictions(purpose, **kwargs):
 
         intents = output.get(const.INTENTS, [])
 
-        confidence_levels = config.tasks.classification.confidence_levels
+        confidence_levels = pipeline.config.tasks.classification.confidence_levels
 
         if confidence_levels:
             for intent in intents:
@@ -137,7 +125,7 @@ def get_predictions(purpose, **kwargs):
                 else:
                     intent[const.CONFIDENCE_LEVEL] = const.HIGH
 
-        output[const.VERSION] = (config.version,)
+        output[const.VERSION] = pipeline.config.version
         if intents and purpose == const.PRODUCTION:
             output[const.INTENTS] = intents[:1]
 
@@ -150,7 +138,7 @@ def get_predictions(purpose, **kwargs):
                 const.LANG: lang,
             },
             output,
-            **kargs,
+            **kargs
         )
         return output
 
