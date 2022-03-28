@@ -25,7 +25,7 @@ A template for SLU projects at [skit.ai](https://skit.ai/).
 | **Makefile**                              | Helps maintain hygiene before deploying code.                                |
 | **pyproject.toml**                        | Track dependencies here. Also, this means you would be using poetry.         |
 | **README.md**                             | This must ring a bell.                                                       |
-| **uwsgi.ini**                             | Modify as per use.                                                           |
+
 
 ## Getting started
 
@@ -239,7 +239,7 @@ To run your models to see how they perform on live inputs, you have two options:
 
 2. `task serve`
 
-    This is a uwsgi server that provides the same interface as your production applications.
+    This is a uvicorn server that provides the same interface as your production applications.
 
 ### 10. Releases
 
@@ -345,18 +345,19 @@ These are the APIs which are being used.
 1. Health check - To check if the service is running.
 
     ```python
-    @app.route("/", methods=["GET"])
-    def health_check():
-        return jsonify(
+    @app.get("/")
+    async def health_check():
+        return JSONResponse(dict(
             status="ok",
             response={"message": "Server is up."},
-        )
+            ),
+        status_code=200)
     ```
 
 2. Predict - This is the main production API.
 
     ```python
-    @app.route("/predict/<lang>/slu/", methods=["POST"])
+    @app.post("/predict/{lang}/{model_name}/")
     ```
 
 ## Entities

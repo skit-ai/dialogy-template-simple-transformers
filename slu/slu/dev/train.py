@@ -28,7 +28,7 @@ from tqdm import tqdm
 
 from slu import constants as const
 from slu.dev.version import check_version_save_config
-from slu.src.controller.prediction import get_workflow
+from slu.src.controller.processors import SLUPipeline
 from slu.utils import logger
 from slu.utils.config import Config, YAMLLocalConfig
 
@@ -50,9 +50,11 @@ def make_label_column_uniform(data_frame: pd.DataFrame) -> None:
 def reftime_patterns(reftime: str):
     time_fns = [
         datetime.fromisoformat,
-        lambda date_string: datetime.strptime(date_string, '%Y-%m-%d %H:%M:%S.%f %z %Z'),
-        lambda date_string: datetime.strptime(date_string, '%Y-%m-%dT%H:%M:%SZ'),
-        lambda date_string: datetime.strptime(date_string, '%Y-%m-%dT%H:%M:%S.%f%z')
+        lambda date_string: datetime.strptime(
+            date_string, "%Y-%m-%d %H:%M:%S.%f %z %Z"
+        ),
+        lambda date_string: datetime.strptime(date_string, "%Y-%m-%dT%H:%M:%SZ"),
+        lambda date_string: datetime.strptime(date_string, "%Y-%m-%dT%H:%M:%S.%f%z"),
     ]
     for time_fn in time_fns:
         try:
@@ -66,9 +68,15 @@ def make_reftime_column_uniform(data_frame: pd.DataFrame) -> None:
     if const.REFERENCE_TIME not in data_frame.columns:
         return
 
-    for i, row in tqdm(data_frame.iterrows(), total=len(data_frame), desc="Fixing reference time"):
-        if row[const.REFERENCE_TIME] is not None and not pd.isna(row[const.REFERENCE_TIME]):
-            data_frame.loc[i, const.REFERENCE_TIME] = reftime_patterns(row[const.REFERENCE_TIME]).isoformat()
+    for i, row in tqdm(
+        data_frame.iterrows(), total=len(data_frame), desc="Fixing reference time"
+    ):
+        if row[const.REFERENCE_TIME] is not None and not pd.isna(
+            row[const.REFERENCE_TIME]
+        ):
+            data_frame.loc[i, const.REFERENCE_TIME] = reftime_patterns(
+                row[const.REFERENCE_TIME]
+            ).isoformat()
 
 
 def make_data_column_uniform(data_frame: pd.DataFrame) -> None:
@@ -196,7 +204,7 @@ slu setup-dirs --version {str(ver_.bump_patch())}
 """.strip()
         )
 
-    workflow = get_workflow(const.TRAIN, lang=args.lang, project=args.project)
+        workflow = SLUPipeline(config).get_workflow(purpose=const.TRAIN)
 
     logger.info("Preparing dataset.")
     dataset = dataset or config.get_dataset(const.CLASSIFICATION, f"{const.TRAIN}.csv")

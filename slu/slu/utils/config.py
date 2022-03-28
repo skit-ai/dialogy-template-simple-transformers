@@ -90,7 +90,9 @@ class Config:
     slots: Dict[str, Dict[str, Any]] = attr.ib(factory=dict, kw_only=True)
     calibration = attr.ib(factory=dict, type=Dict[str, Any], kw_only=True)
     entity_patterns = attr.ib(factory=dict, type=Dict[str, List[str]], kw_only=True)
-    datetime_rules = attr.ib(factory=dict, type=Dict[str, Dict[str, Dict[str, int]]], kw_only=True)
+    datetime_rules = attr.ib(
+        factory=dict, type=Dict[str, Dict[str, Dict[str, int]]], kw_only=True
+    )
     critical_intents = attr.ib(factory=list, type=List[str], kw_only=True)
     timerange_constraints = attr.ib(
         factory=dict, type=Dict[str, Dict[str, Dict[str, Dict[str, int]]]], kw_only=True
@@ -181,3 +183,7 @@ class YAMLLocalConfig(ConfigDataProviderInterface):
             config_dict = yaml.safe_load(handle)
             config = Config(**config_dict)
         return {config_dict[const.MODEL_NAME]: config}
+
+def load_gen_config():
+    project_config_map = YAMLLocalConfig().generate()
+    return list(project_config_map.values()).pop()

@@ -1,3 +1,5 @@
-from flask import Flask
+from fastapi import FastAPI
+from slu.src.api.models import PayloadModel
 
-app = Flask(__name__)
+
+app = FastAPI()
