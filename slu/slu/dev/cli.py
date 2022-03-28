@@ -40,7 +40,7 @@ def build_split_data_cli(parser: argparse.ArgumentParser) -> argparse.ArgumentPa
     parser.add_argument(
         "--stratify",
         action="store_true",
-        help="Data is split in a stratified fashion, using the class labels."
+        help="Data is split in a stratified fashion, using the class labels.",
     )
     parser.add_argument("--dest", help="The destination directory for the split data.")
     return parser
@@ -86,7 +86,11 @@ def build_test_cli(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
         "--version",
         help="The dataset version, which will also be the report's version.",
     )
-    parser.add_argument("--tune-threshold", action="store_true", help="Tune the classifier's threshold based on test results.")
+    parser.add_argument(
+        "--tune-threshold",
+        action="store_true",
+        help="Tune the classifier's threshold based on test results.",
+    )
     return parser
 
 

@@ -40,11 +40,13 @@ async def health_check():
     The purpose of this API is to help other people/machines know liveness of the application.
     """
 
-    return JSONResponse(dict(
+    return JSONResponse(
+        dict(
             status="ok",
             response={"message": "Server is up."},
-            ),
-        status_code=200)
+        ),
+        status_code=200,
+    )
 
 
 @app.post("/predict/{lang}/{model_name}/")
@@ -77,7 +79,9 @@ async def slu(lang: str, model_name: str, payload: Input):
                 lang=lang,
             )
             history.append(response)
-            return JSONResponse(dict(status="ok", response=response, history=history), status_code=200)
+            return JSONResponse(
+                dict(status="ok", response=response, history=history), status_code=200
+            )
 
         except OSError as os_error:
             return error_response.missing_models(os_error)
@@ -88,7 +92,9 @@ async def slu(lang: str, model_name: str, payload: Input):
         # 2. provide user-friendly messages. The current is developer friendly.
         # capture_exception(exc, ctx="api", message=request.json)
         capture_exception(exc, ctx="api", message=request)
-        return JSONResponse({"message": str(exc), "cause": traceback.format_exc()}, status_code=200)
+        return JSONResponse(
+            {"message": str(exc), "cause": traceback.format_exc()}, status_code=200
+        )
 
 
 if __name__ == "__main__":

@@ -47,8 +47,13 @@ def get_reftime(config: Config, context: Dict[str, Any], lang: str):
     current_state = context.get(const.CURRENT_STATE)
 
     if current_state in config.datetime_rules:
-        if const.REWIND not in config.datetime_rules[current_state] and const.FORWARD not in config.datetime_rules[current_state]:
-            raise NotImplementedError(f"Expected either {const.FORWARD} or {const.REWIND} in {config.datetime_rules}")
+        if (
+            const.REWIND not in config.datetime_rules[current_state]
+            and const.FORWARD not in config.datetime_rules[current_state]
+        ):
+            raise NotImplementedError(
+                f"Expected either {const.FORWARD} or {const.REWIND} in {config.datetime_rules}"
+            )
 
         if const.REWIND in config.datetime_rules[current_state]:
             operation = operator.sub
@@ -129,10 +134,10 @@ def get_predictions(purpose, **kwargs):
                     intent[const.CONFIDENCE_LEVEL] = const.LOW
                 elif intent[const.SCORE] <= high:
                     intent[const.CONFIDENCE_LEVEL] = const.MEDIUM
-                else: 
+                else:
                     intent[const.CONFIDENCE_LEVEL] = const.HIGH
 
-        output[const.VERSION] = config.version,
+        output[const.VERSION] = (config.version,)
         if intents and purpose == const.PRODUCTION:
             output[const.INTENTS] = intents[:1]
 

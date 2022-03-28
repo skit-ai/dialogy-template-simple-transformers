@@ -20,7 +20,7 @@ def task_guard(func):
             return None
 
     return wrapper
-    
+
 
 def async_wrap(func):
     @wraps(func)
@@ -29,4 +29,5 @@ def async_wrap(func):
             loop = asyncio.get_event_loop()
         pfunc = partial(func, *args, **kwargs)
         return await loop.run_in_executor(executor, pfunc)
+
     return run

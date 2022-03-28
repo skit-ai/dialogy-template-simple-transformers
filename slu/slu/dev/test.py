@@ -48,7 +48,9 @@ def zoom_out_labels(labels: List[str]):
     return labels_
 
 
-def update_confidence_scores(config: Config, test_df: pd.DataFrame, predictions_df: pd.DataFrame):
+def update_confidence_scores(
+    config: Config, test_df: pd.DataFrame, predictions_df: pd.DataFrame
+):
     """
     Update the confidence scores in the config as per test results.
     """
@@ -62,7 +64,9 @@ def update_confidence_scores(config: Config, test_df: pd.DataFrame, predictions_
     logger.info(f"{incorrect_items.score.describe()}")
 
 
-def make_classification_report(test_df: pd.DataFrame, predictions_df: pd.DataFrame, dir_path: str):
+def make_classification_report(
+    test_df: pd.DataFrame, predictions_df: pd.DataFrame, dir_path: str
+):
     result_dict = classification_report(
         test_df[const.TAG],
         predictions_df[const.INTENT],
@@ -77,11 +81,19 @@ def make_classification_report(test_df: pd.DataFrame, predictions_df: pd.DataFra
     result_df.to_csv(os.path.join(dir_path, "classification_report.csv"))
 
 
-def make_critical_intent_report(test_df: pd.DataFrame, predictions_df: pd.DataFrame, critical_intents: List[str], dir_path: str):
+def make_critical_intent_report(
+    test_df: pd.DataFrame,
+    predictions_df: pd.DataFrame,
+    critical_intents: List[str],
+    dir_path: str,
+):
     merged_df = pd.merge(
         test_df, predictions_df, on="data_id", suffixes=("_test", "_pred")
     )
-    merged_df = merged_df[(merged_df.tag.isin(critical_intents)) | (merged_df.intent_pred.isin(critical_intents))]
+    merged_df = merged_df[
+        (merged_df.tag.isin(critical_intents))
+        | (merged_df.intent_pred.isin(critical_intents))
+    ]
     result_dict = classification_report(
         merged_df.tag,
         merged_df.intent_pred,
@@ -93,10 +105,14 @@ def make_critical_intent_report(test_df: pd.DataFrame, predictions_df: pd.DataFr
     logger.info("saving report.")
     table = tabulate(result_df, headers="keys", tablefmt="github")
     logger.info(f"classification report:\n{table}")
-    result_df.to_csv(os.path.join(dir_path, "critical_intent_classification_report.csv"))
+    result_df.to_csv(
+        os.path.join(dir_path, "critical_intent_classification_report.csv")
+    )
 
 
-def make_errors_report(test_df: pd.DataFrame, predictions_df: pd.DataFrame, dir_path: str):
+def make_errors_report(
+    test_df: pd.DataFrame, predictions_df: pd.DataFrame, dir_path: str
+):
     logger.info(f"{test_df.head()}")
     test_df_ = test_df.copy()
     merged_df = pd.merge(
@@ -113,7 +129,9 @@ def make_errors_report(test_df: pd.DataFrame, predictions_df: pd.DataFrame, dir_
     errors_df.to_csv(os.path.join(dir_path, "error_report.csv"))
 
 
-def make_confusion_matrix(true_labels: List[str], pred_labels: List[str], dir_path: str, prefix=""):
+def make_confusion_matrix(
+    true_labels: List[str], pred_labels: List[str], dir_path: str, prefix=""
+):
     labels = sorted(set(true_labels + pred_labels))
     cm = confusion_matrix(true_labels, pred_labels, labels=labels)
     cm_df = pd.DataFrame(cm, index=labels, columns=labels)
@@ -175,11 +193,15 @@ def test_classifier(args: argparse.Namespace):
     update_confidence_scores(config, test_df, predictions_df)
     make_errors_report(test_df, predictions_df, dir_path=dir_path)
     make_classification_report(test_df, predictions_df, dir_path=dir_path)
-    make_critical_intent_report(test_df, predictions_df, config.critical_intents, dir_path=dir_path)
+    make_critical_intent_report(
+        test_df, predictions_df, config.critical_intents, dir_path=dir_path
+    )
 
     true_labels = test_df[const.TAG].tolist()
     pred_labels = predictions_df[const.INTENT].tolist()
     zoomed_true_label = zoom_out_labels(true_labels)
     zoomed_predicted_label = zoom_out_labels(pred_labels)
-    make_confusion_matrix(zoomed_true_label, zoomed_predicted_label, dir_path=dir_path, prefix="zoomed")
+    make_confusion_matrix(
+        zoomed_true_label, zoomed_predicted_label, dir_path=dir_path, prefix="zoomed"
+    )
     make_confusion_matrix(true_labels, pred_labels, dir_path=dir_path, prefix="full")

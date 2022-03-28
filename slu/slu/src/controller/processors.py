@@ -8,6 +8,7 @@ from slu import constants as const
 from slu.utils.config import Config
 from slu.src.controller.custom_plugins import OOSFilterPlugin
 
+
 def get_plugins(purpose, config: Config, debug=False) -> List[Plugin]:
     duckling_plugin = plugins.DucklingPlugin(
         dest="output.entities",
@@ -60,7 +61,7 @@ def get_plugins(purpose, config: Config, debug=False) -> List[Plugin]:
         dest="output.intents",
         threshold=config.get_model_confidence_threshold(const.CLASSIFICATION),
         replace_output=True,
-        guards= [lambda i, o: purpose != const.PRODUCTION]
+        guards=[lambda i, o: purpose != const.PRODUCTION],
     )
 
     slot_filler = plugins.RuleBasedSlotFillerPlugin(

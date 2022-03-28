@@ -5,7 +5,7 @@ from slu import constants as const
 
 
 def invalid_language(lang):
-    return JSONResponse (
+    return JSONResponse(
         content=jsonable_encoder(
             {
                 "message": "Invalid request.",
@@ -17,7 +17,7 @@ def invalid_language(lang):
 
 
 def invalid_request(req):
-    return JSONResponse (
+    return JSONResponse(
         content=jsonable_encoder(
             {
                 "message": "Invalid request.",
@@ -29,7 +29,7 @@ def invalid_request(req):
 
 
 def invalid_input(req):
-    return JSONResponse (
+    return JSONResponse(
         content=jsonable_encoder(
             {
                 "message": "Invalid request.",
@@ -42,7 +42,7 @@ def invalid_input(req):
 
 
 def missing_project_name(project_name):
-    return JSONResponse (
+    return JSONResponse(
         content=jsonable_encoder(
             {
                 "message": "Project not found.",
@@ -54,7 +54,7 @@ def missing_project_name(project_name):
 
 
 def invalid_initialization(client_name, model_name):
-    return JSONResponse (
+    return JSONResponse(
         content=jsonable_encoder(
             {
                 "message": "Missing config.",
@@ -66,7 +66,7 @@ def invalid_initialization(client_name, model_name):
 
 
 def config_upload_required(plugin):
-    return JSONResponse (
+    return JSONResponse(
         content=jsonable_encoder(
             {
                 "message": "Plugin needs config file.",
@@ -78,7 +78,7 @@ def config_upload_required(plugin):
 
 
 def unknown_plugin(plugin):
-    return JSONResponse (
+    return JSONResponse(
         content=jsonable_encoder(
             {
                 "message": "No schema available for plugin.",
@@ -90,7 +90,7 @@ def unknown_plugin(plugin):
 
 
 def missing_models(message):
-    return JSONResponse (
+    return JSONResponse(
         content=jsonable_encoder(
             {
                 "message": message,

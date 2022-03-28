@@ -5,6 +5,7 @@ from dialogy.types import Intent, BaseEntity
 
 import slu.constants as const
 
+
 class OOSFilterPlugin(Plugin):
     def __init__(self, dest=None, guards=None, threshold=None, **kwargs) -> None:
         super().__init__(dest=dest, guards=guards, **kwargs)
@@ -18,11 +19,14 @@ class OOSFilterPlugin(Plugin):
     def utility(self, input_: Input, output: Output) -> Any:
         return self.set_oos_intent(output.intents)
 
+
 class ContextualIntentSwap(Plugin):
     def __init__(self, dest=None, **kwargs) -> None:
         super().__init__(dest=dest, **kwargs)
 
-    def swap(self, intents: List[Intent], context: Dict[str, Any], entities: List[BaseEntity]) -> Any:
+    def swap(
+        self, intents: List[Intent], context: Dict[str, Any], entities: List[BaseEntity]
+    ) -> Any:
         """
         Swap the predicted intent with another basis the context.
 
@@ -51,7 +55,9 @@ class ContextualIntentSwap(Plugin):
         if not intents:
             raise ValueError("No intents provided")
         if not isinstance(intents[0], Intent):
-            raise TypeError(f"Each Intent must be of type Intent within {intents}, not {type(intents[0])}")
+            raise TypeError(
+                f"Each Intent must be of type Intent within {intents}, not {type(intents[0])}"
+            )
 
         intent = intents[0]
         tracked_intent = context[const.CURRENT_INTENT]
