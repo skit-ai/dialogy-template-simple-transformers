@@ -15,7 +15,7 @@ from slu.utils.config import Config, YAMLLocalConfig
 from slu.utils.sentry import capture_exception
 
 CONFIG_MAP = YAMLLocalConfig().generate()
-PREDICT_API = get_predictions(const.PRODUCTION, ignore_test_case=True)
+PREDICT_API = get_predictions(const.PRODUCTION)
 
 if os.environ.get(const.ENVIRONMENT) == const.PRODUCTION:
     sentry_sdk.init(

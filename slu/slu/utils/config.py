@@ -183,3 +183,7 @@ class YAMLLocalConfig(ConfigDataProviderInterface):
             config_dict = yaml.safe_load(handle)
             config = Config(**config_dict)
         return {config_dict[const.MODEL_NAME]: config}
+
+def load_gen_config():
+    project_config_map = YAMLLocalConfig().generate()
+    return list(project_config_map.values()).pop()

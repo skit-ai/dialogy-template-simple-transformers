@@ -28,7 +28,7 @@ from tqdm import tqdm
 
 from slu import constants as const
 from slu.dev.version import check_version_save_config
-from slu.src.controller.prediction import get_workflow
+from slu.src.controller.processors import SLUPipeline
 from slu.utils import logger
 from slu.utils.config import Config, YAMLLocalConfig
 
@@ -204,7 +204,7 @@ slu setup-dirs --version {str(ver_.bump_patch())}
 """.strip()
         )
 
-    workflow = get_workflow(const.TRAIN, lang=args.lang, project=args.project)
+        workflow = SLUPipeline(config).get_workflow(purpose=const.TRAIN)
 
     logger.info("Preparing dataset.")
     dataset = dataset or config.get_dataset(const.CLASSIFICATION, f"{const.TRAIN}.csv")

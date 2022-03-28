@@ -7,6 +7,7 @@ from typing import Optional
 from slu.dev.dir_setup import create_data_directory
 from slu.dev.release import release
 from slu.dev.repl import repl
+from slu.dev.dev import dev_workflow
 from slu.dev.test import test_classifier
 from slu.dev.train import create_data_splits, merge_datasets, train_intent_classifier
 
@@ -70,6 +71,25 @@ def build_train_cli(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     )
     return parser
 
+def build_dev_cli(parser:argparse.ArgumentParser) -> argparse.ArgumentParser:
+    parser.add_argument(
+        "--file",
+        help="The path of a csv dataset containing utterances and labels. If not provided, we look for files in data/<version/classification/datasets.",
+    )
+    parser.add_argument(
+        "--lang", help="The language code to use for the dataset.", required=True
+    )
+    parser.add_argument(
+        "--version",
+        help="The version of the dataset, model, metrics to use. Defaults to the latest version.",
+    )
+    parser.add_argument(
+        "--calibrate",
+        action="store_true",
+        help="To calibrate model confidence scores (only for xlmr currently).",
+    )
+    return parser
+
 
 def build_test_cli(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     parser.add_argument(
@@ -129,6 +149,7 @@ def parse_commands(command_string: Optional[str] = None) -> argparse.Namespace:
         "combine-data", help="Combine datasets into a single file."
     )
     train_cli_parser = command_parsers.add_parser("train", help="Train a workflow.")
+    dev_cli_parser = command_parsers.add_parser("dev", help="Develop a workflow.")
     test_cli_parser = command_parsers.add_parser("test", help="Test a workflow.")
     release_cli_parser = command_parsers.add_parser(
         "release",
@@ -160,6 +181,8 @@ def main(command_string: Optional[str] = None) -> None:
         merge_datasets(args)
     elif args.command == "train":
         train_intent_classifier(args)
+    elif args.command == "dev":
+        dev_workflow(args)
     elif args.command == "test":
         test_classifier(args)
     elif args.command == "release":
