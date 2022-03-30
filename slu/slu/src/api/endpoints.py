@@ -66,9 +66,9 @@ async def slu(lang: str, model_name: str, payload: Input):
 
     try:
         utterance: Any = request[const.ALTERNATIVES] or request[const.TEXT]
-        context: Dict[str, Any] = request[const.CONTEXT]
-        history: List[Dict[str, Any]] = request[const.HISTORY]
-        intents_info: List[Dict[str, Any]] = request[const.INTENTS_INFO]
+        context: Dict[str, Any] = request.get(const.CONTEXT, {})
+        history: List[Dict[str, Any]] = request.get(const.HISTORY, [])
+        intents_info: List[Dict[str, Any]] = request.get(const.INTENTS_INFO, [])
 
         try:
             response = PREDICT_API(
