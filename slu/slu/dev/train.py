@@ -166,9 +166,9 @@ slu setup-dirs --version {str(ver_.bump_patch())}
         test_size=test_size,
         stratify=labels,
     )
-    test = pd.concat([train_skip_samples, test], sort=False)
     train.to_csv(os.path.join(dest, f"{const.TRAIN}.csv"), index=False)
     test.to_csv(os.path.join(dest, f"{const.TEST}.csv"), index=False)
+    train_skip_samples.to_csv(os.path.join(dest, f"{const.SKIPPED}.csv"), index=False)
 
 
 def merge_datasets(args: argparse.Namespace) -> None:
