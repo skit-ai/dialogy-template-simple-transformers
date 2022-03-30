@@ -12,9 +12,12 @@ from slu.src.api.thread_safe import ThreadSafePredictAPI
 from slu.utils import error_response
 from slu.utils.config import Config, YAMLLocalConfig
 from slu.utils.sentry import capture_exception
+from slu.src.controller.prediction import get_predictions
 
 
 CONFIG_MAP = YAMLLocalConfig().generate()
+CONFIG: Config = list(CONFIG_MAP.values()).pop()
+PREDICT_API = get_predictions(const.PRODUCTION, config=CONFIG)
 
 
 if os.environ.get(const.ENVIRONMENT) == const.PRODUCTION:
@@ -74,7 +77,7 @@ def slu(lang: str, model_name: str):
         with ThreadSafePredictAPI(
             utterance,
             lang,
-            config,
+            PREDICT_API,
             context=context,
             intents_info=intents_info,
             history=history

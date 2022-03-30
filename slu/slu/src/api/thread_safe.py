@@ -1,17 +1,14 @@
 import uwsgi
 
-from slu import constants as const
-from slu.src.controller.prediction import get_predictions
-
 
 class ThreadSafePredictAPI:
-    def __init__(self, utterance, lang, config, context=dict, intents_info=None, history=list):
+    def __init__(self, utterance, lang, predict_api, context=dict, intents_info=None, history=list):
         self.utterance = utterance
         self.context = context
         self.intents_info = intents_info
         self.lang = lang
         self.history = history
-        self.predict = get_predictions(const.PRODUCTION, config=config)
+        self.predict = predict_api
 
     def __enter__(self):
         uwsgi.lock()
