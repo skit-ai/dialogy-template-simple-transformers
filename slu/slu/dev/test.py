@@ -170,7 +170,7 @@ def test_classifier(args: argparse.Namespace):
         output = predict_api(
             **{
                 const.ALTERNATIVES: json.loads(row[const.ALTERNATIVES]),
-                const.CONTEXT: {},
+                const.CONTEXT: {const.CURRENT_STATE: row[const.STATE]},
                 const.LANG: lang,
                 "ignore_test_case": True,
             }

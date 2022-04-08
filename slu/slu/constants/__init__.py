@@ -123,6 +123,7 @@ REFERENCE_TIME = "reference_time"
 LOCALE = "locale"
 CURRENT_STATE = "current_state"
 CURRENT_INTENT = "current_intent"
+STATE = "state"
 
 LANG_TO_LOCALES = {"en": "en_IN", "hi": "hi_IN"}  # This should be set via config
 
