@@ -195,16 +195,16 @@ def train_intent_classifier(args: argparse.Namespace) -> None:
         ver_.bump_patch()
         raise RuntimeError(
             f"""
-Model already exists in {model_dir}.
-You should create a new version using:
-
-```shell
-slu setup-dirs --version {str(ver_.bump_patch())}
-```
-""".strip()
+            Model already exists in {model_dir}.
+            You should create a new version using:
+            
+            ```shell
+            slu setup-dirs --version {str(ver_.bump_patch())}
+            ```
+            """.strip()
         )
 
-        workflow = SLUPipeline(config).get_workflow(purpose=const.TRAIN)
+    workflow = SLUPipeline(config).get_workflow(purpose=const.TRAIN)
 
     logger.info("Preparing dataset.")
     dataset = dataset or config.get_dataset(const.CLASSIFICATION, f"{const.TRAIN}.csv")
