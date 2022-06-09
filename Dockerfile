@@ -2,7 +2,7 @@ FROM 536612919621.dkr.ecr.ap-south-1.amazonaws.com/ubuntu-pyenv:latest
 
 
 ARG PYTHON_VER=3.8.2
-ARG POETRY_VER=1.1.11
+ARG POETRY_VER=1.1.13
 
 WORKDIR /home/slu
 
