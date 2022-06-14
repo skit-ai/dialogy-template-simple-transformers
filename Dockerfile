@@ -29,6 +29,8 @@ COPY ./uwsgi.ini ./uwsgi.ini
 COPY ./config ./config
 
 ENV ENVIRONMENT="production"
+ENV LANG C.UTF-8
+ENV LC_ALL C.UTF-8
 EXPOSE 8005
 
 CMD ["/bin/sh", "-ec", "while :; do echo '.'; sleep 5 ; done"]

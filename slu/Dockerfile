@@ -2,7 +2,7 @@ FROM 536612919621.dkr.ecr.ap-south-1.amazonaws.com/ubuntu-pyenv:latest
 
 
 ARG PYTHON_VER=3.8.2
-ARG POETRY_VER=1.1.11
+ARG POETRY_VER=1.1.13
 
 WORKDIR /home/slu
 
@@ -24,10 +24,13 @@ RUN dvc config core.no_scm true
 RUN dvc pull
 
 COPY ./slu ./slu
+
 COPY ./uwsgi.ini ./uwsgi.ini
 COPY ./config ./config
 
 ENV ENVIRONMENT="production"
+ENV LANG C.UTF-8
+ENV LC_ALL C.UTF-8
 EXPOSE 8005
 
 CMD ["/bin/sh", "-ec", "while :; do echo '.'; sleep 5 ; done"]
