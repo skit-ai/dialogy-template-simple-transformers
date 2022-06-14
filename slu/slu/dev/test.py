@@ -160,6 +160,7 @@ def test_classifier(args: argparse.Namespace):
     predict_api = get_predictions(const.TEST, config=config, debug=False)
     dataset = dataset or config.get_dataset(const.CLASSIFICATION, f"{const.TEST}.csv")
     test_df = pd.read_csv(dataset)
+    test_df[const.INTENT] = test_df.get(const.INTENT) or ''
 
     logger.info("Running predictions")
     predictions = []
@@ -170,7 +171,7 @@ def test_classifier(args: argparse.Namespace):
         output = predict_api(
             **{
                 const.ALTERNATIVES: json.loads(row[const.ALTERNATIVES]),
-                const.CONTEXT: {const.CURRENT_STATE: row[const.STATE]},
+                const.CONTEXT: {const.CURRENT_STATE: row.get(const.STATE)},
                 const.LANG: lang,
                 "ignore_test_case": True,
             }
