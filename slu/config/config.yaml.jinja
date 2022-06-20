@@ -35,6 +35,8 @@ tasks:
         output_dir: null
         reprocess_input_data: true
         silent: true
+        use_multiprocessing: false                            # Setting this to true hurts performance!
+        use_multiprocessing_for_evaluation: false
       train:
         best_model_dir: null
         early_stopping_consider_epochs: true
