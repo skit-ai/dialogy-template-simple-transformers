@@ -10,6 +10,7 @@ from slu.dev.repl import repl
 from slu.dev.dev import dev_workflow
 from slu.dev.test import test_classifier
 from slu.dev.train import create_data_splits, merge_datasets, train_intent_classifier
+from slu.dev.prompt_setup import setup_prompts
 
 
 def build_dir_cli(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
@@ -135,6 +136,23 @@ def build_repl_cli(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     )
     return parser
 
+def build_setup_prompt_cli(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
+    parser.add_argument(
+        "--file",
+        help="NLS-Key File (.csv) downloaded from studio",
+        required=True
+    )
+    parser.add_argument(
+        "--dest",
+        help="Dest File (.yaml) to store the state-prompt-mapping",
+        required=False,
+    )
+    parser.add_argument(
+        "--overwrite",
+        help="",
+        required=False,
+    )
+    return parser
 
 def parse_commands(command_string: Optional[str] = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser()
@@ -158,6 +176,9 @@ def parse_commands(command_string: Optional[str] = None) -> argparse.Namespace:
     repl_cli_parser = command_parsers.add_parser(
         "repl", help="Read Eval Print Loop for a trained workflow."
     )
+    setup_prompt_cli_parser = command_parsers.add_parser(
+        "setup-prompts", help="Make prompts.yaml mapping file from nls-keys"
+    )
 
     dir_cli_parser = build_dir_cli(dir_cli_parser)
     data_split_cli_parser = build_split_data_cli(data_split_cli_parser)
@@ -166,6 +187,7 @@ def parse_commands(command_string: Optional[str] = None) -> argparse.Namespace:
     test_cli_parser = build_test_cli(test_cli_parser)
     release_cli_parser = build_release_cli(release_cli_parser)
     repl_cli_parser = build_repl_cli(repl_cli_parser)
+    setup_prompt_cli_parser = build_setup_prompt_cli(setup_prompt_cli_parser)
 
     command = command_string.split() if command_string else None
     return parser.parse_args(command)
@@ -189,5 +211,7 @@ def main(command_string: Optional[str] = None) -> None:
         release(args)
     elif args.command == "repl":
         repl(args)
+    elif args.command == "setup-prompts":
+        setup_prompts(args)
     else:
         raise ValueError("Unrecognized command: {}".format(args.command))

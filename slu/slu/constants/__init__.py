@@ -96,6 +96,7 @@ FORWARD = "forward"
 TRAIN_DATA = "train.csv"
 TEST_DATA = "test.csv"
 CONFIG_PATH = os.path.join("config", "config.yaml")
+PROMPTS_CONFIG_PATH = os.path.join("config", "prompts.yaml")
 INTENT_LABEL_ENCODER = "labelencoder.pkl"
 ENTITY_LABELS = "entity_label_list.pkl"
 XLMR = "xlmroberta"
@@ -124,6 +125,8 @@ LOCALE = "locale"
 CURRENT_STATE = "current_state"
 CURRENT_INTENT = "current_intent"
 STATE = "state"
+NLS_KEY = 'nls_key'
+PROMPT_NOISE_FILLER_TOKEN = "<pad>"
 
 LANG_TO_LOCALES = {"en": "en_IN", "hi": "hi_IN"}  # This should be set via config
 

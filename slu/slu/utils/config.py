@@ -9,6 +9,8 @@ from typing import Any, Dict, List, Optional, Set
 import attr
 import semver
 import yaml
+import random
+from loguru import logger
 
 from slu import constants as const
 
@@ -184,6 +186,81 @@ class YAMLLocalConfig(ConfigDataProviderInterface):
             config = Config(**config_dict)
         return {config_dict[const.MODEL_NAME]: config}
 
+
+class YAMLPromptConfig():
+    """
+    An instance of this class will load, validate and fetch the state <-> prompts mapping from prompts.yaml
+    The instance will be further passed to classifier plugins like xlmr.py. 
+    """
+
+    def __init__(self, config_path: Optional[str] = None) -> None:
+        self.config_path: str = (
+            config_path if config_path else os.path.join("config", "prompts.yaml")
+        )
+        self.null_prompt_token: str = "<pad>"        
+        self.config_dict: dict[str] = self.get_config_dict(self.config_path)
+        self.supported_languages: list[str] = self.get_supported_languages(self.config_dict)
+        self.debug: bool = False
+
+    def get_config_dict(self, config_path: str) -> dict:
+        error_message = "Unable to read prompts.yaml file, ensure correct format."            
+        with open(self.config_path, "r", encoding="utf8") as handle:
+            config_dict = yaml.safe_load(handle)
+            if not isinstance(config_dict, dict):
+                raise TypeError(error_message)
+            return config_dict
+        
+    def get_supported_languages(self, config_dict: dict) -> List[str]:
+        supported_languages: list = list(config_dict.keys())
+        return supported_languages
+
+    def _get_config_path(self) -> str:
+        return self.config_path
+
+    def validate(self) -> None:
+        if not (all(isinstance(lang,str) for lang in self.config_dict.keys())):
+            raise Exception(f"Invalid format, please make sure prompts.yaml is correctly defined")
+
+        for lang in self.config_dict:
+            if not (all(isinstance(state, str) for state in self.config_dict[lang]) & all(state not in ['', ' '] for state in self.config_dict[lang])):
+                raise Exception(f"Invalid or Malformed state name, please make sure prompts.yaml is correctly defined")
+
+            for state in self.config_dict[lang]:
+                if not self.config_dict[lang][state] or len(self.config_dict[lang][state]) == 0:
+                    raise Exception(f"No prompts found for state: {state} in lang: {lang}, please make sure prompts.yaml is correctly defined")
+
+                if not (
+                    all(isinstance(prompt, str) for prompt in self.config_dict[lang][state]) 
+                    & 
+                    all(prompt not in ['', ' '] for prompt in self.config_dict[lang][state])
+                ):
+                    raise Exception(f"Invalid or Malformed prompt encountered for state: {state} in lang: {lang}")
+
+
+    def get_prompt(self, lang: str, state: str, return_all: bool = False) -> List[str]:
+        if not lang in self.supported_languages:
+            error_message = f"No prompts found for language {lang}, please check the config."            
+            raise KeyError(error_message)
+
+        if not state in self.config_dict[lang]:
+            if self.debug:
+                logger.debug(f"State {state} not found in config for language {lang}")
+            return [self.null_prompt_token]
+
+        if len(self.config_dict[lang][state]) == 0:
+            if self.debug:
+                logger.debug(f"No prompt found for state {state}")
+            return [self.null_prompt_token] 
+        
+        # if return_all = True, return all prompts, else return a single randomly sampled prompt
+        return self.config_dict[lang][state] if return_all else random.sample(self.config_dict[lang][state], 1)
+
+
 def load_gen_config():
     project_config_map = YAMLLocalConfig().generate()
     return list(project_config_map.values()).pop()
+
+def load_prompt_config():
+    prompt_config = YAMLPromptConfig()
+    prompt_config.validate()
+    return prompt_config
