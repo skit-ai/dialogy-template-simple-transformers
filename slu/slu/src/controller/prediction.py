@@ -13,17 +13,12 @@ from pprint import pformat
 from typing import Any, Dict, List, Optional
 
 from dialogy.base import Input
-from dialogy.utils import normalize
-from dialogy.workflow import Workflow
-from dialogy import plugins
-from dialogy.types import Intent
 
 from slu import constants as const
 from slu.src.controller.processors import SLUPipeline
 from slu.utils import logger
-from slu.utils.config import Config, YAMLLocalConfig
+from slu.utils.config import Config
 from slu.utils.make_test_cases import build_test_case
-
 
 
 def get_reftime(config: Config, context: Dict[str, Any], lang: str):
@@ -99,6 +94,7 @@ def get_predictions(purpose, final_plugin=None, **kwargs):
             timezone="Asia/Kolkata",
             current_state=context.get(const.CURRENT_STATE),
             previous_intent=context.get(const.CURRENT_INTENT),
+            expected_slots=context.get(const.EXPECTED_SLOTS)
         )
 
         logger.debug(f"Input:\n{pformat(input_)}")

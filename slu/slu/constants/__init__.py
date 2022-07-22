@@ -124,6 +124,7 @@ LOCALE = "locale"
 CURRENT_STATE = "current_state"
 CURRENT_INTENT = "current_intent"
 STATE = "state"
+EXPECTED_SLOTS = "expected_slots"
 
 LANG_TO_LOCALES = {"en": "en_IN", "hi": "hi_IN"}  # This should be set via config
 
