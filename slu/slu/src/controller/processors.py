@@ -14,7 +14,7 @@ class SLUPipeline:
     def __init__(self, config: Optional[Config]=None, **kwargs):
         self.config = config or kwargs.get(const.CONFIG) or load_gen_config()
         self.debug = kwargs.get("debug", False)
-        self.prompts_map = load_prompt_config()
+        self.prompts_map: dict = load_prompt_config(debug=True)
 
     def get_plugins(self, purpose) -> List[Plugin]:
         merge_asr_output = plugins.MergeASROutputPlugin(
