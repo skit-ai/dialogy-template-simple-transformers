@@ -21,9 +21,8 @@ attrs = "^20.3.0"
 toml = "^0.10.2"
 semver = "^2.13.0"
 torch = "^1.8.0"
-dialogy = "0.9.10"
+dialogy = "0.9.17"
 pydash = "^4.8.0"
-taskipy = "^1.6.0"
 xgboost = "^1.4.2"
 sklearn = "^0.0"
 tabulate = "^0.8.9"
@@ -32,9 +31,11 @@ dvc = {extras = ["s3"], version = "^2.6.4"}
 fastapi = "^0.75.0"
 uvicorn = {extras = ["standard"], version = "^0.17.6"}
 sentry-sdk = "^1.5.8"
+slack-sdk = "^3.18.1"
 
 [tool.poetry.dev-dependencies]
 tqdm = "^4.56.1"
+taskipy = "^1.6.0"
 semver = "^2.13.0"
 pylint = "^2.6.0"
 mypy = "^0.800"

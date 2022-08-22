@@ -4,7 +4,6 @@ cache_dir
 .git/
 *.log
 *.csv
-tests
 runs
 .dvc-cache
 .dvc-tmp

@@ -1,10 +1,12 @@
-import pytest
+import json
 
-from datetime import datetime
+import pandas as pd
+from tqdm import tqdm
+
 from slu.src.controller.prediction import get_predictions
 from slu.utils.config import Config, YAMLLocalConfig
 from slu import constants as const
-from tests import load_tests
+from slu.dev.test import make_classification_report
 
 
 CONFIG_MAP = YAMLLocalConfig().generate()
@@ -12,33 +14,46 @@ CONFIG: Config = list(CONFIG_MAP.values()).pop()
 PREDICT_API = get_predictions(const.PRODUCTION, config=CONFIG)
 
 
-@pytest.mark.parametrize("key,payload", load_tests("cases", __file__))
-def test_utterances(key, payload):
-    """Test predict_api with inputs."""
-    input_ = payload["input"]
-    expected = payload["output"]
-    output = PREDICT_API(**input_)
-    pred_intent_name = output[const.INTENTS][0][const.NAME]
-    true_intent_name = expected[const.INTENTS][0][const.NAME]
-    pred_slots = {
-        slot[const.NAME]: slot for slot in output[const.INTENTS][0][const.SLOTS]
-    }
-    true_slots = {
-        slot[const.NAME]: slot for slot in expected[const.INTENTS][0][const.SLOTS]
-    }
+def test_classifier():
+    """
+    Evaluate the workflow with all the embedded plugins.
 
-    assert pred_intent_name == true_intent_name, f"{key} intent name doesn't match!"
-    assert len(pred_slots) == len(true_slots), f"{key} slot-size doesn't match!"
-    for pred_slot, true_slot in zip(pred_slots, true_slots):
-        pred_slot_values = pred_slots[pred_slot][const.VALUES]
-        true_slot_values = true_slots[true_slot][const.VALUES]
-        assert len(pred_slot_values) == len(
-            true_slot_values
-        ), f"{key} - Values for slot={true_slot} doesn't match!"
-        for pred_slot_value, true_slot_value in zip(pred_slot_values, true_slot_values):
-            assert (
-                pred_slot_value[const.TYPE] == true_slot_value[const.TYPE]
-            ), f"{key} - Type for slot={true_slot_value[const.TYPE]} doesn't match!"
-            assert (
-                pred_slot_value[const.VALUE] == true_slot_value[const.VALUE]
-            ), f"{key} - Values for slot={true_slot_value[const.TYPE]} doesn't match!"
+    Plugins can be evaluated individually for fine-tuning but since there are interactions
+    between them, we need to evaluate them all together. This helps in cases where these interactions
+    are a cause of a model's poor performance.
+
+    This method doesn't mutate the given test dataset, instead we produce results with the same `id_`
+    so that they can be joined and studied together.
+    """
+    project_config_map = YAMLLocalConfig().generate()
+    config: Config = list(project_config_map.values()).pop()
+
+    predict_api = get_predictions(const.PRODUCTION, config=config, debug=False)
+    dataset = config.get_dataset(const.CLASSIFICATION, f"{const.TRAIN}.csv")
+    test_df = pd.read_csv(dataset).sample(n=100)
+
+    predictions = []
+    config.tasks.classification.threshold = 0
+
+    for _, row in tqdm(test_df.iterrows(), total=test_df.shape[0]):
+        output = predict_api(
+            **{
+                const.ALTERNATIVES: json.loads(row[const.ALTERNATIVES]),
+                const.CONTEXT: {},
+                const.LANG: "en",
+                "ignore_test_case": True,
+            }
+        )
+        intents = output.get(const.INTENTS, [])
+
+        predictions.append(
+            {
+                "data_id": row["data_id"],
+                const.INTENT: intents[0][const.NAME] if intents else "_no_preds_",
+                const.SCORE: intents[0][const.SCORE] if intents else 0,
+            }
+        )
+
+    predictions_df = pd.DataFrame(predictions)
+    report = make_classification_report(test_df, predictions_df)
+    assert report["f1-score"]["weighted avg"] >= 0.9

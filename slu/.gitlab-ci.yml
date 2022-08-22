@@ -29,8 +29,10 @@ build and push docker image:
     - docker info | grep Registry
     - docker login -u AWS -p $(aws ecr get-login-password --region ap-south-1) 536612919621.dkr.ecr.ap-south-1.amazonaws.com 
     - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+    - docker run -d -p 8000:8000 536612919621.dkr.ecr.ap-south-1.amazonaws.com/vernacular-voice-services/ai/duckling:master
+    - docker build --network 'host' -t $DOCKER_REGISTRY/$APP_NAME:$CI_COMMIT_TAG -t $DOCKER_REGISTRY/$APP_NAME:$DOCKER_TAG -f Dockerfile.test .
     - docker build --build-arg CI_PROJECT_NAME=$CI_PROJECT_NAME -t $DOCKER_REGISTRY/$APP_NAME:$CI_COMMIT_TAG -t $DOCKER_REGISTRY/$APP_NAME:$DOCKER_TAG .
-    - aws ecr get-login-password | docker login --username AWS --password-stdin $DOCKER_REGISTRY 
+    - aws ecr get-login-password | docker login --username AWS --password-stdin $DOCKER_REGISTRY
     - docker push $DOCKER_REGISTRY/$APP_NAME:$CI_COMMIT_TAG
     - docker push $DOCKER_REGISTRY/$APP_NAME:$DOCKER_TAG
 
