@@ -24,8 +24,6 @@ RUN dvc config core.no_scm true
 RUN dvc pull
 
 COPY ./slu ./slu
-
-COPY ./uwsgi.ini ./uwsgi.ini
 COPY ./config ./config
 
 ENV ENVIRONMENT="production"
