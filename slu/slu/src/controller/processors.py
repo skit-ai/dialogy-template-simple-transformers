@@ -52,7 +52,6 @@ class SLUPipeline:
             debug=self.debug,
         )
 
-
         xlmr_clf = plugins.XLMRMultiClass(
             dest="output.intents",
             model_dir=self.config.get_model_dir(const.CLASSIFICATION),
