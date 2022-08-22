@@ -127,15 +127,6 @@ def get_predictions(purpose, final_plugin=None, **kwargs):
 
         logger.debug(f"Output:\n{output}")
         logger.info(f"Duration: {time.perf_counter() - start_time}s")
-        build_test_case(
-            {
-                const.ALTERNATIVES: alternatives,
-                const.CONTEXT: context,
-                const.LANG: lang,
-            },
-            output,
-            **kargs
-        )
         return output
 
     return predict
