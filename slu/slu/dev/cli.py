@@ -10,7 +10,7 @@ from slu.dev.repl import repl
 from slu.dev.dev import dev_workflow
 from slu.dev.test import test_classifier
 from slu.dev.train import create_data_splits, merge_datasets, train_intent_classifier
-
+from slu.dev.prompt_setup import setup_prompts
 
 def build_dir_cli(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     parser.add_argument(
@@ -136,6 +136,24 @@ def build_repl_cli(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     return parser
 
 
+def build_setup_prompt_cli(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
+    parser.add_argument(
+        "--file",
+        help="NLS-Key File downloaded from studio (.csv) or from flow-creator (.yaml)",
+        required=True
+    )
+    parser.add_argument(
+        "--dest",
+        help="Dest File (.yaml) to store the state-prompt-mapping",
+        required=False,
+    )
+    parser.add_argument(
+        "--overwrite",
+        help="If set to True, overwrites the prompts.yaml file in config",
+        required=False,
+    )
+    return parser
+
 def parse_commands(command_string: Optional[str] = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     command_parsers = parser.add_subparsers(dest="command", help="Project utilities.")
@@ -157,6 +175,9 @@ def parse_commands(command_string: Optional[str] = None) -> argparse.Namespace:
     )
     repl_cli_parser = command_parsers.add_parser(
         "repl", help="Read Eval Print Loop for a trained workflow."
+    )
+    setup_prompt_cli_parser = command_parsers.add_parser(
+        "setup-prompts", help="Make prompts.yaml mapping file from nls-keys"
     )
 
     dir_cli_parser = build_dir_cli(dir_cli_parser)
@@ -189,5 +210,7 @@ def main(command_string: Optional[str] = None) -> None:
         release(args)
     elif args.command == "repl":
         repl(args)
+    elif args.command == "setup-prompts":
+        setup_prompts(args)
     else:
         raise ValueError("Unrecognized command: {}".format(args.command))
