@@ -78,6 +78,14 @@ class SLUPipeline:
             fill_multiple=True,
         )
 
+        address_parser = plugins.AddressParserPlugin(
+            dest="output.entities",
+            gmaps_api_token=os.getenv("GOOGLE_MAPS_API_TOKEN"),
+            mmi_client_id=os.getenv("MMI_CLIENT_ID"),
+            mmi_client_secret=os.getenv("MMI_CLIENT_SECRET"),
+            debug=self.debug
+        )
+
         return [merge_asr_output, xlmr_clf, oos_filter, slot_filler]
 
     @staticmethod
