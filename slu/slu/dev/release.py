@@ -108,7 +108,7 @@ def vcs(repo: Repo, version: str, changelog_body: str, active_branch: str) -> No
     remote.push(tag)
 
 
-def update_changelog(version: str) -> str:
+def update_changelog(version: str, auto: bool) -> str:
     """
     Read user input and update changelog.
 
@@ -120,16 +120,17 @@ def update_changelog(version: str) -> str:
     Returns:
         str: Changelog content.
     """
-    separator = "-" * 50 + "\n"
-    print_formatted_text(
-        HTML(
-            f"What makes version {version} remarkable? "
-            "\nThis input is <b><ansigreen>markdown friendly</ansigreen></b> and <b><ansigreen>date</ansigreen></b> will be added automatically!\n(Press ESC"
-            " followed by ENTER to submit)\n" + separator
+    if not auto:
+        separator = "-" * 50 + "\n"
+        print_formatted_text(
+            HTML(
+                f"What makes version {version} remarkable? "
+                "\nThis input is <b><ansigreen>markdown friendly</ansigreen></b> and <b><ansigreen>date</ansigreen></b> will be added automatically!\n(Press ESC"
+                " followed by ENTER to submit)\n" + separator
+            )
         )
-    )
 
-    raw_changelog = prompt("", multiline=True)
+    raw_changelog = f"Auto-Pushed version {version} after training." if auto else prompt("", multiline=True)
 
     timestamp = datetime.strftime(datetime.now(), "%A, %d %B %Y | %I:%M %p")
     changelog_body = raw_changelog.strip()
@@ -153,6 +154,7 @@ def release(args: argparse.Namespace) -> None:
         version (str): Semver for the dataset, model and metrics.
     """
     version = args.version
+    auto = args.auto
     # Ensure `version` is a valid semver.
     semver.VersionInfo.parse(version)
     project_config_map = YAMLLocalConfig().generate()
@@ -189,7 +191,7 @@ def release(args: argparse.Namespace) -> None:
     check_version_save_config(config, version)
 
     # Maintain changelog.
-    changelog_body = update_changelog(version)
+    changelog_body = update_changelog(version, auto)
 
     # version control commands
     # git and dvc add, commit, push combo.
