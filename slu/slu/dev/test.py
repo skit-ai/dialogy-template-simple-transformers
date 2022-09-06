@@ -12,10 +12,10 @@ Options:
     -h --help   Show this screen.
     --version   Show version.
 """
-import os
 import argparse
 import json
-from typing import List
+import os
+from typing import List, Optional
 
 import pandas as pd
 from dialogy.utils import create_timestamps_path
@@ -65,8 +65,9 @@ def update_confidence_scores(
 
 
 def make_classification_report(
-    test_df: pd.DataFrame, predictions_df: pd.DataFrame, dir_path: str
-):
+    test_df: pd.DataFrame, predictions_df: pd.DataFrame, dir_path: Optional[str] = None
+) -> pd.DataFrame:
+
     result_dict = classification_report(
         test_df[const.TAG],
         predictions_df[const.INTENT],
@@ -78,7 +79,11 @@ def make_classification_report(
     table = tabulate(result_df, headers="keys", tablefmt="github")
     logger.info(f"classification report:\n{table}")
 
-    result_df.to_csv(os.path.join(dir_path, "classification_report.csv"))
+    if dir_path:
+        result_df.to_csv(os.path.join(dir_path, "classification_report.csv"))
+
+    return result_df
+
 
 
 def make_critical_intent_report(
@@ -160,7 +165,6 @@ def test_classifier(args: argparse.Namespace):
     predict_api = get_predictions(const.TEST, config=config, debug=False)
     dataset = dataset or config.get_dataset(const.CLASSIFICATION, f"{const.TEST}.csv")
     test_df = pd.read_csv(dataset)
-    test_df[const.INTENT] = test_df.get(const.INTENT) or ''
 
     logger.info("Running predictions")
     predictions = []

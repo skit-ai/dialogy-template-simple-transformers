@@ -53,3 +53,4 @@ slu = "slu.dev.cli:main"
 
 [tool.taskipy.tasks]
 serve = "uvicorn --workers 1 --port 9998 slu.src.api.endpoints:app"
+test = "pytest tests"

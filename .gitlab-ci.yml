@@ -1,25 +1,26 @@
-image: "python:3.8"                         # base dockerimage on which the stages will run. Can be different for each stage.
+image: "python:3.8" # base dockerimage on which the stages will run. Can be different for each stage.
 
-stages:                                     # each stage runs on a new Docker image. data is not persisted between stages by default.
-  - publish_image                           # build docker image and push to registry
-  - update_chart_and_deploy_to_staging      # deploy the tagged dockerimage to staging cluster
-  - update_chart_and_deploy_to_production   # deploy the tagged dockerimage to production cluster
+stages: # each stage runs on a new Docker image. data is not persisted between stages by default.
+  - publish_image # build docker image and push to registry
+  - update_chart_and_deploy_to_staging # deploy the tagged dockerimage to staging cluster
+  - update_chart_and_deploy_to_production # deploy the tagged dockerimage to production cluster
 
-build and push docker image:        
+build and push docker image:
   stage: publish_image
-  only:                                    # only runs the step when git tag is done and it matches one of the mentioned regex patterns 
+  only: # only runs the step when git tag is done and it matches one of the mentioned regex patterns
     variables:
-        - $CI_COMMIT_TAG =~ /^[0-9]+\.[0-9]+\.[0-9]+-[0-9]+\.[0-9]+\.[0-9]+$/ 
-        - $CI_COMMIT_TAG =~ /^[0-9]+\.[0-9]+\.[0-9]+$/     
+      - $CI_COMMIT_TAG =~ /^[0-9]+\.[0-9]+\.[0-9]+-[0-9]+\.[0-9]+\.[0-9]+$/
+      - $CI_COMMIT_TAG =~ /^[0-9]+\.[0-9]+\.[0-9]+$/
   variables:
     APP_NAME: $APPLICATION_PATH/$CI_PROJECT_NAME
-  image: 
+  image:
     name: amazon/aws-cli
     entrypoint: [""]
   services:
-    - docker:dind 
+    - docker:dind
   before_script:
     - echo "$CI_COMMIT_TAG"
+    - echo "$APP_NAME"
     - amazon-linux-extras install docker
   script:
     - PRE_RELEASE_VERSION=$(echo $CI_COMMIT_TAG | grep -E '^[0-9]+\.[0-9]+\.[0-9]+-[0-9]+\.[0-9]+\.[0-9]+$ || :')
@@ -27,10 +28,12 @@ build and push docker image:
     - if [[ ! -z "${PRE_RELEASE_VERSION}" ]]; then DOCKER_TAG=latest ; fi;
     - if [[ ! -z "${RELEASE_VERSION}" ]]; then DOCKER_TAG=master ; fi;
     - docker info | grep Registry
-    - docker login -u AWS -p $(aws ecr get-login-password --region ap-south-1) 536612919621.dkr.ecr.ap-south-1.amazonaws.com 
+    - docker login -u AWS -p $(aws ecr get-login-password --region ap-south-1) $DOCKER_REGISTRY
+    - docker run -d -p 8000:8000 $DOCKER_REGISTRY/vernacular-voice-services/ai/duckling:master
+    - docker build --network 'host' -t $DOCKER_REGISTRY/$APP_NAME:$CI_COMMIT_TAG -t $DOCKER_REGISTRY/$APP_NAME:$DOCKER_TAG -f Dockerfile.test .
     - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
     - docker build --build-arg CI_PROJECT_NAME=$CI_PROJECT_NAME -t $DOCKER_REGISTRY/$APP_NAME:$CI_COMMIT_TAG -t $DOCKER_REGISTRY/$APP_NAME:$DOCKER_TAG .
-    - aws ecr get-login-password | docker login --username AWS --password-stdin $DOCKER_REGISTRY 
+    - aws ecr get-login-password | docker login --username AWS --password-stdin $DOCKER_REGISTRY
     - docker push $DOCKER_REGISTRY/$APP_NAME:$CI_COMMIT_TAG
     - docker push $DOCKER_REGISTRY/$APP_NAME:$DOCKER_TAG
 
@@ -39,8 +42,8 @@ update chart and deploy to staging:
   variables:
     VALUES_YAML: values-staging.yaml
   rules:
-    - if: '$CI_COMMIT_TAG =~ /^[0-9]+\.[0-9]+\.[0-9]+$/'  
-  image: 
+    - if: '$CI_COMMIT_TAG =~ /^[0-9]+\.[0-9]+\.[0-9]+$/'
+  image:
     name: amazon/aws-cli:amd64
     entrypoint: [""]
   script:
@@ -68,9 +71,9 @@ update chart and deploy to production:
   variables:
     VALUES_YAML: values-production.yaml
   rules:
-    - if: '$CI_COMMIT_TAG =~ /^[0-9]+\.[0-9]+\.[0-9]+$/'  
-      when: manual                                         # this stage requires manual approval to run
-  image: 
+    - if: '$CI_COMMIT_TAG =~ /^[0-9]+\.[0-9]+\.[0-9]+$/'
+      when: manual # this stage requires manual approval to run
+  image:
     name: amazon/aws-cli:amd64
     entrypoint: [""]
   script:

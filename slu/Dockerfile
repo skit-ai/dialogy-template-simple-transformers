@@ -25,10 +25,9 @@ RUN dvc pull
 
 COPY ./slu ./slu
 COPY ./config ./config
+COPY ./server_fault_notif.py ./server_fault_notif.py
 
 ENV ENVIRONMENT="production"
-ENV LANG C.UTF-8
-ENV LC_ALL C.UTF-8
 EXPOSE 8005
 
 CMD ["/bin/sh", "-ec", "while :; do echo '.'; sleep 5 ; done"]
