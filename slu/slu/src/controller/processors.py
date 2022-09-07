@@ -58,10 +58,9 @@ class SLUPipeline:
             score_round_off=5,
             purpose=purpose,
             use_cuda=purpose != const.PRODUCTION,
-            epochs=kwargs.get(const.EPOCHS),
             data_column=const.ALTERNATIVES,
             label_column=const.TAG,
-            args_map=self.config.get_model_args(const.CLASSIFICATION),
+            args_map=self.config.get_model_args(const.CLASSIFICATION, purpose, epochs=kwargs.get(const.EPOCHS)),
             debug=self.debug,
         )
 

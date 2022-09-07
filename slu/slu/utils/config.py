@@ -139,9 +139,13 @@ class Config:
             self._get_data_dir(task_name, version=version), const.DATASETS, file_name
         )
 
-    def get_model_args(self, task_name: str) -> Dict[str, Any]:
+    def get_model_args(self, task_name: str, purpose: str, **kwargs) -> Dict[str, Any]:
         if task_name == const.CLASSIFICATION:
-            return self.tasks.classification.model_args
+            args_map = self.tasks.classification.model_args
+            if purpose == const.TRAIN:
+                if (epochs := kwargs.get(const.EPOCHS)):
+                    args_map[const.TRAIN][const.NUM_TRAIN_EPOCHS] = epochs
+            return args_map
         raise NotImplementedError(f"Model for {task_name} is not defined!")
 
     def get_model_confidence_threshold(self, task_name: str) -> float:
