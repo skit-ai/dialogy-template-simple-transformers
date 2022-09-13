@@ -61,13 +61,18 @@ def build_train_cli(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
         help="The path of a csv dataset containing utterances and labels. If not provided, we look for files in data/<version/classification/datasets.",
     )
     parser.add_argument(
-        "--lang", help="The language code to use for the dataset.", required=True
+        "--lang", help="The language code to use for the dataset."
     )
     parser.add_argument(
         "--project", help="The project scope to which the dataset belongs."
     )
     parser.add_argument(
         "--version", help="The dataset version, which will also be the model's version."
+    )
+    parser.add_argument(
+        "--epochs",
+        help="The number of epochs to train the model for.",
+        type=int,
     )
     return parser
 
@@ -119,6 +124,11 @@ def build_release_cli(parser: argparse.ArgumentParser) -> argparse.ArgumentParse
         "--version",
         required=True,
         help="The version of the dataset, model, metrics to use. Defaults to the latest version.",
+    )
+    parser.add_argument(
+        "--auto",
+        action="store_true",
+        help="Changelog is updated automatically (used for auto retraining)",
     )
     return parser
 

@@ -16,7 +16,7 @@ class SLUPipeline:
         self.debug = kwargs.get("debug", False)
 
 
-    def get_plugins(self, purpose) -> List[Plugin]:
+    def get_plugins(self, purpose, **kwargs) -> List[Plugin]:
         merge_asr_output = plugins.MergeASROutputPlugin(
             dest="input.clf_feature",
             use_transform=True,
@@ -60,7 +60,7 @@ class SLUPipeline:
             use_cuda=purpose != const.PRODUCTION,
             data_column=const.ALTERNATIVES,
             label_column=const.TAG,
-            args_map=self.config.get_model_args(const.CLASSIFICATION),
+            args_map=self.config.get_model_args(const.CLASSIFICATION, purpose, epochs=kwargs.get(const.EPOCHS)),
             debug=self.debug,
         )
 
@@ -91,8 +91,8 @@ class SLUPipeline:
         return all_plugins
         
 
-    def get_workflow(self, purpose, final_plugin=None):
-        self.plugins = self.get_plugins(purpose)
+    def get_workflow(self, purpose, final_plugin=None, **kwargs):
+        self.plugins = self.get_plugins(purpose, **kwargs)
         if final_plugin:
             self.plugins = self.filter_plugins(self.plugins, final_plugin)
 

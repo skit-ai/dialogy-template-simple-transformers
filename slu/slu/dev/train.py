@@ -189,6 +189,7 @@ def merge_datasets(args: argparse.Namespace) -> None:
 def train_intent_classifier(args: argparse.Namespace) -> None:
     version = args.version
     dataset = args.file
+    epochs = args.epochs
     project_config_map = YAMLLocalConfig().generate()
     config: Config = list(project_config_map.values()).pop()
     check_version_save_config(config, version)
@@ -208,7 +209,7 @@ def train_intent_classifier(args: argparse.Namespace) -> None:
             """.strip()
         )
 
-    workflow = SLUPipeline(config).get_workflow(purpose=const.TRAIN)
+    workflow = SLUPipeline(config).get_workflow(purpose=const.TRAIN, epochs=epochs)
 
     logger.info("Preparing dataset.")
     dataset = dataset or config.get_dataset(const.CLASSIFICATION, f"{const.TRAIN}.csv")
