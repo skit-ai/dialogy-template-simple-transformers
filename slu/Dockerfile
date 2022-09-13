@@ -27,6 +27,10 @@ COPY ./slu ./slu
 COPY ./config ./config
 COPY ./server_fault_notif.py ./server_fault_notif.py
 
+ENV GOOGLE_MAPS_API_TOKEN=$GOOGLE_MAPS_API_TOKEN
+ENV MMI_CLIENT_ID=$MMI_CLIENT_ID
+ENV MMI_CLIENT_SECRET=$MMI_CLIENT_SECRET
+
 ENV ENVIRONMENT="production"
 EXPOSE 8005
 
