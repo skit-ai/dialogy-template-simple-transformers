@@ -102,7 +102,7 @@ def build_test_cli(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
         help="The path of a csv dataset containing utterances and labels. If not provided, we look for files in data/<version/classification/datasets.",
     )
     parser.add_argument(
-        "--lang", help="The language code to use for the dataset.", required=True
+        "--lang", help="The language code to use for the dataset."
     )
     parser.add_argument(
         "--project", help="The project scope to which the dataset belongs."
