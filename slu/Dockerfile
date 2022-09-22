@@ -16,7 +16,7 @@ RUN poetry config virtualenvs.create false
 COPY pyproject.toml poetry.lock data.dvc /home/slu/
 
 RUN poetry install --no-dev && \
-    rm -rf /root/.cache && pip3 uninstall --yes poetry
+    rm -rf /root/.cache && pip3 uninstall --yes poetry && pip3 install -U setuptools
 
 COPY ./.dvc ./.dvc
 
