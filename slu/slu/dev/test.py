@@ -85,7 +85,6 @@ def make_classification_report(
     return result_df
 
 
-
 def make_critical_intent_report(
     test_df: pd.DataFrame,
     predictions_df: pd.DataFrame,
