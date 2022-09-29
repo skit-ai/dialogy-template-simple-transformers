@@ -26,12 +26,8 @@ COPY ./slu ./slu
 COPY ./tests ./tests
 COPY ./config ./config
 
-ENV ENVIRONMENT="production"
 ENV LANG C.UTF-8
 ENV LC_ALL C.UTF-8
-
-RUN task test
-
 EXPOSE 8005
 
 CMD ["/bin/sh", "-ec", "while :; do echo '.'; sleep 5 ; done"]

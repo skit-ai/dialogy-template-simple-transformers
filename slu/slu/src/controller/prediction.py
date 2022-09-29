@@ -96,7 +96,7 @@ def get_predictions(purpose, final_plugin=None, **kwargs):
             timezone="Asia/Kolkata",
             current_state=context.get(const.CURRENT_STATE),
             previous_intent=context.get(const.CURRENT_INTENT),
-            expected_slots=context.get(const.EXPECTED_SLOTS)
+            expected_slots=context.get(const.EXPECTED_SLOTS),
         )
 
         logger.debug(f"Input:\n{pformat(input_)}")

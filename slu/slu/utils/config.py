@@ -134,7 +134,7 @@ class Config:
         if task_name == const.CLASSIFICATION:
             args_map = self.tasks.classification.model_args
             if purpose == const.TRAIN:
-                if (epochs := kwargs.get(const.EPOCHS)):
+                if epochs := kwargs.get(const.EPOCHS):
                     args_map[const.TRAIN][const.NUM_TRAIN_EPOCHS] = epochs
             return args_map
         raise NotImplementedError(f"Model for {task_name} is not defined!")
@@ -178,6 +178,7 @@ class YAMLLocalConfig(ConfigDataProviderInterface):
             config_dict = yaml.safe_load(handle)
             config = Config(**config_dict)
         return {config_dict[const.MODEL_NAME]: config}
+
 
 def load_gen_config():
     project_config_map = YAMLLocalConfig().generate()

@@ -52,16 +52,18 @@ async def health_check(probe_type, background_tasks: BackgroundTasks):
         slack_client = WebClient(token=os.getenv("SLACK_TOKEN"))
         startup_msg = f"<@{author}> {svc_name} is running :white_check_mark:"
         container_restart_msg = f"<@{author}> {svc_name} restarted :sadpepe:"
-        container_exp_msg =  f"<@{author}> {svc_name} {probe_type} check failed :feelsstrongman:"
+        container_exp_msg = (
+            f"<@{author}> {svc_name} {probe_type} check failed :feelsstrongman:"
+        )
 
-        with open(f'config/request.{probe_type}.json','r') as f:
+        with open(f"config/request.{probe_type}.json", "r") as f:
             data = json.load(f)
 
-        payload = data['payload']
-        lang = data['lang']
-        expected_intent = data.get('expected_intent')
-        expected_entity_type = data.get('expected_entity_type')
-        expected_entity_value = data.get('expected_entity_value')
+        payload = data["payload"]
+        lang = data["lang"]
+        expected_intent = data.get("expected_intent")
+        expected_entity_type = data.get("expected_entity_type")
+        expected_entity_value = data.get("expected_entity_value")
 
         response = PREDICT_API(
             **payload,
@@ -70,14 +72,20 @@ async def health_check(probe_type, background_tasks: BackgroundTasks):
 
         intent = response[const.INTENTS][0]
 
-        assert intent['name'] == expected_intent, f"{expected_intent=},{intent['name']=} "
+        assert (
+            intent["name"] == expected_intent
+        ), f"{expected_intent=},{intent['name']=} "
 
         if expected_entity_type and expected_entity_value:
-            entity_type = intent["slots"][0]['values'][0]['entity_type']
-            entity_value = intent["slots"][0]['values'][0]['value']
+            entity_type = intent["slots"][0]["values"][0]["entity_type"]
+            entity_value = intent["slots"][0]["values"][0]["value"]
 
-            assert entity_type == expected_entity_type, f"{expected_entity_type=},{entity_type=} "
-            assert entity_value == expected_entity_value, f"{expected_entity_value=},{entity_value=} "
+            assert (
+                entity_type == expected_entity_type
+            ), f"{expected_entity_type=},{entity_type=} "
+            assert (
+                entity_value == expected_entity_value
+            ), f"{expected_entity_value=},{entity_value=} "
 
         if probe_type == "startup":
             background_tasks.add_task(
@@ -85,13 +93,14 @@ async def health_check(probe_type, background_tasks: BackgroundTasks):
                 slack_client,
                 channel,
                 startup_msg,
-                error_notif=container_restart_msg
-           )
+                error_notif=container_restart_msg,
+            )
 
         return Response(status_code=200)
 
     except Exception as e:
-        background_tasks.add_task(send_slack_notif,
+        background_tasks.add_task(
+            send_slack_notif,
             slack_client,
             channel,
             container_exp_msg,
@@ -107,14 +116,15 @@ async def health_check(probe_type, background_tasks: BackgroundTasks):
 {traceback.format_exc()}
 ```
 
-                        """.strip()
-                    }
+                        """.strip(),
+                    },
                 }
-            ]
+            ],
         )
 
         return JSONResponse(
-            dict(status="ok", message=str(e), cause=traceback.format_exc()), status_code=500
+            dict(status="ok", message=str(e), cause=traceback.format_exc()),
+            status_code=500,
         )
 
 

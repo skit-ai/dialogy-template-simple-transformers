@@ -9,7 +9,7 @@ from dialogy.utils import (
     create_timestamps_path,
     save_to_json,
     fit_ts_parameter,
-    save_reliability_graph
+    save_reliability_graph,
 )
 import dialogy.constants as dialogy_const
 
@@ -24,46 +24,72 @@ def get_onehot(targets: np.ndarray, nb_classes: int):
     res = np.eye(nb_classes)[np.array(targets).reshape(-1)]
     return res.reshape(list(targets.shape).append(nb_classes))
 
-def form_ordered_onehot_n_logits(true_intents: pd.Series, all_pred_intents: np.ndarray, all_logits: np.ndarray):
+
+def form_ordered_onehot_n_logits(
+    true_intents: pd.Series, all_pred_intents: np.ndarray, all_logits: np.ndarray
+):
     all_classes = true_intents.unique()
-    class_to_num_map = {class_:all_classes.tolist().index(class_) for class_ in all_classes}
+    class_to_num_map = {
+        class_: all_classes.tolist().index(class_) for class_ in all_classes
+    }
     labels_oneh = []
     all_ordered_logits = []
-    encoded_labels_list = np.array([class_to_num_map[intent_] for intent_ in true_intents])
-    labels_oneh = get_onehot(
-        targets=encoded_labels_list,
-        nb_classes=len(all_classes)
+    encoded_labels_list = np.array(
+        [class_to_num_map[intent_] for intent_ in true_intents]
     )
+    labels_oneh = get_onehot(targets=encoded_labels_list, nb_classes=len(all_classes))
     for pred_intents, logits in zip(all_pred_intents, all_logits):
-        ordered_logits = np.array([
-            logit for _, logit in sorted(
-                zip(pred_intents, logits),
-                key = lambda pair: class_to_num_map[pair[0]]
-            )
-        ])
+        ordered_logits = np.array(
+            [
+                logit
+                for _, logit in sorted(
+                    zip(pred_intents, logits),
+                    key=lambda pair: class_to_num_map[pair[0]],
+                )
+            ]
+        )
         all_ordered_logits.append(ordered_logits)
     return np.array(all_ordered_logits), labels_oneh.flatten(), encoded_labels_list
 
-def save_calibration_stuff(predictions_df: pd.DataFrame, to_calibrate: bool, dir_path: str, prefix: str = ""):
+
+def save_calibration_stuff(
+    predictions_df: pd.DataFrame, to_calibrate: bool, dir_path: str, prefix: str = ""
+):
     exclude = ["_error_", "_no_preds_"]
-    predictions_df = predictions_df[predictions_df["prediction"].apply(
-        lambda pred: not any(p_[const.NAME] in exclude for p_ in json.loads(pred))
-    )]
+    predictions_df = predictions_df[
+        predictions_df["prediction"].apply(
+            lambda pred: not any(p_[const.NAME] in exclude for p_ in json.loads(pred))
+        )
+    ]
     all_true_intents = predictions_df[const.TAG].copy()
-    all_pred_intents, all_logits = zip(*predictions_df["prediction"].apply(
-        lambda pred: list(zip(*((pred_candidate[const.NAME], pred_candidate[const.SCORE]) 
-                      for pred_candidate in json.loads(pred))))
-    ))
-    all_ordered_logits, all_ordered_labels_oneh, all_labels_list = form_ordered_onehot_n_logits(all_true_intents, all_pred_intents, all_logits)
+    all_pred_intents, all_logits = zip(
+        *predictions_df["prediction"].apply(
+            lambda pred: list(
+                zip(
+                    *(
+                        (pred_candidate[const.NAME], pred_candidate[const.SCORE])
+                        for pred_candidate in json.loads(pred)
+                    )
+                )
+            )
+        )
+    )
+    (
+        all_ordered_logits,
+        all_ordered_labels_oneh,
+        all_labels_list,
+    ) = form_ordered_onehot_n_logits(all_true_intents, all_pred_intents, all_logits)
     if to_calibrate:
         ts_parameter = fit_ts_parameter(all_ordered_logits, all_labels_list)
         save_to_json(
             {dialogy_const.TS_PARAMETER: ts_parameter},
             dir_path,
-            file_name=dialogy_const.CALIBRATION_CONFIG_FILE
+            file_name=dialogy_const.CALIBRATION_CONFIG_FILE,
         )
     else:
-        save_reliability_graph(all_ordered_logits.flatten(), all_ordered_labels_oneh, dir_path, prefix)
+        save_reliability_graph(
+            all_ordered_logits.flatten(), all_ordered_labels_oneh, dir_path, prefix
+        )
 
 
 def get_test_outputs(
@@ -76,7 +102,7 @@ def get_test_outputs(
         purpose=const.TEST,
         final_plugin=plugins.XLMRMultiClass,
         config=config,
-        debug=False
+        debug=False,
     )
     logger.disable("slu")
     for _, row in tqdm(test_df.iterrows(), total=test_df.shape[0]):
@@ -95,18 +121,22 @@ def get_test_outputs(
                 "state": row["state"],
                 const.ALTERNATIVES: row[const.ALTERNATIVES],
                 const.TAG: row[const.TAG],
-                "prediction": json.dumps([
-                    {
-                        const.NAME: intent[const.NAME] if intent else "_no_preds_",
-                        const.SCORE: intent[const.SCORE] if intent else 0,
-                        const.SLOTS: intent[const.SLOTS] if intent else []
-                    } for intent in intents
-                ], ensure_ascii=False) if intents 
-                else json.dumps([{
-                    const.NAME: "_no_preds_",
-                    const.SCORE: 0,
-                    const.SLOTS: []
-                }], ensure_ascii=False)
+                "prediction": json.dumps(
+                    [
+                        {
+                            const.NAME: intent[const.NAME] if intent else "_no_preds_",
+                            const.SCORE: intent[const.SCORE] if intent else 0,
+                            const.SLOTS: intent[const.SLOTS] if intent else [],
+                        }
+                        for intent in intents
+                    ],
+                    ensure_ascii=False,
+                )
+                if intents
+                else json.dumps(
+                    [{const.NAME: "_no_preds_", const.SCORE: 0, const.SLOTS: []}],
+                    ensure_ascii=False,
+                ),
             }
         )
     logger.enable("slu")
@@ -119,14 +149,14 @@ def temperature_scaling_processor(
     lang: str,
     to_calibrate: bool,
     dir_path: str,
-    prefix: str = ""
+    prefix: str = "",
 ):
     calibration_predictions = get_test_outputs(config, test_df, lang)
     save_calibration_stuff(
         predictions_df=pd.DataFrame(calibration_predictions),
         to_calibrate=to_calibrate,
         dir_path=dir_path,
-        prefix=prefix
+        prefix=prefix,
     )
 
 
@@ -162,12 +192,14 @@ def dev_workflow(args: argparse.Namespace):
             lang=lang,
             to_calibrate=False,
             dir_path=metrics_dir_path,
-            prefix="old"
+            prefix="old",
         )
-        
+
         # calibrate
         logger.info("Calibrating your model")
-        config.tasks.classification.model_args[const.TEST][dialogy_const.MODEL_CALIBRATION] = True
+        config.tasks.classification.model_args[const.TEST][
+            dialogy_const.MODEL_CALIBRATION
+        ] = True
         temperature_scaling_processor(
             config=config,
             test_df=test_df,
@@ -175,15 +207,17 @@ def dev_workflow(args: argparse.Namespace):
             to_calibrate=True,
             dir_path=models_dir_path,
         )
-        
+
         # save calibrated reliability graph
         logger.info("Generating and saving calibrated reliability graph")
-        config.tasks.classification.model_args[const.TEST][dialogy_const.MODEL_CALIBRATION] = False
+        config.tasks.classification.model_args[const.TEST][
+            dialogy_const.MODEL_CALIBRATION
+        ] = False
         temperature_scaling_processor(
             config=config,
             test_df=test_df,
             lang=lang,
             to_calibrate=False,
             dir_path=metrics_dir_path,
-            prefix="new"
+            prefix="new",
         )

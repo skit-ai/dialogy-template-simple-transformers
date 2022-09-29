@@ -135,7 +135,9 @@ Data already exists in {dest}
 
     if stratify:
         train_available_samples = train_available_samples[
-            train_available_samples[const.TAG].map(train_available_samples[const.TAG].value_counts() > 1)
+            train_available_samples[const.TAG].map(
+                train_available_samples[const.TAG].value_counts() > 1
+            )
         ]
         labels = train_available_samples[const.TAG]
 

@@ -55,10 +55,10 @@ def test(fpath, n=-1, n_conn=30, force_close_conns=True):
     print(f"request for {len(data)}")
     start = time.perf_counter()
     results = loop.run_until_complete(
-                conc_slu_requests("http://localhost:8090",
-                data,
-                l=n_conn,
-                force_close=force_close_conns))
+        conc_slu_requests(
+            "http://localhost:8090", data, l=n_conn, force_close=force_close_conns
+        )
+    )
     end = time.perf_counter()
     print(f"Processed {len(results)} in {end - start}s")
     return results

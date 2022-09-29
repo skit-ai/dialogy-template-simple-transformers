@@ -11,10 +11,9 @@ from slu.src.controller.custom_plugins import OOSFilterPlugin
 
 
 class SLUPipeline:
-    def __init__(self, config: Optional[Config]=None, **kwargs):
+    def __init__(self, config: Optional[Config] = None, **kwargs):
         self.config = config or kwargs.get(const.CONFIG) or load_gen_config()
         self.debug = kwargs.get("debug", False)
-
 
     def get_plugins(self, purpose, **kwargs) -> List[Plugin]:
         merge_asr_output = plugins.MergeASROutputPlugin(
@@ -32,7 +31,9 @@ class SLUPipeline:
             use_cuda=purpose != const.PRODUCTION,
             data_column=const.ALTERNATIVES,
             label_column=const.TAG,
-            args_map=self.config.get_model_args(const.CLASSIFICATION, purpose, epochs=kwargs.get(const.EPOCHS)),
+            args_map=self.config.get_model_args(
+                const.CLASSIFICATION, purpose, epochs=kwargs.get(const.EPOCHS)
+            ),
             debug=self.debug,
         )
 
@@ -42,10 +43,8 @@ class SLUPipeline:
             replace_output=True,
             guards=[lambda i, o: purpose != const.PRODUCTION],
         )
-        
-        retain_original_intent = plugins.RetainOriginalIntentPlugin(
-            debug=self.debug
-        )
+
+        retain_original_intent = plugins.RetainOriginalIntentPlugin(debug=self.debug)
 
         duckling_plugin = plugins.DucklingPlugin(
             dest="output.entities",
@@ -74,7 +73,7 @@ class SLUPipeline:
             use_transform=False,
             debug=self.debug,
         )
-        
+
         slot_filler = plugins.RuleBasedSlotFillerPlugin(
             dest="output.intents",
             rules=self.config.slots,
@@ -82,7 +81,13 @@ class SLUPipeline:
             fill_multiple=True,
         )
 
-        return [merge_asr_output, xlmr_clf, oos_filter, retain_original_intent, slot_filler]
+        return [
+            merge_asr_output,
+            xlmr_clf,
+            oos_filter,
+            retain_original_intent,
+            slot_filler,
+        ]
 
     @staticmethod
     def filter_plugins(all_plugins, final_plugin):
@@ -91,9 +96,8 @@ class SLUPipeline:
         """
         for idx, plugin in enumerate(all_plugins):
             if isinstance(plugin, final_plugin):
-                return all_plugins[:idx+1]
+                return all_plugins[: idx + 1]
         return all_plugins
-        
 
     def get_workflow(self, purpose, final_plugin=None, **kwargs):
         self.plugins = self.get_plugins(purpose, **kwargs)
