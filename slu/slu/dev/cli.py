@@ -60,9 +60,7 @@ def build_train_cli(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
         "--file",
         help="The path of a csv dataset containing utterances and labels. If not provided, we look for files in data/<version/classification/datasets.",
     )
-    parser.add_argument(
-        "--lang", help="The language code to use for the dataset."
-    )
+    parser.add_argument("--lang", help="The language code to use for the dataset.")
     parser.add_argument(
         "--project", help="The project scope to which the dataset belongs."
     )
@@ -76,7 +74,8 @@ def build_train_cli(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     )
     return parser
 
-def build_dev_cli(parser:argparse.ArgumentParser) -> argparse.ArgumentParser:
+
+def build_dev_cli(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     parser.add_argument(
         "--file",
         help="The path of a csv dataset containing utterances and labels. If not provided, we look for files in data/<version/classification/datasets.",
@@ -101,9 +100,7 @@ def build_test_cli(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
         "--file",
         help="The path of a csv dataset containing utterances and labels. If not provided, we look for files in data/<version/classification/datasets.",
     )
-    parser.add_argument(
-        "--lang", help="The language code to use for the dataset."
-    )
+    parser.add_argument("--lang", help="The language code to use for the dataset.")
     parser.add_argument(
         "--project", help="The project scope to which the dataset belongs."
     )

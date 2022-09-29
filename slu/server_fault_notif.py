@@ -26,10 +26,7 @@ try:
     svc_recently_started = current_ts - svc_start_ts < 10
     oldest_message_ts = (current_time - timedelta(minutes=20)).timestamp()
     conv_history = client.conversations_history(
-        limit=100,
-        channel=CHANNEL,
-        oldest=oldest_message_ts,
-        inclusive=True
+        limit=100, channel=CHANNEL, oldest=oldest_message_ts, inclusive=True
     )
     msgs = conv_history.get("messages")
 

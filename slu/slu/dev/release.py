@@ -130,7 +130,11 @@ def update_changelog(version: str, auto: bool) -> str:
             )
         )
 
-    raw_changelog = f"Auto-Pushed version {version} after training." if auto else prompt("", multiline=True)
+    raw_changelog = (
+        f"Auto-Pushed version {version} after training."
+        if auto
+        else prompt("", multiline=True)
+    )
 
     timestamp = datetime.strftime(datetime.now(), "%A, %d %B %Y | %I:%M %p")
     changelog_body = raw_changelog.strip()
