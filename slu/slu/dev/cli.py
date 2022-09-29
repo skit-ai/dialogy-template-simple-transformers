@@ -5,25 +5,13 @@ import argparse
 from typing import Optional
 
 from slu.dev.dir_setup import create_data_directory
-from slu.dev.release import release
 from slu.dev.repl import repl
 from slu.dev.dev import dev_workflow
 from slu.dev.test import test_classifier
 from slu.dev.train import create_data_splits, merge_datasets, train_intent_classifier
 
 
-def build_dir_cli(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
-    parser.add_argument(
-        "--version",
-        default="0.0.1",
-        help="The version of the dataset, model, metrics to use. Defaults to the latest version.",
-        required=True,
-    )
-    return parser
-
-
 def build_split_data_cli(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
-    parser.add_argument("--version", help="The version for dataset paths.")
     parser.add_argument(
         "--file", help="A dataset to be split into train, test datasets.", required=True
     )
@@ -58,16 +46,13 @@ def build_data_combine_cli(parser: argparse.ArgumentParser) -> argparse.Argument
 def build_train_cli(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     parser.add_argument(
         "--file",
-        help="The path of a csv dataset containing utterances and labels. If not provided, we look for files in data/<version/classification/datasets.",
+        help="The path of a csv dataset containing utterances and labels. If not provided, we look for files in data/classification/datasets.",
     )
     parser.add_argument(
         "--lang", help="The language code to use for the dataset."
     )
     parser.add_argument(
         "--project", help="The project scope to which the dataset belongs."
-    )
-    parser.add_argument(
-        "--version", help="The dataset version, which will also be the model's version."
     )
     parser.add_argument(
         "--epochs",
@@ -79,14 +64,10 @@ def build_train_cli(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
 def build_dev_cli(parser:argparse.ArgumentParser) -> argparse.ArgumentParser:
     parser.add_argument(
         "--file",
-        help="The path of a csv dataset containing utterances and labels. If not provided, we look for files in data/<version/classification/datasets.",
+        help="The path of a csv dataset containing utterances and labels. If not provided, we look for files in data/classification/datasets.",
     )
     parser.add_argument(
         "--lang", help="The language code to use for the dataset.", required=True
-    )
-    parser.add_argument(
-        "--version",
-        help="The version of the dataset, model, metrics to use. Defaults to the latest version.",
     )
     parser.add_argument(
         "--calibrate",
@@ -99,17 +80,13 @@ def build_dev_cli(parser:argparse.ArgumentParser) -> argparse.ArgumentParser:
 def build_test_cli(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     parser.add_argument(
         "--file",
-        help="The path of a csv dataset containing utterances and labels. If not provided, we look for files in data/<version/classification/datasets.",
+        help="The path of a csv dataset containing utterances and labels. If not provided, we look for files in data/classification/datasets.",
     )
     parser.add_argument(
         "--lang", help="The language code to use for the dataset."
     )
     parser.add_argument(
         "--project", help="The project scope to which the dataset belongs."
-    )
-    parser.add_argument(
-        "--version",
-        help="The dataset version, which will also be the report's version.",
     )
     parser.add_argument(
         "--tune-threshold",
@@ -119,25 +96,8 @@ def build_test_cli(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     return parser
 
 
-def build_release_cli(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
-    parser.add_argument(
-        "--version",
-        required=True,
-        help="The version of the dataset, model, metrics to use. Defaults to the latest version.",
-    )
-    parser.add_argument(
-        "--auto",
-        action="store_true",
-        help="Changelog is updated automatically (used for auto retraining)",
-    )
-    return parser
-
 
 def build_repl_cli(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
-    parser.add_argument(
-        "--version",
-        help="The version of the dataset, model, metrics to use. Defaults to the latest version.",
-    )
     parser.add_argument(
         "--lang",
         help="Run the models and pre-processing for the given language code.",
@@ -161,20 +121,15 @@ def parse_commands(command_string: Optional[str] = None) -> argparse.Namespace:
     train_cli_parser = command_parsers.add_parser("train", help="Train a workflow.")
     dev_cli_parser = command_parsers.add_parser("dev", help="Develop a workflow.")
     test_cli_parser = command_parsers.add_parser("test", help="Test a workflow.")
-    release_cli_parser = command_parsers.add_parser(
-        "release",
-        help="Release a version for the project. Commit the model, datasets and reports.",
-    )
     repl_cli_parser = command_parsers.add_parser(
         "repl", help="Read Eval Print Loop for a trained workflow."
     )
 
-    dir_cli_parser = build_dir_cli(dir_cli_parser)
     data_split_cli_parser = build_split_data_cli(data_split_cli_parser)
     data_combine_cli_parser = build_data_combine_cli(data_combine_cli_parser)
     train_cli_parser = build_train_cli(train_cli_parser)
     test_cli_parser = build_test_cli(test_cli_parser)
-    release_cli_parser = build_release_cli(release_cli_parser)
+    dev_cli_parser = build_dev_cli(dev_cli_parser)
     repl_cli_parser = build_repl_cli(repl_cli_parser)
 
     command = command_string.split() if command_string else None
@@ -195,8 +150,6 @@ def main(command_string: Optional[str] = None) -> None:
         dev_workflow(args)
     elif args.command == "test":
         test_classifier(args)
-    elif args.command == "release":
-        release(args)
     elif args.command == "repl":
         repl(args)
     else:

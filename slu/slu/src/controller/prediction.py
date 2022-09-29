@@ -123,7 +123,6 @@ def get_predictions(purpose, final_plugin=None, **kwargs):
                 else:
                     intent[const.CONFIDENCE_LEVEL] = const.HIGH
 
-        output[const.VERSION] = pipeline.config.version
         if intents and purpose == const.PRODUCTION:
             output[const.INTENTS] = intents[:1]
 

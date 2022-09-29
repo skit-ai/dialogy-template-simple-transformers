@@ -15,7 +15,6 @@ import dialogy.constants as dialogy_const
 
 from tqdm import tqdm
 from slu import constants as const
-from slu.dev.version import check_version_save_config
 from slu.src.controller.prediction import get_predictions
 from slu.utils import logger
 from slu.utils.config import Config, load_gen_config
@@ -140,20 +139,18 @@ def dev_workflow(args: argparse.Namespace):
     This method doesn't mutate the given test dataset, instead we produce results with the same `id_`
     so that they can be joined and studied together.
     """
-    version = args.version
     dataset = args.file
     lang = args.lang
     calibrate = args.calibrate
     config: Config = load_gen_config()
-    check_version_save_config(config, version)
     dataset = dataset or config.get_dataset(const.CLASSIFICATION, f"{const.TEST}.csv")
 
     test_df = pd.read_csv(dataset)
     metrics_dir_path = create_timestamps_path(
-        config.get_metrics_dir(const.CLASSIFICATION, version=version),
+        config.get_metrics_dir(const.CLASSIFICATION),
         "",
     )
-    models_dir_path = config.get_model_dir(const.CLASSIFICATION, version=version)
+    models_dir_path = config.get_model_dir(const.CLASSIFICATION)
     logger.info("Running predictions")
 
     if calibrate:
