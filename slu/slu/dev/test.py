@@ -1,17 +1,7 @@
 """
 Testing routine.
-
-Usage:
-  test.py <version>
-  test.py (classification|ner) <version>
-  test.py (-h | --help)
-  test.py --version
-
-Options:
-    <version>   The version of the dataset to use, the model produced will also be in the same dir.
-    -h --help   Show this screen.
-    --version   Show version.
 """
+
 import argparse
 import json
 import os
@@ -25,7 +15,6 @@ from tabulate import tabulate
 from tqdm import tqdm
 
 from slu import constants as const
-from slu.dev.version import check_version_save_config
 from slu.src.controller.prediction import get_predictions
 from slu.utils import logger
 from slu.utils.config import Config, YAMLLocalConfig
@@ -154,12 +143,10 @@ def test_classifier(args: argparse.Namespace):
     This method doesn't mutate the given test dataset, instead we produce results with the same `id_`
     so that they can be joined and studied together.
     """
-    version = args.version
     dataset = args.file
     lang = args.lang
     project_config_map = YAMLLocalConfig().generate()
     config: Config = list(project_config_map.values()).pop()
-    check_version_save_config(config, version)
 
     predict_api = get_predictions(const.TEST, config=config, debug=False)
     dataset = dataset or config.get_dataset(const.CLASSIFICATION, f"{const.TEST}.csv")
@@ -191,7 +178,7 @@ def test_classifier(args: argparse.Namespace):
     logger.enable("slu")
     predictions_df = pd.DataFrame(predictions)
     dir_path = create_timestamps_path(
-        config.get_metrics_dir(const.CLASSIFICATION, version=version),
+        config.get_metrics_dir(const.CLASSIFICATION),
         "",
     )
     update_confidence_scores(config, test_df, predictions_df)

@@ -4,11 +4,10 @@ A data directory for this template contains the following structure:
 
 ```
 data
-|-- <version>
-    |-- classification
-    |   |-- datasets
-    |   |-- metrics
-    |   +-- models
+|-- classification
+|   |-- datasets
+|   |-- metrics
+|   +-- models
 ```
 
 Given a valid semver, the code here helps creating
@@ -27,17 +26,10 @@ def create_data_directory(args: argparse.Namespace) -> None:
     """
     Create sub directories.
 
-    This function will check if `version` is a valid semver.
-
-    Args:
-        version (str): Semver for the dataset, model and metrics.
+    This function will create sub directories.
     """
-    version = args.version
-
-    # This will raise an exception for invalid semver. So we don't have to catch it.
-    semver.VersionInfo.parse(version)
-
-    base_module_path = os.path.join(const.DATA, version)
+    
+    base_module_path = const.DATA
     depth_level_1 = [const.CLASSIFICATION]
     depth_level_2 = [const.DATASETS, const.METRICS, const.MODELS]
 
@@ -59,10 +51,6 @@ def copy_data_directory(args: argparse.Namespace) -> None:
     """
     copy_from = args.source
     copy_to = args.dest
-
-    # This will raise an exception for invalid semver. So we don't have to catch it.
-    semver.VersionInfo.parse(copy_from)
-    semver.VersionInfo.parse(copy_to)
 
     source = os.path.join(const.DATA, copy_from)
     destination = os.path.join(const.DATA, copy_to)

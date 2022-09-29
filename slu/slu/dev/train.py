@@ -1,20 +1,7 @@
 """
-Routine for Classifier and NER training. Provide a version and a model will be trained on a dataset
-of the same version.
-
-This script expects data/<version> to be a directory where models, metrics and dataset are present.
-
-Usage:
-  train.py <version>
-  train.py (classification|ner) <version>
-  train.py (-h | --help)
-  train.py --version
-
-Options:
-    <version>     The version of the dataset to use, the model produced will also be in the same dir.
-    -h --help     Show this screen.
-    --version     Show version.
+Routine for Classifier and NER training.
 """
+
 import argparse
 import json
 import os
@@ -27,7 +14,6 @@ from sklearn.model_selection import train_test_split
 from tqdm import tqdm
 
 from slu import constants as const
-from slu.dev.version import check_version_save_config
 from slu.src.controller.processors import SLUPipeline
 from slu.utils import logger
 from slu.utils.config import Config, YAMLLocalConfig
@@ -103,13 +89,11 @@ def make_data_column_uniform(data_frame: pd.DataFrame) -> None:
 
 def create_data_splits(args: argparse.Namespace) -> None:
     """
-    Create a data split for the given version.
+    Create a data split for the given dataset.
     :param args: The arguments passed to the script.
     """
-    version = args.version
     project_config_map = YAMLLocalConfig().generate()
     config: Config = list(project_config_map.values()).pop()
-    check_version_save_config(config, version)
 
     dataset_file = args.file
     train_size = args.train_size
@@ -118,15 +102,9 @@ def create_data_splits(args: argparse.Namespace) -> None:
     dest = args.dest or config.get_dataset_dir(const.CLASSIFICATION)
 
     if os.listdir(dest):
-        ver_ = semver.VersionInfo.parse(config.version)
-        ver_.bump_patch()
         raise RuntimeError(
             f"""
-Data already exists in {dest} You should create a new version using:
-
-```shell
-slu setup-dirs --version {str(ver_.bump_patch())}
-```
+Data already exists in {dest}
 """.strip()
         )
 
@@ -189,25 +167,16 @@ def merge_datasets(args: argparse.Namespace) -> None:
 
 
 def train_intent_classifier(args: argparse.Namespace) -> None:
-    version = args.version
     dataset = args.file
     epochs = args.epochs
     project_config_map = YAMLLocalConfig().generate()
     config: Config = list(project_config_map.values()).pop()
-    check_version_save_config(config, version)
 
     model_dir = config.get_model_dir(const.CLASSIFICATION)
     if os.listdir(model_dir):
-        ver_ = semver.VersionInfo.parse(config.version)
-        ver_.bump_patch()
         raise RuntimeError(
             f"""
             Model already exists in {model_dir}.
-            You should create a new version using:
-            
-            ```shell
-            slu setup-dirs --version {str(ver_.bump_patch())}
-            ```
             """.strip()
         )
 

@@ -11,7 +11,6 @@ from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
 from prompt_toolkit.history import FileHistory
 
 import slu.constants as const
-from slu.dev.version import check_version_save_config
 from slu.src.controller.prediction import get_predictions
 from slu.utils import logger
 from slu.utils.config import Config, YAMLLocalConfig
@@ -61,11 +60,9 @@ def make_input(input_string):
 
 
 def repl(args: argparse.Namespace) -> None:
-    version = args.version
     lang = args.lang
     project_config_map = YAMLLocalConfig().generate()
     config: Config = list(project_config_map.values()).pop()
-    check_version_save_config(config, version)
 
     separator = "-" * 100
     show_help = True
