@@ -80,7 +80,9 @@ def get_predictions(purpose, final_plugin=None, **kwargs):
         context = context or {}
         history = history or []
         if not lang:
-            raise ValueError(f"Expected {lang} to be a ISO-639-1 code.")
+            logger.info(f"Expected {lang=} to be a ISO-639-1 code.")
+            logger.info("setting default lang=hi since no lang was provided")
+            lang = "hi"
 
         start_time = time.perf_counter()
         reference_time_as_unix_epoch = get_reftime(pipeline.config, context, lang)
@@ -122,7 +124,6 @@ def get_predictions(purpose, final_plugin=None, **kwargs):
                 else:
                     intent[const.CONFIDENCE_LEVEL] = const.HIGH
 
-        output[const.VERSION] = pipeline.config.version
         if intents and purpose == const.PRODUCTION:
             output[const.INTENTS] = intents[:1]
 

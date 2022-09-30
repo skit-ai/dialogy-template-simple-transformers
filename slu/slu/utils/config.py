@@ -3,11 +3,9 @@
 """
 import abc
 import os
-import types
 from typing import Any, Dict, List, Optional, Set
 
 import attr
-import semver
 import yaml
 
 from slu import constants as const
@@ -80,12 +78,6 @@ class Config:
     model_name = attr.ib(
         type=str, kw_only=True, validator=attr.validators.instance_of(str)
     )
-    version = attr.ib(
-        type=str,
-        kw_only=True,
-        default="0.0.0",
-        validator=attr.validators.instance_of(str),
-    )
     tasks = attr.ib(type=Tasks, kw_only=True)
     languages = attr.ib(type=List[str], kw_only=True)
     slots: Dict[str, Dict[str, Any]] = attr.ib(factory=dict, kw_only=True)
@@ -104,7 +96,6 @@ class Config:
         Update default values of attributes from `conifg.yaml`.
         """
         self.tasks = Tasks(**self.tasks)  # type: ignore
-        semver.VersionInfo.parse(self.version)
         for purpose in self.tasks.classification.model_args:
             purpose_args = self.tasks.classification.model_args[purpose]
             purpose_args[const.BEST_MODEL_DIR] = self.get_model_dir(
@@ -112,22 +103,22 @@ class Config:
             )
             purpose_args[const.OUTPUT_DIR] = self.get_model_dir(const.CLASSIFICATION)
 
-    def _get_data_dir(self, task_name: str, version=None) -> str:
-        return os.path.join(const.DATA, version or self.version, task_name)
+    def _get_data_dir(self, task_name: str) -> str:
+        return os.path.join(const.DATA, task_name)
 
-    def get_metrics_dir(self, task_name: str, version=None) -> str:
+    def get_metrics_dir(self, task_name: str) -> str:
         return os.path.join(
-            self._get_data_dir(task_name, version=version), const.METRICS
+            self._get_data_dir(task_name), const.METRICS
         )
 
-    def get_model_dir(self, task_name: str, version=None) -> str:
+    def get_model_dir(self, task_name: str) -> str:
         return os.path.join(
-            self._get_data_dir(task_name, version=version), const.MODELS
+            self._get_data_dir(task_name), const.MODELS
         )
 
-    def get_dataset_dir(self, task_name: str, version=None) -> str:
+    def get_dataset_dir(self, task_name: str) -> str:
         return os.path.join(
-            self._get_data_dir(task_name, version=version), const.DATASETS
+            self._get_data_dir(task_name), const.DATASETS
         )
 
     def get_skip_list(self, task_name: str) -> Set[str]:
@@ -135,14 +126,18 @@ class Config:
             return set(self.tasks.classification.skip)
         raise NotImplementedError(f"Model for {task_name} is not defined!")
 
-    def get_dataset(self, task_name: str, file_name: str, version=None) -> Any:
+    def get_dataset(self, task_name: str, file_name: str) -> Any:
         return os.path.join(
-            self._get_data_dir(task_name, version=version), const.DATASETS, file_name
+            self._get_data_dir(task_name), const.DATASETS, file_name
         )
 
-    def get_model_args(self, task_name: str) -> Dict[str, Any]:
+    def get_model_args(self, task_name: str, purpose: str, **kwargs) -> Dict[str, Any]:
         if task_name == const.CLASSIFICATION:
-            return self.tasks.classification.model_args
+            args_map = self.tasks.classification.model_args
+            if purpose == const.TRAIN:
+                if epochs := kwargs.get(const.EPOCHS):
+                    args_map[const.TRAIN][const.NUM_TRAIN_EPOCHS] = epochs
+            return args_map
         raise NotImplementedError(f"Model for {task_name} is not defined!")
 
     def get_model_confidence_threshold(self, task_name: str) -> float:

@@ -1,4 +1,3 @@
-version: 0.0.0
 model_name: slu
 slots:                # Just an example, please change this to your own slots.
   _cancel_:           # Intent name
@@ -86,7 +85,18 @@ tasks:
     skip:                                       # Skip the intents that are not required for training, will still be used for testing.
     - silence
     - audio_noisy
-    threshold: 0.1
+    - partial
+    - _ood_
+    - ood
+    - _oos_
+    - oos
+    - audio_silent
+    - audio_channel_noise
+    - audio_speech_unclear
+    - audio_speech_volume
+    - background_speech
+    - other_language
+    threshold: 0.2
     use: true
 calibration: {}
 entity_patterns:

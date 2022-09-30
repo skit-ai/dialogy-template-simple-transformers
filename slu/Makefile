@@ -8,6 +8,9 @@ lint:
 	@isort slu
 	@black slu
 
+install:
+	@poetry install && pre-commit install
+
 test:
 	@pytest --cov=slu --cov-report html --cov-report term:skip-covered tests/
 	@echo -e "The tests pass!"
@@ -15,4 +18,4 @@ test:
 build:
 	@bash build.sh $1
 
-all: lint test build
+all: lint install test build

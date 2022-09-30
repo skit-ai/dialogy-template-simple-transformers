@@ -1,0 +1,12 @@
+repos:
+  - repo: https://github.com/ambv/black
+    rev: 22.6.0
+    hooks:
+      - id: black
+        args: [--line-length=88]
+  - repo: local
+    hooks:
+      - id: dvc-changes
+        name: dvc-changes
+        entry: bash -c 'dvc add data && dvc push && git add data.dvc'
+        language: system

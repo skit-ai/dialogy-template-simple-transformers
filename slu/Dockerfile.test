@@ -14,8 +14,8 @@ RUN poetry config virtualenvs.create false
 
 COPY pyproject.toml poetry.lock data.dvc /home/slu/
 
-RUN poetry install --no-dev && \
-    rm -rf /root/.cache && pip3 uninstall --yes poetry && pip3 install pytest
+RUN poetry install && \
+    rm -rf /root/.cache && pip3 uninstall --yes poetry && pip3 install -U setuptools
 
 COPY ./.dvc ./.dvc
 
@@ -26,12 +26,8 @@ COPY ./slu ./slu
 COPY ./tests ./tests
 COPY ./config ./config
 
-ENV ENVIRONMENT="production"
 ENV LANG C.UTF-8
 ENV LC_ALL C.UTF-8
-
-RUN task test
-
 EXPOSE 8005
 
 CMD ["/bin/sh", "-ec", "while :; do echo '.'; sleep 5 ; done"]
