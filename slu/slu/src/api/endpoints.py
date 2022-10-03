@@ -36,7 +36,7 @@ if os.environ.get(const.ENVIRONMENT) == const.PRODUCTION:
     app.add_middleware(SentryAsgiMiddleware)
 
 
-@app.get("/{probe_type}")
+@app.get("/health/{probe_type}")
 async def health_check(probe_type, background_tasks: BackgroundTasks):
     """
     Get server status health.
