@@ -123,7 +123,6 @@ def test_input_cases(key, payload, slu_api):
     verify_entities(key, output, expected)
 
 
-@pytest.mark.skip(reason="problem with the model in production")
 def test_classifier_on_training_data(slu_api):
     """
     Evaluate the workflow with all the embedded plugins.
