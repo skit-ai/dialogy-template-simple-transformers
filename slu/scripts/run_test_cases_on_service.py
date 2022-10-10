@@ -1,7 +1,6 @@
 import requests
 import argparse
-from pprint import pprint
-import os, yaml, json
+import os, yaml
 
 from slu import constants as const
 
