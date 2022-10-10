@@ -79,6 +79,12 @@ class Config:
     model_name = attr.ib(
         type=str, kw_only=True, validator=attr.validators.instance_of(str)
     )
+    version = attr.ib(
+        type=str,
+        kw_only=True,
+        default="0.0.0",
+        validator=attr.validators.instance_of(str),
+    )
     tasks = attr.ib(type=Tasks, kw_only=True)
     languages = attr.ib(type=List[str], kw_only=True)
     slots: Dict[str, Dict[str, Any]] = attr.ib(factory=dict, kw_only=True)
