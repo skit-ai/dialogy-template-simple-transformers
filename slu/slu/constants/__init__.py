@@ -96,6 +96,7 @@ FORWARD = "forward"
 TRAIN_DATA = "train.csv"
 TEST_DATA = "test.csv"
 CONFIG_PATH = os.path.join("config", "config.yaml")
+PROMPTS_CONFIG_PATH = os.path.join("config", "prompts.yaml")
 INTENT_LABEL_ENCODER = "labelencoder.pkl"
 ENTITY_LABELS = "entity_label_list.pkl"
 XLMR = "xlmroberta"
@@ -125,8 +126,11 @@ CURRENT_STATE = "current_state"
 CURRENT_INTENT = "current_intent"
 STATE = "state"
 EXPECTED_SLOTS = "expected_slots"
+NLS_LABEL = 'nls_label'
+PROMPT_NOISE_FILLER_TOKEN = "<pad>"
 
 LANG_TO_LOCALES = {"en": "en_IN", "hi": "hi_IN"}  # This should be set via config
+NLS_LANG_MAPPING = {'hi': 'hi_nls', 'en': 'en_nls'}
 
 CLIENTCONFIGROUTE = "/clients/configs/"
 REQUEST_MAX_RETRIES = 5

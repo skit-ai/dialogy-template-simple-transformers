@@ -6,7 +6,7 @@ from dialogy.base.plugin import Plugin
 from dialogy.workflow import Workflow
 
 from slu import constants as const
-from slu.utils.config import load_gen_config, Config
+from slu.utils.config import load_gen_config, load_prompt_config, Config
 from slu.src.controller.custom_plugins import OOSFilterPlugin
 
 
@@ -14,6 +14,7 @@ class SLUPipeline:
     def __init__(self, config: Optional[Config] = None, **kwargs):
         self.config = config or kwargs.get(const.CONFIG) or load_gen_config()
         self.debug = kwargs.get("debug", False)
+        self.prompts_map: dict = load_prompt_config(debug=True)
 
     def get_plugins(self, purpose, **kwargs) -> List[Plugin]:
         merge_asr_output = plugins.MergeASROutputPlugin(
@@ -31,6 +32,12 @@ class SLUPipeline:
             use_cuda=purpose != const.PRODUCTION,
             data_column=const.ALTERNATIVES,
             label_column=const.TAG,
+            state_column=const.STATE,
+            lang_column=const.LANG,
+            nls_label_column =const.NLS_LABEL,
+            prompts_map =  self.prompts_map,
+            use_state = False,
+            use_prompt=False,
             args_map=self.config.get_model_args(
                 const.CLASSIFICATION, purpose, epochs=kwargs.get(const.EPOCHS)
             ),
