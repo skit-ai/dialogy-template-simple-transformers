@@ -22,8 +22,8 @@ from tqdm import tqdm
 
 from slu import constants as const
 from slu.utils import logger
+from slu.utils.config import Config, YAMLLocalConfig
 
-lang_map = const.NLS_LANG_MAPPING
 
 def preprocess_prompt(prompt: str, remove_var: bool = True, fill_token: str = const.PROMPT_NOISE_FILLER_TOKEN) -> str:
 
@@ -81,7 +81,7 @@ def _nls_to_state(string: str, delimiter: str = "_") -> str:
     return string
 
 
-def _nls_to_df(dataset: str)-> pd.DataFrame:
+def _nls_to_df(dataset: str, config: Config)-> pd.DataFrame:
     nls_labels = None
     nls_keys = set()
 
@@ -101,40 +101,37 @@ def _nls_to_df(dataset: str)-> pd.DataFrame:
             """.strip()
         )   
     
-    for lang in lang_map.keys():
-        if lang_map[lang] not in nls_labels:
+    for lang in config.get_supported_languages():
+        if const.NLS_LANG_MAPPING[lang] not in nls_labels:
             raise Exception(
-                f"{lang} not found in nls labels, please check your input file."
-            ) 
-        if not nls_labels[lang_map[lang]]:
-            raise Exception(
-                f"No nls-keys found for {lang}, please check your input file."
+                f"No prompts found for {lang}, please check your input file."
             )
         
-        for _ in nls_labels[lang_map[lang]].keys():
-            nls_keys.add(_)
+        else:
+            for _ in nls_labels[const.NLS_LANG_MAPPING[lang]].keys():
+                nls_keys.add(_)
 
     logger.debug(f"Total unique nls-keys: {len(nls_keys)}")
 
-    nls_df = pd.DataFrame(columns=[const.NLS_LABEL] + list(lang_map.keys()))
+    nls_df = pd.DataFrame(columns=[const.NLS_LABEL] + list(config.get_supported_languages()))
     nls_df[const.NLS_LABEL] = pd.Series(list(nls_keys))
 
     for i in tqdm(range(nls_df.shape[0]),desc="Fetching prompts"):
         NLS_LABEL = nls_df.iloc[i][const.NLS_LABEL]
-        for lang in lang_map.keys():
-            if NLS_LABEL not in nls_labels[lang_map[lang]]:
+        for lang in config.get_supported_languages():
+            if NLS_LABEL not in nls_labels[const.NLS_LANG_MAPPING[lang]]:
                 logger.debug(
                     f"nls-key  {NLS_LABEL} not found for lang {lang}"
                 )                
-            elif not nls_labels[lang_map[lang]][NLS_LABEL]:
+            elif not nls_labels[const.NLS_LANG_MAPPING[lang]][NLS_LABEL]:
                 logger.debug(
                     f"Prompt not found for lang {lang}, nls-key {NLS_LABEL}"
                 )
             else:
-                if isinstance(nls_labels[lang_map[lang]][NLS_LABEL], str) and len(nls_labels[lang_map[lang]][NLS_LABEL]) > 0:
-                    nls_df.at[i,lang] = nls_labels[lang_map[lang]][NLS_LABEL]
-                if isinstance(nls_labels[lang_map[lang]][NLS_LABEL], list) and len(nls_labels[lang_map[lang]][NLS_LABEL]) == 1:
-                    nls_df.at[i,lang] = nls_labels[lang_map[lang]][NLS_LABEL][0]
+                if isinstance(nls_labels[const.NLS_LANG_MAPPING[lang]][NLS_LABEL], str) and len(nls_labels[const.NLS_LANG_MAPPING[lang]][NLS_LABEL]) > 0:
+                    nls_df.at[i,lang] = nls_labels[const.NLS_LANG_MAPPING[lang]][NLS_LABEL]
+                if isinstance(nls_labels[const.NLS_LANG_MAPPING[lang]][NLS_LABEL], list) and len(nls_labels[const.NLS_LANG_MAPPING[lang]][NLS_LABEL]) == 1:
+                    nls_df.at[i,lang] = nls_labels[const.NLS_LANG_MAPPING[lang]][NLS_LABEL][0]
 
     return nls_df
 
@@ -192,7 +189,9 @@ def setup_prompts(args: argparse.Namespace) -> None:
     dataset: str = args.file
     overwrite: bool = args.overwrite or True
     dest: str = os.path.join(args.dest,"prompts.yaml") if args.dest else const.PROMPTS_CONFIG_PATH
-
+    project_config_map = YAMLLocalConfig().generate()
+    config: Config = list(project_config_map.values()).pop()
+    
     if not os.path.exists(dataset):
         raise RuntimeError(
             f"""
@@ -218,7 +217,7 @@ def setup_prompts(args: argparse.Namespace) -> None:
             """.strip()
         )
         
-    data_frame = _nls_to_df(dataset) if dataset.endswith(".yaml") else pd.read_csv(dataset)
+    data_frame = _nls_to_df(dataset, config) if dataset.endswith(".yaml") else pd.read_csv(dataset)
 
     if (const.STATE not in data_frame.columns and const.NLS_LABEL in data_frame.columns):
             logger.debug(f"State column missing, deriving from NLS-Keys")
