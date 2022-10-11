@@ -81,7 +81,7 @@ def make_critical_intent_report(
     dir_path: str,
 ):
     merged_df = pd.merge(
-        test_df, predictions_df, on="data_id", suffixes=("_test", "_pred")
+        test_df, predictions_df, on="data_id"
     )
     merged_df = merged_df[
         (merged_df.tag.isin(critical_intents))
