@@ -44,7 +44,7 @@ def update_confidence_scores(
     Update the confidence scores in the config as per test results.
     """
     merged_df = pd.merge(
-        test_df, predictions_df, on="data_id", suffixes=("_test", "_pred")
+        test_df, predictions_df, on="data_id"
     )
     valid_inputs = merged_df[~merged_df.alternatives.isin(["[]", "[[]]"])]
     correct_items = valid_inputs[valid_inputs.tag == valid_inputs.intent_pred]
@@ -59,7 +59,7 @@ def make_classification_report(
 
     result_dict = classification_report(
         test_df[const.TAG],
-        predictions_df[const.INTENT],
+        predictions_df[const.INTENT_PRED],
         zero_division=0,
         output_dict=True,
     )
@@ -81,7 +81,7 @@ def make_critical_intent_report(
     dir_path: str,
 ):
     merged_df = pd.merge(
-        test_df, predictions_df, on="data_id", suffixes=("_test", "_pred")
+        test_df, predictions_df, on="data_id"
     )
     merged_df = merged_df[
         (merged_df.tag.isin(critical_intents))
@@ -109,13 +109,13 @@ def make_errors_report(
     logger.info(f"{test_df.head()}")
     test_df_ = test_df.copy()
     merged_df = pd.merge(
-        test_df_, predictions_df, on="data_id", suffixes=("_test", "_pred")
+        test_df_, predictions_df, on="data_id"
     )
     errors_df = merged_df[
-        merged_df[f"{const.TAG}"] != merged_df[f"{const.INTENT}_pred"]
+        merged_df[f"{const.TAG}"] != merged_df[const.INTENT_PRED]
     ].copy()
     true_labels = errors_df[f"{const.TAG}"].tolist()
-    pred_labels = errors_df[f"{const.INTENT}_pred"].tolist()
+    pred_labels = errors_df[const.INTENT_PRED].tolist()
     if not true_labels and not pred_labels:
         return
     make_confusion_matrix(true_labels, pred_labels, dir_path, prefix="errors")
@@ -170,7 +170,7 @@ def test_classifier(args: argparse.Namespace):
         predictions.append(
             {
                 "data_id": row["data_id"],
-                const.INTENT: intents[0][const.NAME] if intents else "_no_preds_",
+                const.INTENT_PRED: intents[0][const.NAME] if intents else "_no_preds_",
                 const.SCORE: intents[0][const.SCORE] if intents else 0,
             }
         )
@@ -189,7 +189,7 @@ def test_classifier(args: argparse.Namespace):
     )
 
     true_labels = test_df[const.TAG].tolist()
-    pred_labels = predictions_df[const.INTENT].tolist()
+    pred_labels = predictions_df[const.INTENT_PRED].tolist()
     zoomed_true_label = zoom_out_labels(true_labels)
     zoomed_predicted_label = zoom_out_labels(pred_labels)
     make_confusion_matrix(
