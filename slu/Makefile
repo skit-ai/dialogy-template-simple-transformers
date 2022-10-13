@@ -6,7 +6,7 @@ python_version = 3.8.5
 lint:
 	@echo -e "Running linter"
 	@isort slu
-	@black slu
+	@black .
 
 install:
 	@poetry install && pre-commit install
