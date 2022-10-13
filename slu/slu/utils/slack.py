@@ -1,9 +1,9 @@
 import os
-import pytz
-import psutil
-from typing import Any, Dict, List, Optional
 from datetime import datetime, timedelta
+from typing import Any, Dict, List, Optional
 
+import psutil
+import pytz
 from slack_sdk import WebClient
 
 from slu import constants as const
