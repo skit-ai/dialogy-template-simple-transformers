@@ -2,22 +2,22 @@
 This module provides a simple interface to provide text features
 and receive Intent and Entities.
 """
-import copy
-import operator
 import os
+import copy
 import time
+import pytz
+import operator
+from requests import exceptions
 from datetime import datetime, timedelta
 from pprint import pformat
 from typing import Any, Dict, List, Optional
 
-import pytz
 from dialogy.base import Input
-from requests import exceptions
 
 from slu import constants as const
 from slu.src.controller.processors import SLUPipeline
 from slu.utils import logger
-from slu.utils.config import Config
+from slu.utils.config import Config, YAMLLocalConfig
 from slu.utils.make_test_cases import build_test_case
 
 
@@ -97,6 +97,7 @@ def get_predictions(purpose, final_plugin=None, **kwargs):
             current_state=context.get(const.CURRENT_STATE),
             previous_intent=context.get(const.CURRENT_INTENT),
             expected_slots=context.get(const.EXPECTED_SLOTS),
+            nls_label=context.get(const.NLS_LABEL),
         )
 
         logger.debug(f"Input:\n{pformat(input_)}")
