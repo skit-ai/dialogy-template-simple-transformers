@@ -1,7 +1,7 @@
-from typing import Any, Optional, List, Dict
+from typing import Any, Dict, List, Optional
 
-from dialogy.base.plugin import Plugin, Guard, Input, Output
-from dialogy.types import Intent, BaseEntity
+from dialogy.base.plugin import Guard, Input, Output, Plugin
+from dialogy.types import BaseEntity, Intent
 
 import slu.constants as const
 
