@@ -3,9 +3,9 @@ Routine for Classifier and NER training.
 """
 
 import argparse
+import functools
 import json
 import os
-import functools
 from datetime import datetime
 
 import pandas as pd

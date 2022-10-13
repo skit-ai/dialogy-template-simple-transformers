@@ -1,5 +1,5 @@
 import asyncio
-from functools import wraps, partial
+from functools import partial, wraps
 
 from slu import constants as const
 
