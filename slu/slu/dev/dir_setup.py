@@ -28,7 +28,7 @@ def create_data_directory(args: argparse.Namespace) -> None:
 
     This function will create sub directories.
     """
-    
+
     base_module_path = const.DATA
     depth_level_1 = [const.CLASSIFICATION]
     depth_level_2 = [const.DATASETS, const.METRICS, const.MODELS]

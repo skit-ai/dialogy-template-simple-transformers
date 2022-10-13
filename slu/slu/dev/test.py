@@ -43,9 +43,7 @@ def update_confidence_scores(
     """
     Update the confidence scores in the config as per test results.
     """
-    merged_df = pd.merge(
-        test_df, predictions_df, on="data_id"
-    )
+    merged_df = pd.merge(test_df, predictions_df, on="data_id")
     valid_inputs = merged_df[~merged_df.alternatives.isin(["[]", "[[]]"])]
     correct_items = valid_inputs[valid_inputs.tag == valid_inputs.intent_pred]
     incorrect_items = valid_inputs[valid_inputs.tag != valid_inputs.intent_pred]
@@ -80,9 +78,7 @@ def make_critical_intent_report(
     critical_intents: List[str],
     dir_path: str,
 ):
-    merged_df = pd.merge(
-        test_df, predictions_df, on="data_id"
-    )
+    merged_df = pd.merge(test_df, predictions_df, on="data_id")
     merged_df = merged_df[
         (merged_df.tag.isin(critical_intents))
         | (merged_df.intent_pred.isin(critical_intents))
@@ -108,9 +104,7 @@ def make_errors_report(
 ):
     logger.info(f"{test_df.head()}")
     test_df_ = test_df.copy()
-    merged_df = pd.merge(
-        test_df_, predictions_df, on="data_id"
-    )
+    merged_df = pd.merge(test_df_, predictions_df, on="data_id")
     errors_df = merged_df[
         merged_df[f"{const.TAG}"] != merged_df[const.INTENT_PRED]
     ].copy()
@@ -161,7 +155,10 @@ def test_classifier(args: argparse.Namespace):
         output = predict_api(
             **{
                 const.ALTERNATIVES: json.loads(row[const.ALTERNATIVES]),
-                const.CONTEXT: {const.CURRENT_STATE: row.get(const.STATE), const.NLS_LABEL: row.get(const.NLS_LABEL)},
+                const.CONTEXT: {
+                    const.CURRENT_STATE: row.get(const.STATE),
+                    const.NLS_LABEL: row.get(const.NLS_LABEL),
+                },
                 const.LANG: lang,
                 "ignore_test_case": True,
             }
