@@ -1,21 +1,22 @@
-import json
 import os
+import json
 import traceback
 from typing import Any, Dict, List
 
 import sentry_sdk
-from fastapi import BackgroundTasks
-from fastapi.responses import JSONResponse, Response
-from sentry_sdk.integrations.asgi import SentryAsgiMiddleware
 from slack_sdk import WebClient
+from fastapi.responses import JSONResponse, Response
+from fastapi import BackgroundTasks
+from sentry_sdk.integrations.asgi import SentryAsgiMiddleware
 
 from slu import constants as const
-from slu.src.api import Input, app
+from slu.src.api import app, Input
 from slu.src.controller.prediction import get_predictions
 from slu.utils import error_response
 from slu.utils.config import Config, YAMLLocalConfig
 from slu.utils.sentry import capture_exception
 from slu.utils.slack import send_slack_notif
+
 
 CONFIG_MAP = YAMLLocalConfig().generate()
 PREDICT_API = get_predictions(const.PRODUCTION)
