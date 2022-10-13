@@ -34,9 +34,9 @@ class SLUPipeline:
             label_column=const.TAG,
             state_column=const.STATE,
             lang_column=const.LANG,
-            nls_label_column =const.NLS_LABEL,
-            prompts_map =  self.prompts_map,
-            use_state = False,
+            nls_label_column=const.NLS_LABEL,
+            prompts_map=self.prompts_map,
+            use_state=False,
             use_prompt=False,
             args_map=self.config.get_model_args(
                 const.CLASSIFICATION, purpose, epochs=kwargs.get(const.EPOCHS)

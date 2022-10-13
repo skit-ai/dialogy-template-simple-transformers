@@ -97,7 +97,7 @@ def get_predictions(purpose, final_plugin=None, **kwargs):
             current_state=context.get(const.CURRENT_STATE),
             previous_intent=context.get(const.CURRENT_INTENT),
             expected_slots=context.get(const.EXPECTED_SLOTS),
-            nls_label=context.get(const.NLS_LABEL)
+            nls_label=context.get(const.NLS_LABEL),
         )
 
         logger.debug(f"Input:\n{pformat(input_)}")

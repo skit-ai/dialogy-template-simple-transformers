@@ -94,7 +94,6 @@ def build_test_cli(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     return parser
 
 
-
 def build_repl_cli(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     parser.add_argument(
         "--lang",
@@ -104,12 +103,11 @@ def build_repl_cli(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     return parser
 
 
-
 def build_setup_prompt_cli(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     parser.add_argument(
         "--file",
         help="NLS-Key File downloaded from studio (.csv) or from flow-creator (.yaml)",
-        required=True
+        required=True,
     )
     parser.add_argument(
         "--dest",
@@ -122,7 +120,6 @@ def build_setup_prompt_cli(parser: argparse.ArgumentParser) -> argparse.Argument
         required=False,
     )
     return parser
-
 
 
 def parse_commands(command_string: Optional[str] = None) -> argparse.Namespace:
@@ -146,7 +143,7 @@ def parse_commands(command_string: Optional[str] = None) -> argparse.Namespace:
     setup_prompt_cli_parser = command_parsers.add_parser(
         "setup-prompts", help="Make prompts.yaml mapping file from nls-keys"
     )
-    
+
     data_split_cli_parser = build_split_data_cli(data_split_cli_parser)
     data_combine_cli_parser = build_data_combine_cli(data_combine_cli_parser)
     train_cli_parser = build_train_cli(train_cli_parser)
