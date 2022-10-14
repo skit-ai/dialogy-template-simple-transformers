@@ -18,7 +18,7 @@ A template for SLU projects at [skit.ai](https://skit.ai/).
 | ----------------------------------------- | ---------------------------------------------------------------------------- |
 | **config**                                | A directory that contains `yaml` files.                                      |
 | **data**                                  | Version controlled by `dvc`.                                                 |
-| **data/0.0.1**                            | A directory that would contain these directories: datasets, metrics, models. |
+| **data/****                               | A directory that would contain these directories: datasets, metrics, models. |
 | **slu/dev**                               | Programs not required for development, might not be useful in production.    |
 | **slu/src**                               | Houses the prediction API.                                                   |
 | **slu/utils**                             | Programs that offer assitance in either dev or src belong here.              |
@@ -29,7 +29,6 @@ A template for SLU projects at [skit.ai](https://skit.ai/).
 | **Makefile**                              | Helps maintain hygiene before deploying code.                                |
 | **pyproject.toml**                        | Track dependencies here. Also, this means you would be using poetry.         |
 | **README.md**                             | This must ring a bell.                                                       |
-| **uwsgi.ini**                             | Modify as per use.                                                           |
 
 ## Getting started
 
@@ -54,7 +53,7 @@ The questions here help:
 
 ```shell
 cd hello-world
-poetry install
+make install
 make lint
 git init
 git add .
@@ -89,26 +88,24 @@ optional arguments:
 
 ### 4. Data setup
 
-Let's start with dataset, model and report management command `slu setup-dirs --version=0.0.1`.
+Let's start with dataset, model and report management command `slu setup-dirs`.
 
 ```shell
 slu setup-dirs -h
-usage: slu setup-dirs [-h] [--version VERSION]
+usage: slu setup-dirs [-h]
 
 optional arguments:
   -h, --help         show this help message and exit
-  --version VERSION  The version of the dataset, model, metrics to use. Defaults to the latest version.
 ```
 
 This creates a data directory with the following structure:
 
 ```shell
 data
-+---0.0.1
-    +---classification
-        +---datasets
-        +---metrics
-        +---models
++---classification
+    +---datasets
+    +---metrics
+    +---models
 ```
 
 ### 5. Version control
@@ -128,16 +125,15 @@ git add data.dvc
 
 Assuming we have a labeled dataset, we are ready to execute the next command `slu split-data`,
 this puts a `train.csv` and `test.csv` at a desired `--dest` or the project default places within
-`data/0.0.1/classification/datasets`.
+`data/classification/datasets`.
 
 ```shell
 slu split-data -h
-usage: slu split-data [-h] [--version VERSION] --file FILE (--train-size TRAIN_SIZE | --test-size TEST_SIZE)
+usage: slu split-data [-h] --file FILE (--train-size TRAIN_SIZE | --test-size TEST_SIZE)
                       [--stratify STRATIFY] [--dest DEST]
 
 optional arguments:
   -h, --help            show this help message and exit
-  --version VERSION     The version for dataset paths.
   --file FILE           A dataset to be split into train, test datasets.
   --train-size TRAIN_SIZE
                         The proportion of the dataset to include in the train split
@@ -150,8 +146,7 @@ optional arguments:
 
 ```shell
 data
-+---0.0.1
-    +---classification
++---classification
     +---datasets
     |   +---train.csv
     |   +---test.csv
@@ -165,23 +160,20 @@ To train an classifier, we run `slu train`.
 
 ```shell
 slu train -h
-usage: slu train [-h] [--file FILE] [--lang LANG] [--project PROJECT] [--version VERSION]
+usage: slu train [-h] [--file FILE] [--lang LANG] [--project PROJECT]
 
 optional arguments:
   -h, --help         show this help message and exit
   --file FILE        A csv dataset containing utterances and labels.
   --lang LANG        The language of the dataset.
-  --project PROJECT  The project scope to which the dataset belongs.
-  --version VERSION  The dataset version, which will also be the model's version.
 ```
 
-Not providing the `--file` argument will pick a `train.csv` from `data/0.0.1/classification/datasets`.
+Not providing the `--file` argument will pick a `train.csv` from `data/classification/datasets`.
 Once the training is complete, you would notice the models would be populated:
 
 ```shell
 data
-+---0.0.1
-    +---classification
++---classification
     +---datasets
     |   +---train.csv
     |   +---test.csv
@@ -202,21 +194,19 @@ data
 ### 8. Evaluation
 
 We evaluate all the plugins in the workflow using `slu test --lang=LANG`.
-Not providing the `--file` argument will pick a `test.csv` from `data/0.0.1/classification/datasets`.
+Not providing the `--file` argument will pick a `test.csv` from `data/classification/datasets`.
 
 ```shell
 slu test -h
-usage: slu test [-h] [--file FILE] --lang LANG [--project PROJECT] [--version VERSION]
+usage: slu test [-h] [--file FILE] --lang LANG [--project PROJECT]
 
 optional arguments:
   -h, --help         show this help message and exit
   --file FILE        A csv dataset containing utterances and labels.
   --lang LANG        The language of the dataset.
-  --project PROJECT  The project scope to which the dataset belongs.
-  --version VERSION  The dataset version, which will also be the report's version.
 ```
 
-Reports are saved in the `data/0.0.1/classification/metrics` directory. We save:
+Reports are saved in the `data/classification/metrics` directory. We save:
 
 1. A classification report that shows the f1-score for all the labels in the `test.csv` or `--file`.
 
@@ -232,11 +222,10 @@ To run your models to see how they perform on live inputs, you have two options:
 
     ```shell
     slu repl -h
-    usage: slu repl [-h] [--version VERSION] [--lang LANG]
+    usage: slu repl [-h][--lang LANG]
 
     optional arguments:
     -h, --help         show this help message and exit
-    --version VERSION  The version of the dataset, model, metrics to use. Defaults to the latest version.
     --lang LANG        Run the models and pre-processing for the given language code.
     ```
 
@@ -244,79 +233,7 @@ To run your models to see how they perform on live inputs, you have two options:
 
 2. `task serve`
 
-    This is a uwsgi server that provides the same interface as your production applications.
-
-### 10. Releases
-
-Once the model performance achieves a satisfactory metric, we want to release and persist the dataset, models and reports.
-To do this, we meet the final command `slu release --version VERSION`.
-
-```shell
-slu release -h
-usage: slu release [-h] --version VERSION
-
-optional arguments:
-  -h, --help         show this help message and exit
-  --version VERSION  The version of the dataset, model, metrics to use. Defaults to the latest version.
-```
-
-This command takes care of the following acts:
-
-1. Stages `data` dir for dvc.
-
-2. Requires a changelog input.
-
-3. Stages changes within CHANGELOG.md, data.dvc, config.yaml, pyproject.toml for content updates and version changes.
-
-4. Creates a commit.
-
-5. Creates a tag for the given `--version=VERSION`.
-
-6. Pushes the data to dvc remote.
-
-7. Pushes the code and tag to git remote.
-
-## 11. Build
-
-Finally, we are ready to build a Docker image for our service for production runs. We use Makefiles to ensure a bit of hygiene checks.
-Run `make <image-name>` to check if the image builds in your local environment. If you have CI-CD enabled, that should do it for you.
-
-## 12. Enabling CI/CD
-CI/CD automates the entire Docker Image build and deployment steps to staging & production. Pipeline is triggered whenever a new tag is released (recommendeded way to create and push tags is `slu release --version VERSION`). 
-[.gitlab-ci.yml](.gitlab-ci.yml) pipeline includes the following stages. 
-
-  1. `publish_image`                           # build docker image and push to registry
-  2. `update_chart_and_deploy_to_staging`      # deploy the tagged dockerimage to staging cluster
-  3. `update_chart_and_deploy_to_production`   # deploy the tagged dockerimage to production cluster
-
-`update_chart_and_deploy_to_production` stage requires manual approval for running.
-
-For a clean CI/CD setup, following conditions should be met.
-  1. Project name should be same for Gitlab Repository and Amazon ECR folder. 
-  2. [k8s-configs/ai/clients](https://gitlab.com/vernacularai/kubernetes/k8s-configs/-/tree/master/ai/clients) project folder should follow the following file structure:
-      - values-staging.yaml  #values for staging
-      - values-production.yaml #values for prod
-      - application-production.yaml # deploys app to prod
-      - application-staging.yaml  #deploys to staging
-      
-  3. dvc shouldn't be a dev-dependencies. 
-
-        replace this:
-        ```
-        [tool.poetry.dev-dependencies.dvc]
-        extras = [ "s3",]
-        version = "^2.6.4"
-        ```
-        with:
-        ```  
-          [tool.poetry.dependencies.dvc]
-          extras = [ "s3",]
-          version = "^2.6.4"
-        ```
-        in pyproject.toml.
-
-  4. poetry.lock should be a git tracked file. Ensure it is not present inside `.gitignore`.
-  5. Remove `.dvc` if present inside `.dockerignore` and replace it with `.dvc/cache/`.
+    This is a uvicorn server that provides the same interface as your production applications.
 
 
 ## Config
@@ -338,23 +255,23 @@ tasks:
     format: ''
     model_args:
       production:
-        best_model_dir: data/0.0.1/classification/models
+        best_model_dir: data/classification/models
         dynamic_quantize: true
         eval_batch_size: 1
         max_seq_length: 128
         no_cache: true
-        output_dir: data/0.0.1/classification/models
+        output_dir: data/classification/models
         reprocess_input_data: true
         silent: true
         thread_count: 1
         use_multiprocessing: false
       test:
-        best_model_dir: data/0.0.1/classification/models
-        output_dir: data/0.0.1/classification/models
+        best_model_dir: data/classification/models
+        output_dir: data/classification/models
         reprocess_input_data: true
         silent: true
       train:
-        best_model_dir: data/0.0.1/classification/models
+        best_model_dir: data/classification/models
         early_stopping_consider_epochs: true
         early_stopping_delta: 0.01
         early_stopping_metric: eval_loss
@@ -364,7 +281,7 @@ tasks:
         evaluate_during_training_steps: 1080
         fp16: false
         num_train_epochs: 1
-        output_dir: data/0.0.1/classification/models
+        output_dir: data/classification/models
         overwrite_output_dir: true
         reprocess_input_data: true
         save_eval_checkpoints: false
@@ -376,7 +293,6 @@ tasks:
     - audio_noisy
     threshold: 0.1
     use: true
-version: 0.0.1
 ```
 
 Model args help maintain the configuration of models in a single place, [here](https://simpletransformers.ai/docs/usage/#configuring-a-simple-transformers-model) is a full list, for classification or NER model configuration.
