@@ -46,7 +46,8 @@ def verify_slots(key, predicted_output, expected_output):
         for slot in expected_output[const.INTENTS][0][const.SLOTS]
     }
 
-    assert len(pred_slots) == len(true_slots), f"{key} slot-size doesn't match!"
+    assert len(pred_slots) == len(
+        true_slots), f"{key} slot-size doesn't match!"
     for pred_slot, true_slot in zip(pred_slots, true_slots):
         pred_slot_values = pred_slots[pred_slot][const.VALUES]
         true_slot_values = true_slots[true_slot][const.VALUES]
@@ -138,6 +139,10 @@ def test_classifier_on_training_data(slu_api):
     config: Config = list(project_config_map.values()).pop()
     dataset = config.get_dataset(const.CLASSIFICATION, f"{const.TRAIN}.csv")
     test_df = pd.read_csv(dataset).sample(n=100)
+    test_df = test_df[~test_df[const.TAG].isin(
+        config.tasks.classification.skip)]
+    test_df = test_df[test_df[const.ALTERNATIVES] != "[]"]
+    test_df = test_df.replace({const.TAG: config.tasks.classification.alias})
 
     predictions = []
     config.tasks.classification.threshold = 0
