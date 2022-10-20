@@ -39,10 +39,8 @@ def reftime_patterns(reftime: str):
         lambda date_string: datetime.strptime(
             date_string, "%Y-%m-%d %H:%M:%S.%f %z %Z"
         ),
-        lambda date_string: datetime.strptime(
-            date_string, "%Y-%m-%dT%H:%M:%SZ"),
-        lambda date_string: datetime.strptime(
-            date_string, "%Y-%m-%dT%H:%M:%S.%f%z"),
+        lambda date_string: datetime.strptime(date_string, "%Y-%m-%dT%H:%M:%SZ"),
+        lambda date_string: datetime.strptime(date_string, "%Y-%m-%dT%H:%M:%S.%f%z"),
     ]
     for time_fn in time_fns:
         try:
@@ -118,7 +116,11 @@ Data already exists in {dest}
     data_frame = pd.read_csv(dataset_file)
     logger.debug(f"Data frame: {data_frame.shape}")
     skip_list = config.get_skip_list(const.CLASSIFICATION)
-
+    # Replacing intents with their alias
+    data_frame = data_frame.replace({const.TAG: config.tasks.classification.alias})
+    logger.info(
+        f"Model will be trained for the following classes:\n{data_frame[const.TAG].value_counts(dropna=False)}"
+    )
     make_label_column_uniform(data_frame)
     make_data_column_uniform(data_frame)
     make_reftime_column_uniform(data_frame)
@@ -154,8 +156,7 @@ Data already exists in {dest}
     )
     train.to_csv(os.path.join(dest, f"{const.TRAIN}.csv"), index=False)
     test.to_csv(os.path.join(dest, f"{const.TEST}.csv"), index=False)
-    train_skip_samples.to_csv(os.path.join(
-        dest, f"{const.SKIPPED}.csv"), index=False)
+    train_skip_samples.to_csv(os.path.join(dest, f"{const.SKIPPED}.csv"), index=False)
 
 
 def merge_datasets(args: argparse.Namespace) -> None:
@@ -165,8 +166,7 @@ def merge_datasets(args: argparse.Namespace) -> None:
     data_files = args.files
     file_name = args.out
 
-    data_frames = pd.concat([pd.read_csv(data_file)
-                            for data_file in data_files])
+    data_frames = pd.concat([pd.read_csv(data_file) for data_file in data_files])
     data_frames.to_csv(file_name, index=False)
 
 
@@ -184,19 +184,11 @@ def train_intent_classifier(args: argparse.Namespace) -> None:
             """.strip()
         )
 
-    workflow = SLUPipeline(config).get_workflow(
-        purpose=const.TRAIN, epochs=epochs)
+    workflow = SLUPipeline(config).get_workflow(purpose=const.TRAIN, epochs=epochs)
 
     logger.info("Preparing dataset.")
-    dataset = dataset or config.get_dataset(
-        const.CLASSIFICATION, f"{const.TRAIN}.csv")
+    dataset = dataset or config.get_dataset(const.CLASSIFICATION, f"{const.TRAIN}.csv")
     data_frame = pd.read_csv(dataset)
-    data_frame = data_frame[~data_frame[const.TAG].isin(
-        config.tasks.classification.skip)]
-    data_frame = data_frame.replace(
-        {const.TAG: config.tasks.classification.alias})
-    logger.info(
-        f"Model will be trained for the following classes:\n{data_frame[const.TAG].value_counts(dropna=False)}")
     make_label_column_uniform(data_frame)
     make_data_column_uniform(data_frame)
     make_reftime_column_uniform(data_frame)
