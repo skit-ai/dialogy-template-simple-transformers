@@ -119,7 +119,8 @@ Data already exists in {dest}
     # Replacing intents with their alias
     data_frame = data_frame.replace({const.TAG: config.tasks.classification.alias})
     logger.info(
-        f"Model will be trained for the following classes:\n{data_frame[const.TAG].value_counts(dropna=False)}"
+        f"Model will be trained for the following classes:\
+        \n{data_frame[const.TAG].value_counts(dropna=False)}"
     )
     make_label_column_uniform(data_frame)
     make_data_column_uniform(data_frame)
