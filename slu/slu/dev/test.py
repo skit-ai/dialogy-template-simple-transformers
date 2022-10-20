@@ -46,8 +46,7 @@ def update_confidence_scores(
     merged_df = pd.merge(test_df, predictions_df, on="data_id")
     valid_inputs = merged_df[~merged_df.alternatives.isin(["[]", "[[]]"])]
     correct_items = valid_inputs[valid_inputs.tag == valid_inputs.intent_pred]
-    incorrect_items = valid_inputs[valid_inputs.tag !=
-                                   valid_inputs.intent_pred]
+    incorrect_items = valid_inputs[valid_inputs.tag != valid_inputs.intent_pred]
     logger.info(f"{correct_items.score.describe()}")
     logger.info(f"{incorrect_items.score.describe()}")
 
@@ -144,11 +143,9 @@ def test_classifier(args: argparse.Namespace):
     config: Config = list(project_config_map.values()).pop()
 
     predict_api = get_predictions(const.TEST, config=config, debug=False)
-    dataset = dataset or config.get_dataset(
-        const.CLASSIFICATION, f"{const.TEST}.csv")
+    dataset = dataset or config.get_dataset(const.CLASSIFICATION, f"{const.TEST}.csv")
     test_df = pd.read_csv(dataset)
-    test_df = test_df[~test_df[const.TAG].isin(
-        config.tasks.classification.skip)]
+    test_df = test_df[~test_df[const.TAG].isin(config.tasks.classification.skip)]
     test_df = test_df[test_df[const.ALTERNATIVES] != "[]"]
     test_df = test_df.replace({const.TAG: config.tasks.classification.alias})
 
@@ -197,5 +194,4 @@ def test_classifier(args: argparse.Namespace):
     make_confusion_matrix(
         zoomed_true_label, zoomed_predicted_label, dir_path=dir_path, prefix="zoomed"
     )
-    make_confusion_matrix(true_labels, pred_labels,
-                          dir_path=dir_path, prefix="full")
+    make_confusion_matrix(true_labels, pred_labels, dir_path=dir_path, prefix="full")
