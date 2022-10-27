@@ -86,6 +86,7 @@ class SLUPipeline:
             xlmr_clf,
             oos_filter,
             retain_original_intent,
+            list_entity_plugin,
             slot_filler,
         ]
 
