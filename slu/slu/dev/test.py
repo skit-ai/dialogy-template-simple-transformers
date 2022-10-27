@@ -145,6 +145,9 @@ def test_classifier(args: argparse.Namespace):
     predict_api = get_predictions(const.TEST, config=config, debug=False)
     dataset = dataset or config.get_dataset(const.CLASSIFICATION, f"{const.TEST}.csv")
     test_df = pd.read_csv(dataset)
+    test_df = test_df[~test_df[const.TAG].isin(config.tasks.classification.skip)]
+    test_df = test_df[test_df[const.ALTERNATIVES] != "[]"]
+    test_df = test_df.replace({const.TAG: config.tasks.classification.alias})
 
     logger.info("Running predictions")
     predictions = []

@@ -116,7 +116,12 @@ Data already exists in {dest}
     data_frame = pd.read_csv(dataset_file)
     logger.debug(f"Data frame: {data_frame.shape}")
     skip_list = config.get_skip_list(const.CLASSIFICATION)
-
+    # Replacing intents with their alias
+    data_frame = data_frame.replace({const.TAG: config.tasks.classification.alias})
+    logger.info(
+        f"Model will be trained for the following classes:\
+        \n{data_frame[const.TAG].value_counts(dropna=False)}"
+    )
     make_label_column_uniform(data_frame)
     make_data_column_uniform(data_frame)
     make_reftime_column_uniform(data_frame)
