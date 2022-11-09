@@ -222,7 +222,7 @@ class YAMLPromptConfig(ConfigDataProviderInterface):
 
     def validate(self) -> None:
         if not (all(isinstance(lang, str) for lang in self.config_dict.keys())):
-            raise Exception(
+            raise TypeError(
                 f"Invalid format, please make sure prompts.yaml is correctly defined"
             )
 
@@ -234,13 +234,13 @@ class YAMLPromptConfig(ConfigDataProviderInterface):
                     for nls_label in self.config_dict[lang]
                 )
             ):
-                raise Exception(
+                raise TypeError(
                     f"Invalid or Malformed nls_label name, please make sure prompts.yaml is correctly defined"
                 )
 
             for nls_label in self.config_dict[lang]:
                 if not self._valid_string(self.config_dict[lang][nls_label]):
-                    raise Exception(
+                    raise TypeError(
                         f"Invalid or Malformed prompt encountered for nls_label: {nls_label} in lang: {lang}"
                     )
 

@@ -174,9 +174,9 @@ def get_prompts_map(df: pd.DataFrame) -> pd.DataFrame:
     prompts_map: dict = dict()
     missing_prompts_map: dict = dict()
     supported_languages: list = [
-        _
-        for _ in df.columns
-        if (_valid_string(_) and _ not in [const.NLS_LABEL, const.STATE])
+        col
+        for col in df.columns
+        if (_valid_string(col) and col not in [const.NLS_LABEL, const.STATE])
     ]
     nls_labels: set = set()
 
@@ -211,7 +211,7 @@ def get_prompts_map(df: pd.DataFrame) -> pd.DataFrame:
 def setup_prompts(args: argparse.Namespace) -> None:
 
     dataset: str = args.file
-    overwrite: bool = args.overwrite or True
+    overwrite: bool = args.overwrite
     dest: str = (
         os.path.join(args.dest, "prompts.yaml")
         if args.dest
@@ -219,7 +219,7 @@ def setup_prompts(args: argparse.Namespace) -> None:
     )
     project_config_map = YAMLLocalConfig().generate()
     config: Config = list(project_config_map.values()).pop()
-
+    
     if not os.path.exists(dataset):
         raise RuntimeError(
             f"""
@@ -233,11 +233,8 @@ def setup_prompts(args: argparse.Namespace) -> None:
             Invalid input, pass either a .csv or .yaml file.
             """.strip()
         )
-
-    if not os.path.exists(dest):
-        os.mkdir(dest)
-
-    if os.path.exists(os.path.join(dest, "prompts.yaml")) and not overwrite:
+    
+    if os.path.exists(dest) and not overwrite:
         raise RuntimeError(
             f"""
             File already exists {os.path.join(dest,'prompts.yaml')}.
