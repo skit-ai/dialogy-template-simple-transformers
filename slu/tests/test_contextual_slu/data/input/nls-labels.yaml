@@ -1,0 +1,28 @@
+en_nls: &en_nls
+  NLS_LABEL_1: <prosody rate='90%'>For me to find your booking, please enter the 10-digit number used to make the booking, on your keypad. Press star key, if you don't know the number.</prosody>
+  NLS_LABEL_2: <prosody rate='90%'>Oh! Looks like, I am unable to find any bookings against the given number. Please re-enter the 10-digit number you used for the booking, on your keypad.</prosody>
+  NLS_LABEL_3: <prosody rate='90%'>As I can see, not all passengers have checked in for the upcoming flight. To help you regarding this, I am connecting you to one of my colleagues. Kindly be on the line.</prosody>
+  NLS_LABEL_4: If you are calling for a waiver on cancellation fee in a reservation booked through the travel agency, kindly contact the respective travel agency.
+  NLS_LABEL_5: Hello! Welcome to IndiGo. To continue in English, say English, हिंदी में बात करने के लिए कहिए हिंदी।
+
+
+#------------------------------------------dividing the English and Hindi prompts here so it's easier to find------------------------------------------#
+
+hi_nls: &hi_nls
+  NLS_LABEL_1: If you are calling for a waiver on cancellation fee in a reservation booked through the travel agency, kindly contact the respective travel agency.
+  NLS_LABEL_2: <prosody rate='90%'>नमस्ते। Welcome to IndiGo. To continue in English, say English, हिंदी में बात करने के लिए कहिए हिंदी।</prosody>
+  NLS_LABEL_3: <prosody rate='90%'>Welcome to IndiGo. IndiGo में आपका स्वागत है। To continue in English, say English, हिंदी में बात करने के लिए कहिए हिंदी।</prosody>
+  NLS_LABEL_6: <prosody rate='90%'> If you want to continue in English, please say English. हिंदी में बात करने के लिए कहिए हिंदी।  </prosody>
+  NLS_LABEL_7: <prosody rate='90%'> Sorry! I did not get that. Please say 'English' or 'Hindi' to continue in your preferred language. </prosody>
+
+labels:
+  TTS:
+    en:
+      <<: *en_nls
+    hi:
+      <<: *hi_nls
+  RECORDED:
+    en:
+      <<: *en_nls
+    hi:
+      <<: *hi_nls
