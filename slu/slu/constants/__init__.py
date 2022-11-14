@@ -102,6 +102,7 @@ TRAIN_DATA = "train.csv"
 TEST_DATA = "test.csv"
 CONFIG_PATH = os.path.join("config", "config.yaml")
 PROMPTS_CONFIG_PATH = os.path.join("config", "prompts.yaml")
+MISSING_PROMPTS_PATH = os.path.join("config", "missing_prompts.yaml")
 INTENT_LABEL_ENCODER = "labelencoder.pkl"
 ENTITY_LABELS = "entity_label_list.pkl"
 XLMR = "xlmroberta"

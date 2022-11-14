@@ -212,11 +212,17 @@ def setup_prompts(args: argparse.Namespace) -> None:
 
     dataset: str = args.file
     overwrite: bool = args.overwrite
-    dest: str = (
+    dest_p: str = (
         os.path.join(args.dest, "prompts.yaml")
         if args.dest
         else const.PROMPTS_CONFIG_PATH
     )
+    dest_mp: str = (
+        os.path.join(args.dest, "missing_prompts.yaml")
+        if args.dest
+        else const.MISSING_PROMPTS_PATH
+    )
+        
     project_config_map = YAMLLocalConfig().generate()
     config: Config = list(project_config_map.values()).pop()
     
@@ -234,10 +240,10 @@ def setup_prompts(args: argparse.Namespace) -> None:
             """.strip()
         )
     
-    if os.path.exists(dest) and not overwrite:
+    if os.path.exists(dest_p) and not overwrite:
         raise RuntimeError(
             f"""
-            File already exists {os.path.join(dest,'prompts.yaml')}.
+            File already exists {dest_p}.
             Use --overwrite=True
             """.strip()
         )
@@ -257,7 +263,7 @@ def setup_prompts(args: argparse.Namespace) -> None:
     validate(data_frame)
     prompts_map, missing_prompts_map = get_prompts_map(data_frame)
 
-    with open(dest, "w") as file:
+    with open(dest_p, "w") as file:
         yaml.safe_dump(prompts_map, file, allow_unicode=True)
-    with open(dest.replace("prompts.yaml", "missing_prompts.yaml"), "w") as file:
+    with open(dest_mp, "w") as file:
         yaml.safe_dump(missing_prompts_map, file, allow_unicode=True)
