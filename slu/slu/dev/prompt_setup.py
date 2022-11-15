@@ -30,7 +30,7 @@ def preprocess_prompt(
     """
     REGEX1: Detect special characters
     REGEX2: Detect noisy digits, alphanumberic characters
-    REGEX3: Detect consequtive black spaces
+    REGEX3: Detect consequtive blank spaces
     REGEX4: Detect variables defined inside prompts. Eg: {{.variable}}
     """
 
