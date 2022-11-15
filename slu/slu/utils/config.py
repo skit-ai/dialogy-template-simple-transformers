@@ -286,7 +286,7 @@ class YAMLPromptConfig(ConfigDataProviderInterface):
 
     def generate(self) -> dict:
         self.config_dict: Dict[str] = self.get_config_dict(self.config_path)
-        self.supported_languages: list[str] = self.get_supported_languages(
+        self.supported_languages: List[str] = self.get_supported_languages(
             self.config_dict
         )
         self.validate()
