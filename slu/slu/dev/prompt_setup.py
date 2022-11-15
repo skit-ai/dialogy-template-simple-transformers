@@ -113,13 +113,13 @@ def _nls_to_df(dataset: str, config: Config) -> pd.DataFrame:
         )
 
     for lang in config.get_supported_languages():
-        if const.NLS_LANG_MAPPING[lang] not in nls_labels:
+        if const.LANG_TO_LOCALES[lang] not in nls_labels:
             raise Exception(
                 f"No prompts found for {lang}, please check your input file."
             )
 
         else:
-            for _ in nls_labels[const.NLS_LANG_MAPPING[lang]].keys():
+            for _ in nls_labels[const.LANG_TO_LOCALES[lang]].keys():
                 nls_keys.add(_)
 
     logger.debug(f"Total unique nls-keys: {len(nls_keys)}")
@@ -132,25 +132,25 @@ def _nls_to_df(dataset: str, config: Config) -> pd.DataFrame:
     for i in tqdm(range(nls_df.shape[0]), desc="Fetching prompts"):
         NLS_LABEL = nls_df.iloc[i][const.NLS_LABEL]
         for lang in config.get_supported_languages():
-            if NLS_LABEL not in nls_labels[const.NLS_LANG_MAPPING[lang]]:
+            if NLS_LABEL not in nls_labels[const.LANG_TO_LOCALES[lang]]:
                 logger.debug(f"nls-key  {NLS_LABEL} not found for lang {lang}")
-            elif not nls_labels[const.NLS_LANG_MAPPING[lang]][NLS_LABEL]:
+            elif not nls_labels[const.LANG_TO_LOCALES[lang]][NLS_LABEL]:
                 logger.debug(f"Prompt not found for lang {lang}, nls-key {NLS_LABEL}")
             else:
                 if (
-                    isinstance(nls_labels[const.NLS_LANG_MAPPING[lang]][NLS_LABEL], str)
-                    and len(nls_labels[const.NLS_LANG_MAPPING[lang]][NLS_LABEL]) > 0
+                    isinstance(nls_labels[const.LANG_TO_LOCALES[lang]][NLS_LABEL], str)
+                    and len(nls_labels[const.LANG_TO_LOCALES[lang]][NLS_LABEL]) > 0
                 ):
-                    nls_df.at[i, lang] = nls_labels[const.NLS_LANG_MAPPING[lang]][
+                    nls_df.at[i, lang] = nls_labels[const.LANG_TO_LOCALES[lang]][
                         NLS_LABEL
                     ]
                 if (
                     isinstance(
-                        nls_labels[const.NLS_LANG_MAPPING[lang]][NLS_LABEL], list
+                        nls_labels[const.LANG_TO_LOCALES[lang]][NLS_LABEL], list
                     )
-                    and len(nls_labels[const.NLS_LANG_MAPPING[lang]][NLS_LABEL]) == 1
+                    and len(nls_labels[const.LANG_TO_LOCALES[lang]][NLS_LABEL]) == 1
                 ):
-                    nls_df.at[i, lang] = nls_labels[const.NLS_LANG_MAPPING[lang]][
+                    nls_df.at[i, lang] = nls_labels[const.LANG_TO_LOCALES[lang]][
                         NLS_LABEL
                     ][0]
 
