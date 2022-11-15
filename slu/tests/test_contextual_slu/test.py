@@ -8,7 +8,7 @@ from slu import constants as const
 import argparse
 
 
-def load_tests(path='tests/test_contextual_slu/test_cases.yaml')-> dict:
+def load_tests(path)-> dict:
     """
     Custom function to load test cases (.yaml file)
     """
@@ -32,43 +32,38 @@ def reset_output(dest)-> None:
         os.remove(os.path.join(dest,'missing_prompts.yaml'))
         
 
-def test_prompt_config()-> None:
-    """
-    Unit tests to evaluate Class YAMLPromptConfig from slu.utils.config
-    """
-    test_cases = load_tests()
-    tests = [test for test in test_cases if test['type'] == 'prompt_config']
-    for test in tests:
+@pytest.mark.parametrize("test_case", load_tests(path="tests/test_contextual_slu/test_cases.yaml"))
+def test_prompt_config(test_case)-> None:
+    if test_case['type'] == 'prompt_config':
+        """
+        Unit test to evaluate Class YAMLPromptConfig from slu.utils.config
+        """
         project_config_map = YAMLPromptConfig(
-                config_path=test['args']['file']
+                config_path=test_case['args']['file']
             )
-        if test['args']['is_valid']:
+        if test_case['args']['is_valid']:
             project_map = project_config_map.generate()
             assert isinstance(project_map,dict)
             assert len(project_map.keys()) == 2
             assert(len(project_config_map.supported_languages) == 2)
         else:
             with pytest.raises(TypeError):
-                project_map = project_config_map.generate()            
-                
-                
-def test_setup_prompts()-> None:
-    """
-    Unit tests to evaluate setup_prompts() from slu.dev.setup_prompts
-    """
-    test_cases = load_tests()
-    tests = [test for test in test_cases if test['type'] == 'prompt_setup']
-    for test in tests:
+                project_map = project_config_map.generate()
+
+    elif test_case['type'] == 'prompt_setup':
+        """
+        Unit tests to evaluate setup_prompts() from slu.dev.setup_prompts
+        """
         parser = argparse.ArgumentParser()
-        parser.file = test['args']['file']
-        parser.overwrite = test['args']['overwrite']
-        parser.dest = test['args']['dest']
+        parser.file = test_case['args']['file']
+        parser.overwrite = test_case['args']['overwrite']
+        parser.dest = test_case['args']['dest']
         
-        if test['args']['is_valid']:
+        if test_case['args']['is_valid']:
             reset_output(parser.dest)
             setup_prompts(parser)
-            assert os.path.exists(os.path.join(test['args']['dest'],'prompts.yaml'))
-            assert os.path.exists(os.path.join(test['args']['dest'],'missing_prompts.yaml'))
+            assert os.path.exists(os.path.join(test_case['args']['dest'],'prompts.yaml'))
+            assert os.path.exists(os.path.join(test_case['args']['dest'],'missing_prompts.yaml'))
 
         else:
             with pytest.raises(RuntimeError):           
