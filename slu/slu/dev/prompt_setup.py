@@ -31,13 +31,17 @@ def preprocess_prompt(
     REGEX1: Detect special characters
     REGEX2: Detect noisy digits, alphanumberic characters
     REGEX3: Detect consequtive black spaces
-    REGEX4: Detect variables defined inside prompts. Eg: {{.variable}}
+    REGEX4: Detect noisy addition (+) sequences. 
+    REGEX5: Detect independent underscore (_) characters. 
+    REGEX6: Detect variables defined inside prompts. Eg: {{.variable}}
     """
 
     REGEX1 = re.compile("\[.*?\]")
     REGEX2 = re.compile("<.*?>|&([a-z0-9]+|#[0-9]{1,6}|#x[0-9a-f]{1,6});")
     REGEX3 = re.compile("/\W/g")
-    REGEX4 = re.compile(r"{{(.*?)}}")
+    REGEX4 = re.compile("\+\s")
+    REGEX5 = re.compile("\_")
+    REGEX6 = re.compile(r"{{(.*?)}}")
 
     if not isinstance(prompt, str):
         return prompt
@@ -46,11 +50,11 @@ def preprocess_prompt(
     prompt = re.sub(REGEX1, "", prompt)
     prompt = re.sub(REGEX2, "", prompt)
     prompt = re.sub(REGEX3, "", prompt)
-    prompt = re.sub(" +", " ", prompt)
-    prompt = re.sub("_", " ", prompt)
+    prompt = re.sub(REGEX4, " ", prompt)
+    prompt = re.sub(REGEX5, " ", prompt)
     prompt = prompt.strip()
     if remove_var:
-        prompt = re.sub(REGEX4, fill_token, prompt)
+        prompt = re.sub(REGEX6, fill_token, prompt)
     prompt = prompt.translate(
         str.maketrans("", "", string.punctuation.replace("<", "").replace(">", ""))
     )
@@ -58,7 +62,7 @@ def preprocess_prompt(
     return prompt
 
 
-def _valid_string(string: str) -> bool:
+def valid_string(string: str) -> bool:
     if isinstance(string, str):
         if all(
             [
@@ -74,14 +78,14 @@ def _valid_string(string: str) -> bool:
     return False
 
 
-def _nls_to_state(string: str, delimiter: str = "_") -> str:
+def nls_to_state(string: str, delimiter: str = "_") -> str:
     """
     Convert NLS-Key to State.
     NLS-Keys are nothing but extentions of State names.
     Eg: state "A" will have NLS-Keys names A_1, A_2, and so on.
     This code simply removes the suffix _1, _2, etc from a NLS-Key to get the original State name.
     """
-    if not _valid_string(string):
+    if not valid_string(string):
         return None
     string = string.split(delimiter)
     if len(string) > 1:
@@ -92,7 +96,7 @@ def _nls_to_state(string: str, delimiter: str = "_") -> str:
     return string
 
 
-def _nls_to_df(dataset: str, config: Config) -> pd.DataFrame:
+def nls_to_df(dataset: str, config: Config) -> pd.DataFrame:
     nls_labels = None
     nls_keys = set()
 
@@ -176,7 +180,7 @@ def get_prompts_map(df: pd.DataFrame) -> pd.DataFrame:
     supported_languages: list = [
         col
         for col in df.columns
-        if (_valid_string(col) and col not in [const.NLS_LABEL, const.STATE])
+        if (valid_string(col) and col not in [const.NLS_LABEL, const.STATE])
     ]
     nls_labels: set = set()
 
@@ -193,11 +197,11 @@ def get_prompts_map(df: pd.DataFrame) -> pd.DataFrame:
             nls_labels.add(nls_label)
             prompt = df.iloc[i][lang]
 
-            if _valid_string(prompt):
+            if valid_string(prompt):
                 prompt = preprocess_prompt(
                     prompt, fill_token=const.PROMPT_NOISE_FILLER_TOKEN
                 )
-                if _valid_string(prompt):
+                if valid_string(prompt):
                     prompts_map[lang][nls_label] = prompt
 
     for lang in supported_languages:
@@ -249,7 +253,7 @@ def setup_prompts(args: argparse.Namespace) -> None:
         )
 
     data_frame = (
-        _nls_to_df(dataset, config)
+        nls_to_df(dataset, config)
         if dataset.endswith(".yaml")
         else pd.read_csv(dataset)
     )
@@ -257,7 +261,7 @@ def setup_prompts(args: argparse.Namespace) -> None:
     if const.STATE not in data_frame.columns and const.NLS_LABEL in data_frame.columns:
         logger.debug(f"State column missing, deriving from NLS-Keys")
         data_frame[const.STATE] = data_frame[const.NLS_LABEL].apply(
-            lambda x: _nls_to_state(x)
+            lambda x: nls_to_state(x)
         )
 
     validate(data_frame)
