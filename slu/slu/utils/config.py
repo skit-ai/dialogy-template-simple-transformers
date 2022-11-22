@@ -11,6 +11,7 @@ import yaml
 from loguru import logger
 
 from slu import constants as const
+from slu.utils.validations import valid_string
 
 
 @attr.s
@@ -176,49 +177,35 @@ class YAMLLocalConfig(ConfigDataProviderInterface):
 
 class YAMLPromptConfig(ConfigDataProviderInterface):
     """
-    An instance of this class will load, validate and fetch the state <-> prompts mapping from prompts.yaml
-    The instance will be further passed to classifier plugins like xlmr.py.
+    An instance of this class can:
+    -   Load and validate config/prompts.yaml.
+    -   Store information from config/prompts.yaml into an object (prompt_config_map). 
+        prompt_config_map maps nls_label -> prompt. 
+        Text classification plugins like XLMR will input prompt_config_map.
     """
 
     def __init__(
-        self, config_path: Optional[str] = None, debug: Optional[bool] = True
+        self, config_path: Optional[str] = None, null_prompt_token: Optional[str] = const.PROMPT_NOISE_FILLER_TOKEN,debug: Optional[bool] = True
     ) -> None:
         self.config_path: str = config_path or const.PROMPTS_CONFIG_PATH
-        self.null_prompt_token: str = "<pad>"
+        self.null_prompt_token: str = null_prompt_token
         self.missing_nls_labels: set = set()
         self.config_dict: dict[str] = {}
         self.supported_languages: list[str] = []
         self.debug: bool = debug
 
-    def get_config_dict(self, config_path: str) -> dict:
-        error_message = "Unable to read prompts.yaml file, ensure correct format."
+    def get_config_dict(self) -> dict:
         with open(self.config_path, "r", encoding="utf8") as handle:
             config_dict = yaml.safe_load(handle)
             if not isinstance(config_dict, dict):
-                raise TypeError(error_message)
+                raise TypeError("Unable to read prompts.yaml file, ensure correct format.")
             return config_dict
 
-    def get_supported_languages(self, config_dict: dict) -> List[str]:
-        supported_languages: list = list(config_dict.keys())
-        return supported_languages
+    def get_supported_languages(self) -> None:
+        self.supported_languages: list = list(self.config_dict.keys())
 
-    def _get_config_path(self) -> str:
+    def get_config_path(self) -> str:
         return self.config_path
-
-    def _valid_string(self, string: str) -> bool:
-        if isinstance(string, str):
-            if all(
-                [
-                    len(string) > 0,
-                    string != "nan",
-                    string != ".nan",
-                    string != "",
-                    string != " ",
-                    "Unnamed" not in string,
-                ]
-            ):
-                return True
-        return False
 
     def validate(self) -> None:
         if not (all(isinstance(lang, str) for lang in self.config_dict.keys())):
@@ -230,7 +217,7 @@ class YAMLPromptConfig(ConfigDataProviderInterface):
             if not (
                 all(isinstance(nls_label, str) for nls_label in self.config_dict[lang])
                 & all(
-                    self._valid_string(nls_label)
+                    valid_string(nls_label)
                     for nls_label in self.config_dict[lang]
                 )
             ):
@@ -239,59 +226,23 @@ class YAMLPromptConfig(ConfigDataProviderInterface):
                 )
 
             for nls_label in self.config_dict[lang]:
-                if not self._valid_string(self.config_dict[lang][nls_label]):
+                if not valid_string(self.config_dict[lang][nls_label]):
                     raise TypeError(
                         f"Invalid or Malformed prompt encountered for nls_label: {nls_label} in lang: {lang}"
                     )
 
-    def get_prompt(
-        self, lang: str, nls_label: str, return_all: bool = False
-    ) -> List[str]:
-        if not lang in self.supported_languages:
-            error_message = (
-                f"No prompts found for language {lang}, please check the config."
-            )
-            raise KeyError(error_message)
-
-        if not nls_label in self.config_dict[lang]:
-            self.missing_nls_labels.add(nls_label)
-            if self.debug:
-                logger.debug(
-                    f"NLS Label {nls_label} not found in config for language {lang}"
-                )
-            return [self.null_prompt_token]
-
-        if not self._valid_string(self.config_dict[lang][nls_label]):
-            if self.debug:
-                logger.debug(f"No prompt found for NLS Label {nls_label}")
-            return [self.null_prompt_token]
-
-        return (
-            self.config_dict[lang][nls_label]
-            if return_all
-            else random.sample(self.config_dict[lang][nls_label], 1)
-        )
-
-    def lookup_prompt(
-        self, lang: str, nls_label: str, return_all: bool = False
-    ) -> List[str]:
-        """
-        Same as get_prompt() method, but built for faster lookup to reduce latency during inference.
-        """
-        try:
-            return random.sample(self.config_dict.get(lang).get(nls_label), 1)
-        except Exception as e:
-
-            return [self.null_prompt_token]
-
     def generate(self) -> dict:
-        self.config_dict: Dict[str] = self.get_config_dict(self.config_path)
-        self.supported_languages: List[str] = self.get_supported_languages(
-            self.config_dict
-        )
-        self.validate()
-        logger.debug(f"List of NLS missing from prompts.yaml:")
-        logger.debug(self.missing_nls_labels)
+        """
+        Create, validate, and return a dictionary mapping between nls_labels and their respective prompts. 
+        :rtype: Dict[str, str]
+        """
+        self.config_dict: Dict[str] = self.get_config_dict()
+        self.get_supported_languages()
+        self.validate()      
+        if self.debug:
+            logger.debug(f"Found following NLS Labels missing in config/prompts.yaml:")
+            logger.debug(self.missing_nls_labels)
+            
         return self.config_dict
 
 

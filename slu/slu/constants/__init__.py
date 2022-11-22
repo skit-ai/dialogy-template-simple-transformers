@@ -134,14 +134,14 @@ STATE = "state"
 EXPECTED_SLOTS = "expected_slots"
 NLS_LABEL = "nls_label"
 PROMPT_NOISE_FILLER_TOKEN = "<pad>"
-
 LANG_TO_LOCALES = {                     
     "en": "en_IN", 
-    "hi": "hi_IN", 
-    "hi": "hi_nls", 
-    "en": "en_nls"
+    "hi": "hi_IN"
 }                                        # This should be set via config
-
+PLATFORM_LEVEL_NOISE = {                     
+    "en": ["en_nls", "en_us"], 
+    "hi": ["hi_nls","hi_us"]
+}
 CLIENTCONFIGROUTE = "/clients/configs/"
 REQUEST_MAX_RETRIES = 5
 LANG = "lang"
