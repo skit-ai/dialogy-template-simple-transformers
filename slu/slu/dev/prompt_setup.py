@@ -71,7 +71,7 @@ def nls_to_state(string: str, delimiter: str = "_") -> str:
         return None
     string = string.split(delimiter)
     if len(string) > 1:
-        string = str(delimiter).join(_ for _ in string[: len(string) - 1])
+        string = str(delimiter).join(ch for ch in string[: len(string) - 1])
     if isinstance(string, list):
         string = string[0]
 
@@ -114,10 +114,10 @@ def nls_to_df(dataset: str, config: Config) -> pd.DataFrame:
     
     for lang in config.get_supported_languages():
         if const.PLATFORM_LEVEL_NOISE.get(lang):
-            for _ in const.PLATFORM_LEVEL_NOISE[lang]:
-                if _ in nls_labels:
-                    nls_labels[lang] = nls_labels[_]
-                    del nls_labels[_]
+            for term in const.PLATFORM_LEVEL_NOISE[lang]:
+                if term in nls_labels:
+                    nls_labels[lang] = nls_labels[term]
+                    del nls_labels[term]
                 
         if lang not in nls_labels:
             raise Exception(
@@ -125,8 +125,8 @@ def nls_to_df(dataset: str, config: Config) -> pd.DataFrame:
             )
 
         else:
-            for _ in nls_labels[lang].keys():
-                nls_keys.add(_)
+            for label in nls_labels[lang].keys():
+                nls_keys.add(label)
 
     logger.debug(f"Total unique nls-keys: {len(nls_keys)}")
 
