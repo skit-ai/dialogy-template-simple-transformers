@@ -15,10 +15,11 @@ import string
 import pandas as pd
 import yaml
 from tqdm import tqdm
+from loguru import logger
 
 from slu import constants as const
 from slu.utils import logger
-from slu.utils.config import Config, YAMLLocalConfig
+from slu.utils.config import Config, YAMLLocalConfig, load_prompt_config
 from slu.utils.validations import valid_string
 
 
@@ -76,6 +77,18 @@ def nls_to_state(string: str, delimiter: str = "_") -> str:
 
     return string
 
+def state_to_nls(current_state: str, nls_labels: set)-> str:
+    """
+    Get the best nls_label match, given current-state and list of available nls labels.
+    """
+    for nls_label in list(nls_labels):
+        if nls_label == current_state:
+            return nls_label
+        else:
+         state = nls_to_state(nls_label)
+         if state == current_state:
+             return nls_label
+    return ''
 
 def nls_to_df(dataset: str, config: Config) -> pd.DataFrame:
     """
@@ -267,3 +280,51 @@ def setup_prompts(args: argparse.Namespace) -> None:
         yaml.safe_dump(prompts_map, file, allow_unicode=True)
     with open(dest_mp, "w") as file:
         yaml.safe_dump(missing_prompts_map, file, allow_unicode=True)
+
+
+def fill_nls_col(args: argparse.Namespace)-> None:
+    """
+    This is a temporary workaround to handle datasets with missing nls_label info.
+    """
+    input_file: str = args.input_file
+    output_file:str = args.output_file if args.output_file else args.input_file
+    overwrite: bool = args.overwrite
+    nls_labels = set()
+    tqdm.pandas()
+
+    if not (input_file.endswith(".csv")):
+        raise RuntimeError(
+            f"""
+            Invalid input, pass .csv file.
+            """.strip()
+        )
+    if not (output_file.endswith(".csv")):
+        raise RuntimeError(
+            f"""
+            Invalid output, must be a .csv file.
+            """.strip()
+        )
+    if os.path.exists(output_file) and not overwrite:
+        raise RuntimeError(
+            f"""
+            Specificy --output_file or use --overwrite=True
+            """.strip()
+        )
+    
+    data_frame = pd.read_csv(input_file)
+    if not const.STATE in data_frame.columns:
+        raise RuntimeError(
+            f"""
+            {const.STATE} column missing in {input_file}. 
+            Make sure it is populated
+            """.strip()
+        )
+        
+    prompts_map: dict = load_prompt_config()
+    for key in prompts_map:
+        for nls_label in prompts_map[key]:
+            nls_labels.add(nls_label)
+    data_frame[const.NLS_LABEL] = data_frame[const.STATE].progress_apply(lambda current_state: state_to_nls(current_state,nls_labels))
+    data_frame.to_csv(output_file, index=False)
+    
+    logger.debug(f"Saved to {output_file}.")

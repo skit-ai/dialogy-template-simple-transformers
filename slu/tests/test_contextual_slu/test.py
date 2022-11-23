@@ -3,7 +3,7 @@ import os
 from tqdm import tqdm
 import yaml
 from slu.utils.config import YAMLPromptConfig
-from slu.dev.prompt_setup import setup_prompts
+from slu.dev.prompt_setup import setup_prompts, fill_nls_col
 from slu import constants as const
 import argparse
 
@@ -68,3 +68,16 @@ def test_prompt_config(test_case)-> None:
         else:
             with pytest.raises(RuntimeError):           
                 setup_prompts(parser)
+                
+    elif test_case['type'] == 'fill_nls_col':
+        """
+        Unit tests to evaluate setup_prompts() from slu.dev.setup_prompts
+        """
+        parser = argparse.ArgumentParser()
+        parser.input_file = test_case['args']['input_file']
+        parser.overwrite = test_case['args']['overwrite']
+        parser.output_file = test_case['args']['output_file']
+        
+        if not test_case['args']['is_valid']:
+            with pytest.raises(ValueError):           
+                fill_nls_col(parser)

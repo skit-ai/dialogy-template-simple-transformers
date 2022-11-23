@@ -6,7 +6,7 @@ from typing import Optional
 
 from slu.dev.dev import dev_workflow
 from slu.dev.dir_setup import create_data_directory
-from slu.dev.prompt_setup import setup_prompts
+from slu.dev.prompt_setup import setup_prompts, fill_nls_col
 from slu.dev.repl import repl
 from slu.dev.test import test_classifier
 from slu.dev.train import create_data_splits, merge_datasets, train_intent_classifier
@@ -122,6 +122,25 @@ def build_setup_prompt_cli(parser: argparse.ArgumentParser) -> argparse.Argument
     return parser
 
 
+def build_fill_nls_col_cli(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
+    parser.add_argument(
+        "--input_file",
+        help="Train or test file (.csv)",
+        required=True,
+    )
+    parser.add_argument(
+        "--output_file",
+        help="Dest File (.csv) to save updates",
+        required=False,
+    )
+    parser.add_argument(
+        "--overwrite",
+        help="If set to True, overwrites input_file",
+        required=False,
+    )
+    return parser
+
+
 def parse_commands(command_string: Optional[str] = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     command_parsers = parser.add_subparsers(dest="command", help="Project utilities.")
@@ -143,7 +162,10 @@ def parse_commands(command_string: Optional[str] = None) -> argparse.Namespace:
     setup_prompt_cli_parser = command_parsers.add_parser(
         "setup-prompts", help="Make prompts.yaml mapping file from nls-keys"
     )
-
+    fill_nls_col_cli_parser = command_parsers.add_parser(
+        "get-nls-labels", help="Populate nls_label column in your train/test dataframes."
+    )
+    
     data_split_cli_parser = build_split_data_cli(data_split_cli_parser)
     data_combine_cli_parser = build_data_combine_cli(data_combine_cli_parser)
     train_cli_parser = build_train_cli(train_cli_parser)
@@ -151,7 +173,8 @@ def parse_commands(command_string: Optional[str] = None) -> argparse.Namespace:
     dev_cli_parser = build_dev_cli(dev_cli_parser)
     repl_cli_parser = build_repl_cli(repl_cli_parser)
     setup_prompt_cli_parser = build_setup_prompt_cli(setup_prompt_cli_parser)
-
+    fill_nls_col_cli_parser = build_fill_nls_col_cli(fill_nls_col_cli_parser)
+    
     command = command_string.split() if command_string else None
     return parser.parse_args(command)
 
@@ -174,5 +197,7 @@ def main(command_string: Optional[str] = None) -> None:
         repl(args)
     elif args.command == "setup-prompts":
         setup_prompts(args)
+    elif args.command == "get-nls-labels":
+        fill_nls_col(args)
     else:
         raise ValueError("Unrecognized command: {}".format(args.command))
