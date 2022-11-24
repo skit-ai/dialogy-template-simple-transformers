@@ -138,8 +138,8 @@ LANG_TO_LOCALES = {
     "en": "en_IN", 
     "hi": "hi_IN"
 }                                        # This should be set via config
-PLATFORM_LEVEL_NOISE = {                     
-    "en": ["en_nls", "en_us"], 
+PLATFORM_LEVEL_NOISE = {                 # Mapping between accepted lang formats and their respective platform-level variants (non-standard/noise).  
+    "en": ["en_nls", "en_us"],           # Type: Dict[str, list]; Each lang has multiple noisy variants. 
     "hi": ["hi_nls","hi_us"]
 }
 CLIENTCONFIGROUTE = "/clients/configs/"
