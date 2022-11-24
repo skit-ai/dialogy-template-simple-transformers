@@ -201,9 +201,6 @@ class YAMLPromptConfig(ConfigDataProviderInterface):
                 raise TypeError("Unable to read prompts.yaml file, ensure correct format.")
             return config_dict
 
-    def get_supported_languages(self) -> None:
-        self.supported_languages: list = list(self.config_dict.keys())
-
     def get_config_path(self) -> str:
         return self.config_path
 
@@ -237,7 +234,7 @@ class YAMLPromptConfig(ConfigDataProviderInterface):
         :rtype: Dict[str, str]
         """
         self.config_dict: Dict[str] = self.get_config_dict()
-        self.get_supported_languages()
+        self.supported_languages: list = list(self.config_dict.keys())
         self.validate()      
         if self.debug:
             logger.debug(f"Found following NLS Labels missing in config/prompts.yaml:")

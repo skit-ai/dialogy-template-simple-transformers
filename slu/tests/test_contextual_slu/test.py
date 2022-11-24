@@ -79,5 +79,5 @@ def test_prompt_config(test_case)-> None:
         parser.output_file = test_case['args']['output_file']
         
         if not test_case['args']['is_valid']:
-            with pytest.raises(ValueError):           
+            with pytest.raises(RuntimeError):           
                 fill_nls_col(parser)

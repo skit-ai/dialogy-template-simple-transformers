@@ -11,7 +11,7 @@ import argparse
 import os
 import re
 import string
-
+from typing import Dict, Tuple
 import pandas as pd
 import yaml
 from tqdm import tqdm
@@ -63,12 +63,14 @@ def preprocess_prompt(
 def nls_to_state(string: str, delimiter: str = "_") -> str:
     """
     Convert an NLS-Label to its corresponding State.
-    NLS-Labels are nothing but extentions of State names.
-    Eg: state "A" will have NLS-Label names A_1, A_2, and so on.
-    This code simply removes the suffix _1, _2, etc from a NLS-Key to get the original State name.
+    - NLS-Labels are nothing but extentions of State names.
+    - Eg: state "A" will have NLS-Label names A_1, A_2, and so on.
+    - This code simply removes the suffix _1, _2, etc from a NLS-Key to get the original State name.
+    - Returns an empty string in case of an invalid NLS label. 
     """
     if not valid_string(string):
-        return None
+        return ''
+    
     string = string.split(delimiter)
     if len(string) > 1:
         string = str(delimiter).join(ch for ch in string[: len(string) - 1])
@@ -80,6 +82,7 @@ def nls_to_state(string: str, delimiter: str = "_") -> str:
 def state_to_nls(current_state: str, nls_labels: set)-> str:
     """
     Get the best nls_label match, given current-state and list of available nls labels.
+    Returns an empty string if match not found.
     """
     for nls_label in list(nls_labels):
         if nls_label == current_state:
@@ -136,6 +139,10 @@ def nls_to_df(dataset: str, config: Config) -> pd.DataFrame:
     nls_df[const.NLS_LABEL] = pd.Series(list(nls_keys))
 
     for i in tqdm(range(nls_df.shape[0]), desc="Fetching prompts"):
+        """
+        By iterating over the dataframe, we are trying to fetch prompts in each language for the given nls_label.
+        A nls_label may or may NOT have prompts defined for all suppoorted languages.
+        """
         nls_label = nls_df.iloc[i][const.NLS_LABEL]
         for lang in config.get_supported_languages():
             if nls_label not in nls_labels[lang]:
@@ -175,12 +182,12 @@ def validate(df: pd.DataFrame) -> None:
     logger.debug(f"Num invalid rows: {invalid_rows.shape[0]}")
 
 
-def get_prompts_map(df: pd.DataFrame) -> tuple[dict,dict]:
+def get_prompts_map(df: pd.DataFrame) -> Tuple[Dict[str, str],Dict[str,str]]:
     """
     Extract prompts, missing prompts from a Dataframe.
     missing_prompts: Sometimes an nls_label maybe defined for English, but not present for Hindi. missing_prompts gives a list of such nls_labels. 
     """
-    
+    tqdm.pandas()
     prompts_map: dict = dict()
     missing_prompts_map: dict = dict()
     supported_languages: list = [
@@ -188,29 +195,23 @@ def get_prompts_map(df: pd.DataFrame) -> tuple[dict,dict]:
         for col in df.columns
         if (valid_string(col) and col not in [const.NLS_LABEL, const.STATE])
     ]
-    nls_labels: set = set()
+    nls_labels: set = set(df[const.NLS_LABEL].unique())
 
     if not supported_languages:
         raise Exception("No languages found in the dataset")
 
     logger.debug(f"Found languages: {supported_languages}")
     for lang in supported_languages:
+        """
+        Preprocess raw prompts.
+        Map nls labels -> prompts for each supported language (eg: en, hi) and store in prompts_map.
+        """
         prompts_map[lang] = {}
         missing_prompts_map[lang] = []
+        
+        df[lang] = df[lang].progress_apply(lambda prompt: preprocess_prompt(prompt) if valid_string(prompt) else 'nan')
+        prompts_map[lang] = {nls_label: prompt for nls_label, prompt in zip(df[const.NLS_LABEL], df[lang])}
 
-        for i in tqdm(range(df.shape[0]), desc=f"Fetching prompts for {lang}"):
-            nls_label = df.iloc[i][const.NLS_LABEL]
-            nls_labels.add(nls_label)
-            prompt = df.iloc[i][lang]
-
-            if valid_string(prompt):
-                prompt = preprocess_prompt(
-                    prompt
-                )
-                if valid_string(prompt):
-                    prompts_map[lang][nls_label] = prompt
-
-    for lang in supported_languages:
         missing_prompts_map[lang].append(
             list(nls_labels - set(prompts_map[lang].keys()))
         )
@@ -221,6 +222,16 @@ def get_prompts_map(df: pd.DataFrame) -> tuple[dict,dict]:
 def setup_prompts(args: argparse.Namespace) -> None:
     """
     Create prompts.yaml from a raw file (Can be a .csv downloaded from Studio, or .yaml fetched from Flow-Creator).
+    The final output, i.e. prompts.yaml will have the following structure:
+    {
+        en:
+            nls_label1: prompt1
+            nls_label2: prompt2
+        
+        hi:
+            nls_label1: prompt3
+            nls_label2: prompt4  
+    }    
     """
 
     dataset: str = args.file
