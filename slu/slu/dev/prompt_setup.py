@@ -69,7 +69,7 @@ def nls_to_state(string: str, delimiter: str = "_") -> str:
     - Returns an empty string in case of an invalid NLS label. 
     """
     if not valid_string(string):
-        return ''
+        return None
     
     string = string.split(delimiter)
     if len(string) > 1:
