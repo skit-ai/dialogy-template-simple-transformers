@@ -1,26 +1,26 @@
 - type: prompt_config
   args:
-    file: tests/test_contextual_slu/data/test_cases/test_case_1.yaml
+    file: tests/test_contextual_slu/data/input/prompt_config_1.yaml
     is_valid: True
 
 - type: prompt_config
   args:
-    file: tests/test_contextual_slu/data/test_cases/test_case_2.yaml
+    file: tests/test_contextual_slu/data/input/prompt_config_2.yaml
     is_valid: False
 
 - type: prompt_config
   args:
-    file: tests/test_contextual_slu/data/test_cases/test_case_3.yaml
+    file: tests/test_contextual_slu/data/input/prompt_config_3.yaml
     is_valid: False
 
 - type: prompt_config
   args:
-    file: tests/test_contextual_slu/data/test_cases/test_case_4.yaml
+    file: tests/test_contextual_slu/data/input/prompt_config_4.yaml
     is_valid: False
 
 - type: prompt_config
   args:
-    file: tests/test_contextual_slu/data/test_cases/test_case_5.yaml
+    file: tests/test_contextual_slu/data/input/prompt_config_5.yaml
     is_valid: False
 
 
@@ -29,28 +29,32 @@
     file: tests/test_contextual_slu/data/input/nls-labels.yaml
     is_valid: True
     overwrite: True
-    dest: tests/test_contextual_slu/output
+    dest: tests/test_contextual_slu/data/output
+    config_path: tests/test_contextual_slu/data/input/config.yaml
 
 - type: prompt_setup
   args:
     file: tests/test_contextual_slu/data/input/nls-labels.csv
     is_valid: True
     overwrite: True
-    dest: tests/test_contextual_slu/output
+    dest: tests/test_contextual_slu/data/output
+    config_path: tests/test_contextual_slu/data/input/config.yaml
 
 - type: prompt_setup
   args:
     file: tests/test_contextual_slu/data/input/nls-labels.txt
     is_valid: False
     overwrite: True
-    dest: tests/test_contextual_slu/output
+    dest: tests/test_contextual_slu/data/output
+    config_path: tests/test_contextual_slu/data/input/config.yaml
 
 - type: prompt_setup
   args:
     file: tests/test_contextual_slu/data/input
     is_valid: False
     overwrite: False
-    dest: tests/test_contextual_slu/output
+    dest: tests/test_contextual_slu/data/output
+    config_path: tests/test_contextual_slu/data/input/config.yaml
 
 - type: fill_nls_col
   args:

@@ -115,6 +115,11 @@ def build_setup_prompt_cli(parser: argparse.ArgumentParser) -> argparse.Argument
         required=False,
     )
     parser.add_argument(
+        "--config_path",
+        help="Path to config.yaml (By default it is config/config.yaml)",
+        required=False,
+    )
+    parser.add_argument(
         "--overwrite",
         help="If set to True, overwrites the prompts.yaml file in config",
         required=False,

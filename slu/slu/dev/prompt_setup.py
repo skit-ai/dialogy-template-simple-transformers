@@ -11,7 +11,7 @@ import argparse
 import os
 import re
 import string
-from typing import Dict, Tuple
+from typing import Dict, Tuple, Optional
 import pandas as pd
 import yaml
 from tqdm import tqdm
@@ -236,6 +236,7 @@ def setup_prompts(args: argparse.Namespace) -> None:
 
     dataset: str = args.file
     overwrite: bool = args.overwrite
+    config_path: str = args.config_path
     dest_p: str = (
         os.path.join(args.dest, "prompts.yaml")
         if args.dest
@@ -246,8 +247,8 @@ def setup_prompts(args: argparse.Namespace) -> None:
         if args.dest
         else const.MISSING_PROMPTS_PATH
     )
-        
-    project_config_map = YAMLLocalConfig().generate()
+    
+    project_config_map = YAMLLocalConfig(config_path).generate() if config_path else YAMLLocalConfig().generate()
     config: Config = list(project_config_map.values()).pop()
     
     if not os.path.exists(dataset):

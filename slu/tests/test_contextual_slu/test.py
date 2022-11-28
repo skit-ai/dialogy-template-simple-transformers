@@ -32,7 +32,7 @@ def reset_output(dest)-> None:
         os.remove(os.path.join(dest,'missing_prompts.yaml'))
         
 
-@pytest.mark.parametrize("test_case", load_tests(path="tests/test_contextual_slu/test_cases.yaml"))
+@pytest.mark.parametrize("test_case", load_tests(path="tests/test_contextual_slu/data/test_cases.yaml"))
 def test_prompt_config(test_case)-> None:
     if test_case['type'] == 'prompt_config':
         """
@@ -58,6 +58,7 @@ def test_prompt_config(test_case)-> None:
         parser.file = test_case['args']['file']
         parser.overwrite = test_case['args']['overwrite']
         parser.dest = test_case['args']['dest']
+        parser.config_path = test_case['args']['config_path']
         
         if test_case['args']['is_valid']:
             reset_output(parser.dest)
