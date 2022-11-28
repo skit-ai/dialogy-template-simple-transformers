@@ -1,0 +1,85 @@
+- type: prompt_config
+  args:
+    file: tests/test_contextual_slu/data/input/prompt_config_1.yaml
+    is_valid: True
+
+- type: prompt_config
+  args:
+    file: tests/test_contextual_slu/data/input/prompt_config_2.yaml
+    is_valid: False
+
+- type: prompt_config
+  args:
+    file: tests/test_contextual_slu/data/input/prompt_config_3.yaml
+    is_valid: False
+
+- type: prompt_config
+  args:
+    file: tests/test_contextual_slu/data/input/prompt_config_4.yaml
+    is_valid: False
+
+- type: prompt_config
+  args:
+    file: tests/test_contextual_slu/data/input/prompt_config_5.yaml
+    is_valid: False
+
+
+- type: prompt_setup
+  args:
+    file: tests/test_contextual_slu/data/input/nls-labels.yaml
+    is_valid: True
+    overwrite: True
+    dest: tests/test_contextual_slu/data/output
+    config_path: tests/test_contextual_slu/data/input/config.yaml
+
+- type: prompt_setup
+  args:
+    file: tests/test_contextual_slu/data/input/nls-labels.csv
+    is_valid: True
+    overwrite: True
+    dest: tests/test_contextual_slu/data/output
+    config_path: tests/test_contextual_slu/data/input/config.yaml
+
+- type: prompt_setup
+  args:
+    file: tests/test_contextual_slu/data/input/nls-labels.txt
+    is_valid: False
+    overwrite: True
+    dest: tests/test_contextual_slu/data/output
+    config_path: tests/test_contextual_slu/data/input/config.yaml
+
+- type: prompt_setup
+  args:
+    file: tests/test_contextual_slu/data/input
+    is_valid: False
+    overwrite: False
+    dest: tests/test_contextual_slu/data/output
+    config_path: tests/test_contextual_slu/data/input/config.yaml
+
+- type: fill_nls_col
+  args:
+    input_file: tests/test_contextual_slu/data/input/sample_train.csv
+    output_file:
+    is_valid: False
+    overwrite: False
+
+- type: fill_nls_col
+  args:
+    input_file: tests/test_contextual_slu/data/input/nls-labels.txt
+    output_file:
+    is_valid: False
+    overwrite: False
+
+- type: fill_nls_col
+  args:
+    input_file: tests/test_contextual_slu/data/input/sample_train.csv
+    output_file: tests/test_contextual_slu/data/input/sample_train.txt
+    is_valid: False
+    overwrite: False
+
+- type: fill_nls_col
+  args:
+    input_file: tests/test_contextual_slu/data/input/nls-labels.csv
+    output_file: tests/test_contextual_slu/data/input/nls-labels.csv
+    is_valid: False
+    overwrite: True

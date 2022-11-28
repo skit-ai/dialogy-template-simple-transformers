@@ -101,6 +101,8 @@ PARSERS = "parsers"
 TRAIN_DATA = "train.csv"
 TEST_DATA = "test.csv"
 CONFIG_PATH = os.path.join("config", "config.yaml")
+PROMPTS_CONFIG_PATH = os.path.join("config", "prompts.yaml")
+MISSING_PROMPTS_PATH = os.path.join("config", "missing_prompts.yaml")
 INTENT_LABEL_ENCODER = "labelencoder.pkl"
 ENTITY_LABELS = "entity_label_list.pkl"
 XLMR = "xlmroberta"
@@ -130,9 +132,16 @@ CURRENT_STATE = "current_state"
 CURRENT_INTENT = "current_intent"
 STATE = "state"
 EXPECTED_SLOTS = "expected_slots"
-
-LANG_TO_LOCALES = {"en": "en_IN", "hi": "hi_IN"}  # This should be set via config
-
+NLS_LABEL = "nls_label"
+PROMPT_NOISE_FILLER_TOKEN = "<pad>"
+LANG_TO_LOCALES = {                     
+    "en": "en_IN", 
+    "hi": "hi_IN"
+}                                        # This should be set via config
+PLATFORM_LEVEL_NOISE = {                 # Mapping between accepted lang formats and their respective platform-level variants (non-standard/noise).  
+    "en": ["en_nls", "en_us"],           # Type: Dict[str, list]; Each lang has multiple noisy variants. 
+    "hi": ["hi_nls","hi_us"]
+}
 CLIENTCONFIGROUTE = "/clients/configs/"
 REQUEST_MAX_RETRIES = 5
 LANG = "lang"

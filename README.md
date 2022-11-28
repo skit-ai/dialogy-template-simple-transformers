@@ -76,6 +76,7 @@ positional arguments:
   {setup-dirs,split-data,combine-data,train,test,release,repl}
                         Project utilities.
     setup-dirs          Create base directory structure.
+    setup-prompts       Create mapping between nls_labels and prompts.
     split-data          Split a dataset into train-test datasets for given ratio.
     combine-data        Combine datasets into a single file.
     train               Train a workflow.
