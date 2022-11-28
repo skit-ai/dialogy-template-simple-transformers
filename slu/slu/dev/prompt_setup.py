@@ -60,7 +60,7 @@ def preprocess_prompt(
 
     return prompt
 
-def nls_to_state(string: str, delimiter: str = "_") -> str:
+def nls_to_state(string: str, delimiter: str = "_") -> Optional[str]:
     """
     Convert an NLS-Label to its corresponding State.
     - NLS-Labels are nothing but extentions of State names.
@@ -69,7 +69,7 @@ def nls_to_state(string: str, delimiter: str = "_") -> str:
     - Returns an empty string in case of an invalid NLS label. 
     """
     if not valid_string(string):
-        return ''
+        return None
     
     string = string.split(delimiter)
     if len(string) > 1:
