@@ -58,7 +58,7 @@ def make_reftime_column_uniform(data_frame: pd.DataFrame) -> pd.DataFrame:
 
     return data_frame
 
-def make_data_column_uniform(data_frame: pd.DataFrame) -> pd.DataFrame:
+def make_data_column_uniform(data_frame: pd.DataFrame) -> None:
     if const.ALTERNATIVES in data_frame.columns:
         column = const.ALTERNATIVES
     elif const.DATA in data_frame.columns:
@@ -74,9 +74,11 @@ def make_data_column_uniform(data_frame: pd.DataFrame) -> pd.DataFrame:
     ):
         if isinstance(row[const.ALTERNATIVES], str):
             data = json.loads(row[const.ALTERNATIVES])
+            if isinstance(data, str):
+                data = json.loads(row[const.ALTERNATIVES])
             if const.ALTERNATIVES in data:
                 data_frame.loc[i, const.ALTERNATIVES] = json.dumps(
-                    data[const.ALTERNATIVES]
+                    data[const.ALTERNATIVES], ensure_ascii=False
                 )
-
+                
     return data_frame
