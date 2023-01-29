@@ -242,6 +242,79 @@ class YAMLPromptConfig(ConfigDataProviderInterface):
             
         return self.config_dict
 
+class YamlAliasConfig(ConfigDataProviderInterface):
+    """
+    An instance of this class can:
+    -   Load and validate an alias.yaml file.
+    """
+
+    def __init__(
+        self, config_path: Optional[str] = None, debug: Optional[bool] = True
+    ) -> None:
+        self.config_path: str = config_path
+        self.debug: bool = debug
+        self.intents: set = set()
+
+    def get_config_dict(self) -> dict:
+        """
+        Read a alias.yaml in common format.
+        """
+        with open(self.config_path, "r", encoding="utf8") as handle:
+            config_dict = yaml.safe_load(handle)
+            if not isinstance(config_dict, dict):
+                logger.debug("No aliases found")
+            return config_dict
+
+    def get_alias_dict(self) -> dict:
+        """
+        Convert commmon format (alias : intent) to a dictionary mapping (intent : alias) .
+        """
+        alias_dict: dict = {}
+        for k,v in self.config_dict.items():
+            for x in v:
+                alias_dict.setdefault(x,k)
+        return alias_dict
+    
+    def get_config_path(self) -> str:
+        return self.config_path
+
+    def validate(self) -> None:
+        if self.config_dict:
+            if not (all(isinstance(key, str) for key in self.config_dict.keys())):
+                raise TypeError(
+                    f"Invalid or Malformed key, please make sure {self.config_path} is correctly defined"
+                )
+
+            for key in self.config_dict:
+                if not (
+                    all(isinstance(value, str) for value in self.config_dict[key])
+                    & all(
+                        valid_string(value)
+                        for value in self.config_dict[key]
+                    )
+                ):
+                    raise TypeError(
+                        f"Invalid or Malformed value, please make sure {self.config_path} is correctly defined"
+                    )
+                
+                for value in self.config_dict[key]:
+                    if value in self.intents:
+                        raise ValueError(
+                            f"Duplicate key found {value}. Please check {self.config_path}"
+                        )
+                    else:
+                        self.intents.add(value)
+
+    def generate(self) -> dict:
+        """
+        Create, validate, and return a dictionary mapping between intent and their respective aliases. 
+        :rtype: Dict[str, str]
+        """
+        self.config_dict: Dict[str] = self.get_config_dict()
+        self.validate()      
+        alias_dict = self.get_alias_dict() if self.config_dict else {}
+        return alias_dict
+
 
 def load_gen_config():
     project_config_map = YAMLLocalConfig().generate()

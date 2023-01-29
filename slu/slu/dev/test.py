@@ -18,6 +18,7 @@ from slu import constants as const
 from slu.src.controller.prediction import get_predictions
 from slu.utils import logger
 from slu.utils.config import Config, YAMLLocalConfig
+from slu.utils.preprocessing import make_label_column_uniform, make_data_column_uniform, make_reftime_column_uniform
 
 
 def zoom_out_labels(labels: List[str]):
@@ -145,10 +146,16 @@ def test_classifier(args: argparse.Namespace):
     predict_api = get_predictions(const.TEST, config=config, debug=False)
     dataset = dataset or config.get_dataset(const.CLASSIFICATION, f"{const.TEST}.csv")
     test_df = pd.read_csv(dataset)
+    test_df = make_label_column_uniform(test_df,const.ALIAS_EVAL_PATH)
+    test_df = make_data_column_uniform(test_df)
+    test_df = make_reftime_column_uniform(test_df)
     test_df = test_df[~test_df[const.TAG].isin(config.tasks.classification.skip)]
     test_df = test_df[test_df[const.ALTERNATIVES] != "[]"]
-    test_df = test_df.replace({const.TAG: config.tasks.classification.alias})
 
+    logger.info(
+        f"Model will be tested for the following classes:\
+        \n{test_df[const.TAG].value_counts(dropna=False)}"
+    )
     logger.info("Running predictions")
     predictions = []
     logger.disable("slu")
