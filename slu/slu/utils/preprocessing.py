@@ -58,7 +58,7 @@ def make_reftime_column_uniform(data_frame: pd.DataFrame) -> pd.DataFrame:
 
     return data_frame
 
-def make_data_column_uniform(data_frame: pd.DataFrame) -> None:
+def make_data_column_uniform(data_frame: pd.DataFrame) -> pd.DataFrame:
     if const.ALTERNATIVES in data_frame.columns:
         column = const.ALTERNATIVES
     elif const.DATA in data_frame.columns:
