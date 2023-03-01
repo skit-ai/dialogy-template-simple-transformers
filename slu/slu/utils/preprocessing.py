@@ -75,7 +75,7 @@ def make_data_column_uniform(data_frame: pd.DataFrame) -> pd.DataFrame:
         if isinstance(row[const.ALTERNATIVES], str):
             data = json.loads(row[const.ALTERNATIVES])
             if isinstance(data, str):
-                data = json.loads(row[const.ALTERNATIVES])
+                data = json.loads(data)
             if const.ALTERNATIVES in data:
                 data_frame.loc[i, const.ALTERNATIVES] = json.dumps(
                     data[const.ALTERNATIVES], ensure_ascii=False
