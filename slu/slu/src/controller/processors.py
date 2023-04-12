@@ -65,7 +65,10 @@ class SLUPipeline:
             # url works only in development mode.
             # You need to set its real value in k8s configs or wherever you keep your
             # env-vars safe.
-            url=os.environ.get("DUCKLING_URL", "http://localhost:8000/parse/"),
+            url=os.environ.get(
+                "DUCKLING_URL",
+                f"http://{os.environ.get('DUCKLING_HOST', 'localhost:8000')}/parse",
+            ),
             use_transform=False,
             debug=self.debug,
         )
