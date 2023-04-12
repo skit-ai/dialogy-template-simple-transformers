@@ -146,3 +146,5 @@ runs
 cache_dir
 htmlcov/
 .repl_history
+
+.DS_Store

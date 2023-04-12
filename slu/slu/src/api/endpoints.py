@@ -72,7 +72,7 @@ async def health_check(probe_type, background_tasks: BackgroundTasks):
         intent = response[const.INTENTS][0]
 
         assert (
-            intent["name"] == expected_intent
+                intent["name"] == expected_intent
         ), f"{expected_intent=},{intent['name']=} "
 
         if expected_entity_type and expected_entity_value:
@@ -80,10 +80,10 @@ async def health_check(probe_type, background_tasks: BackgroundTasks):
             entity_value = intent["slots"][0]["values"][0]["value"]
 
             assert (
-                entity_type == expected_entity_type
+                    entity_type == expected_entity_type
             ), f"{expected_entity_type=},{entity_type=} "
             assert (
-                entity_value == expected_entity_value
+                    entity_value == expected_entity_value
             ), f"{expected_entity_value=},{entity_value=} "
 
         if probe_type == "startup":
@@ -148,21 +148,20 @@ async def slu(lang: str, model_name: str, payload: Input):
         history: List[Dict[str, Any]] = request.get(const.HISTORY) or []
         intents_info: List[Dict[str, Any]] = request.get(const.INTENTS_INFO) or []
 
-        try:
-            response = PREDICT_API(
-                alternatives=utterance,
-                context=context,
-                intents_info=intents_info,
-                history=history,
-                lang=lang,
-            )
-            history.append(response)
-            return JSONResponse(
-                dict(status="ok", response=response, history=history), status_code=200
-            )
+        response = PREDICT_API(
+            alternatives=utterance,
+            context=context,
+            intents_info=intents_info,
+            history=history,
+            lang=lang,
+        )
+        history.append(response)
+        return JSONResponse(
+            dict(status="ok", response=response, history=history), status_code=200
+        )
 
-        except OSError as os_error:
-            return error_response.missing_models(os_error)
+    except FileNotFoundError as io_error:
+        return error_response.missing_models(io_error)
 
     except Exception as exc:
         # Update this section to:

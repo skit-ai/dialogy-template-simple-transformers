@@ -25,7 +25,6 @@ RUN dvc pull
 
 COPY ./slu ./slu
 COPY ./config ./config
-COPY ./server_fault_notif.py ./server_fault_notif.py
 
 ENV GOOGLE_MAPS_API_TOKEN=$GOOGLE_MAPS_API_TOKEN
 ENV MMI_CLIENT_ID=$MMI_CLIENT_ID

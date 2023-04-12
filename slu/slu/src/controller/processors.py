@@ -5,8 +5,8 @@ from dialogy import plugins
 from dialogy.base.plugin import Plugin
 from dialogy.workflow import Workflow
 
+from slu.src.controller.plugin_proxy import PluginProxy, PluginProxyFused
 from slu import constants as const
-from slu.src.controller.custom_plugins import OOSFilterPlugin
 from slu.utils.config import Config, load_gen_config, load_prompt_config
 
 
@@ -43,11 +43,11 @@ class SLUPipeline:
             ),
             debug=self.debug,
         )
-
-        oos_filter = OOSFilterPlugin(
+        oos_filter = plugins.OOSFilterPlugin(
             dest="output.intents",
             threshold=self.config.get_model_confidence_threshold(const.CLASSIFICATION),
             replace_output=True,
+            intent_oos=const.INTENT_OOS,
             guards=[lambda i, o: purpose != const.PRODUCTION],
         )
 
@@ -97,6 +97,26 @@ class SLUPipeline:
         ]
 
     @staticmethod
+    def fuse_plugins(plugins):
+        _plugins = []
+        i = 0
+        while i < len(plugins):
+            if isinstance(plugins[i], PluginProxy):
+                fusable = []
+                while isinstance(plugins[i], PluginProxy):
+                    fusable.append(plugins[i])
+                    i += 1
+                if len(fusable) == 1:
+                    _plugins.append(fusable[0])
+                else:
+                    _plugins.append(PluginProxyFused([p.plugin_name for p in fusable]))
+            else:
+                _plugins.append(plugins[i])
+                i += 1
+
+        return _plugins
+
+    @staticmethod
     def filter_plugins(all_plugins, final_plugin):
         """
         This will ensure that pipeline runs till final_plugin only and then returns.
@@ -111,4 +131,5 @@ class SLUPipeline:
         if final_plugin:
             self.plugins = self.filter_plugins(self.plugins, final_plugin)
 
-        return Workflow(self.plugins, debug=self.debug)
+        self.plugins = self.fuse_plugins(self.plugins)
+        return Workflow(self.plugins, debug=True)
