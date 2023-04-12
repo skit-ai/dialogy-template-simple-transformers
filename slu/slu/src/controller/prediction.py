@@ -2,23 +2,21 @@
 This module provides a simple interface to provide text features
 and receive Intent and Entities.
 """
-import copy
 import operator
-import os
 import time
+import datetime as dt
 from datetime import datetime, timedelta
 from pprint import pformat
 from typing import Any, Dict, List, Optional
 
 import pytz
-from dialogy.base import Input
+from dialogy.base import Input, Output
 from requests import exceptions
 
 from slu import constants as const
 from slu.src.controller.processors import SLUPipeline
 from slu.utils import logger
-from slu.utils.config import Config, YAMLLocalConfig
-from slu.utils.make_test_cases import build_test_case
+from slu.utils.config import Config
 
 
 def get_reftime(config: Config, context: Dict[str, Any], lang: str):
@@ -53,6 +51,23 @@ def get_reftime(config: Config, context: Dict[str, Any], lang: str):
     return int(reference_time.timestamp() * 1000)
 
 
+def serialize(d):
+    if isinstance(d, (dt.date, dt.datetime)):
+        return d.isoformat()
+    elif isinstance(d, list):
+        return [serialize(x) for x in d]
+    elif isinstance(d, dict):
+        return {key: serialize(val) for key, val in d.items()}
+    else:
+        return d
+
+
+def reformat_output(output_dict: Dict[str, Any]) -> Dict[str, Any]:
+    intent_slots = output_dict["intents"][0]["slots"]
+    output_dict["intents"][0]["slots"] = [slot_val for slot_key, slot_val in intent_slots.items()]
+    return serialize(output_dict)
+
+
 def get_predictions(purpose, final_plugin=None, **kwargs):
     """
     Create a closure for the predict function.
@@ -84,6 +99,9 @@ def get_predictions(purpose, final_plugin=None, **kwargs):
             logger.info("setting default lang=hi since no lang was provided")
             lang = "hi"
 
+        if isinstance(alternatives[0], dict):
+            alternatives = [alternatives]
+
         start_time = time.perf_counter()
         reference_time_as_unix_epoch = get_reftime(pipeline.config, context, lang)
 
@@ -96,7 +114,7 @@ def get_predictions(purpose, final_plugin=None, **kwargs):
             timezone="Asia/Kolkata",
             current_state=context.get(const.CURRENT_STATE),
             previous_intent=context.get(const.CURRENT_INTENT),
-            expected_slots=context.get(const.EXPECTED_SLOTS),
+            expected_slots=context.get(const.EXPECTED_SLOTS, []),
             nls_label=context.get(const.NLS_LABEL),
         )
 
@@ -104,13 +122,10 @@ def get_predictions(purpose, final_plugin=None, **kwargs):
         try:
             _, output = workflow.run(input_)
         except exceptions.ConnectionError as error:
-            if os.environ.get("ENVIRONMENT") == const.PRODUCTION:
-                message = "Could not connect to duckling."
-            else:
-                message = "Could not connect to duckling. If you don't need duckling then it seems safe to remove it in this environment."
-            raise exceptions.ConnectionError(message) from error
+            message = "Could not connect to microservice"
+            raise exceptions.ConnectionError(message, error)
 
-        intents = output.get(const.INTENTS, [])
+        intents = output.intents
 
         confidence_levels = pipeline.config.tasks.classification.confidence_levels
 
@@ -125,10 +140,16 @@ def get_predictions(purpose, final_plugin=None, **kwargs):
                     intent[const.CONFIDENCE_LEVEL] = const.HIGH
 
         if intents and purpose == const.PRODUCTION:
-            output[const.INTENTS] = intents[:1]
+            output = Output.from_dict(
+                {
+                    "intents": intents[:1],
+                    "entities": output.entities,
+                    "original_intent": output.original_intent,
+                }
+            )
 
-        logger.debug(f"Output:\n{output}")
+        logger.debug(f"Output:\n{pformat(output.dict())}")
         logger.info(f"Duration: {time.perf_counter() - start_time}s")
-        return output
+        return reformat_output(output.dict())
 
     return predict
