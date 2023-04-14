@@ -9,6 +9,7 @@ from typing import List, Optional
 
 import pandas as pd
 from dialogy.utils import create_timestamps_path
+from dialogy.base.output import Output
 from pandas.core.reshape.merge import merge
 from sklearn.metrics import classification_report, confusion_matrix
 from tabulate import tabulate
@@ -18,7 +19,6 @@ from slu import constants as const
 from slu.src.controller.prediction import get_predictions
 from slu.utils import logger
 from slu.utils.config import Config, YAMLLocalConfig
-
 
 def zoom_out_labels(labels: List[str]):
     """
