@@ -151,7 +151,7 @@ def test_classifier(args: argparse.Namespace):
 
     logger.info("Running predictions")
     predictions = []
-    # logger.disable("slu")
+    logger.disable("slu")
     logger.disable("dialogy")
 
     config.tasks.classification.threshold = 0
@@ -171,7 +171,9 @@ def test_classifier(args: argparse.Namespace):
                 }
             )
         except Exception as e:
+            logger.enable("slu")
             logger.error(f"skipping {row[const.ALTERNATIVES]} because {e}")
+            logger.disable("slu")
 
         intents = output.get(const.INTENTS, [])
         predictions.append(
