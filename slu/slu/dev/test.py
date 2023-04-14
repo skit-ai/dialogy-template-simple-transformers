@@ -151,21 +151,28 @@ def test_classifier(args: argparse.Namespace):
 
     logger.info("Running predictions")
     predictions = []
-    logger.disable("slu")
+    # logger.disable("slu")
+    logger.disable("dialogy")
+
     config.tasks.classification.threshold = 0
 
     for _, row in tqdm(test_df.iterrows(), total=test_df.shape[0]):
-        output = predict_api(
-            **{
-                const.ALTERNATIVES: json.loads(row[const.ALTERNATIVES]),
-                const.CONTEXT: {
-                    const.CURRENT_STATE: row.get(const.STATE),
-                    const.NLS_LABEL: row.get(const.NLS_LABEL),
-                },
-                const.LANG: lang,
-                "ignore_test_case": True,
-            }
-        )
+        output = Output().dict()
+        try:
+            output = predict_api(
+                **{
+                    const.ALTERNATIVES: json.loads(row[const.ALTERNATIVES]),
+                    const.CONTEXT: {
+                        const.CURRENT_STATE: row.get(const.STATE),
+                        const.NLS_LABEL: row.get(const.NLS_LABEL),
+                    },
+                    const.LANG: lang,
+                    "ignore_test_case": True,
+                }
+            )
+        except Exception as e:
+            logger.error(f"skipping {row[const.ALTERNATIVES]} because {e}")
+
         intents = output.get(const.INTENTS, [])
         predictions.append(
             {
@@ -176,6 +183,8 @@ def test_classifier(args: argparse.Namespace):
         )
 
     logger.enable("slu")
+    logger.enable("dialogy")
+
     predictions_df = pd.DataFrame(predictions)
     dir_path = create_timestamps_path(
         config.get_metrics_dir(const.CLASSIFICATION),
