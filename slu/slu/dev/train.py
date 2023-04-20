@@ -1,3 +1,4 @@
+from slu.utils.preprocessing import make_label_column_uniform, make_data_column_uniform, make_reftime_column_uniform
 """
 Routine for Classifier and NER training.
 """
@@ -17,75 +18,7 @@ from slu import constants as const
 from slu.src.controller.processors import SLUPipeline
 from slu.utils import logger
 from slu.utils.config import Config, YAMLLocalConfig
-
-
-def make_label_column_uniform(data_frame: pd.DataFrame) -> None:
-    if const.INTENTS in data_frame.columns:
-        column = const.INTENTS
-    elif const.LABELS in data_frame.columns:
-        column = const.LABELS
-    elif const.TAG in data_frame.columns:
-        column = const.TAG
-    else:
-        raise ValueError(
-            f"Expected one of {const.LABELS}, {const.TAG} to be present in the dataset."
-        )
-    data_frame.rename(columns={column: const.TAG}, inplace=True)
-
-
-def reftime_patterns(reftime: str):
-    time_fns = [
-        datetime.fromisoformat,
-        lambda date_string: datetime.strptime(
-            date_string, "%Y-%m-%d %H:%M:%S.%f %z %Z"
-        ),
-        lambda date_string: datetime.strptime(date_string, "%Y-%m-%dT%H:%M:%SZ"),
-        lambda date_string: datetime.strptime(date_string, "%Y-%m-%dT%H:%M:%S.%f%z"),
-    ]
-    for time_fn in time_fns:
-        try:
-            return time_fn(reftime)
-        except ValueError:
-            continue
-    raise ValueError(f"Could not parse reftime {reftime}")
-
-
-def make_reftime_column_uniform(data_frame: pd.DataFrame) -> None:
-    if const.REFERENCE_TIME not in data_frame.columns:
-        return
-
-    for i, row in tqdm(
-        data_frame.iterrows(), total=len(data_frame), desc="Fixing reference time"
-    ):
-        if row[const.REFERENCE_TIME] is not None and not pd.isna(
-            row[const.REFERENCE_TIME]
-        ):
-            data_frame.loc[i, const.REFERENCE_TIME] = reftime_patterns(
-                row[const.REFERENCE_TIME]
-            ).isoformat()
-
-
-def make_data_column_uniform(data_frame: pd.DataFrame) -> None:
-    if const.ALTERNATIVES in data_frame.columns:
-        column = const.ALTERNATIVES
-    elif const.DATA in data_frame.columns:
-        column = const.DATA
-    else:
-        raise ValueError(
-            f"Expected one of {const.ALTERNATIVES}, {const.DATA} to be present in the dataset."
-        )
-    data_frame.rename(columns={column: const.ALTERNATIVES}, inplace=True)
-
-    for i, row in tqdm(
-        data_frame.iterrows(), total=len(data_frame), desc="Fixing data structure"
-    ):
-        if isinstance(row[const.ALTERNATIVES], str):
-            data = json.loads(row[const.ALTERNATIVES])
-            if const.ALTERNATIVES in data:
-                data_frame.loc[i, const.ALTERNATIVES] = json.dumps(
-                    data[const.ALTERNATIVES]
-                )
-
+from slu.utils.preprocessing import make_label_column_uniform, make_data_column_uniform, make_reftime_column_uniform
 
 def create_data_splits(args: argparse.Namespace) -> None:
     """
@@ -115,18 +48,14 @@ Data already exists in {dest}
 
     data_frame = pd.read_csv(dataset_file)
     logger.debug(f"Data frame: {data_frame.shape}")
+    data_frame = make_label_column_uniform(data_frame, const.ALIAS_TRAIN_PATH)
     skip_list = config.get_skip_list(const.CLASSIFICATION)
-    # Replacing intents with their alias
-    data_frame = data_frame.replace({const.TAG: config.tasks.classification.alias})
+    skip_filter = data_frame[const.TAG].isin(skip_list)
     logger.info(
         f"Model will be trained for the following classes:\
         \n{data_frame[const.TAG].value_counts(dropna=False)}"
     )
-    make_label_column_uniform(data_frame)
-    make_data_column_uniform(data_frame)
-    make_reftime_column_uniform(data_frame)
-
-    skip_filter = data_frame[const.TAG].isin(skip_list)
+    
     failed_transcripts = data_frame[const.ALTERNATIVES].isin(["[[]]", "[]"])
     non_empty_transcripts = data_frame[const.ALTERNATIVES].isna()
     invalid_samples = skip_filter | non_empty_transcripts | failed_transcripts
@@ -190,9 +119,13 @@ def train_intent_classifier(args: argparse.Namespace) -> None:
     logger.info("Preparing dataset.")
     dataset = dataset or config.get_dataset(const.CLASSIFICATION, f"{const.TRAIN}.csv")
     data_frame = pd.read_csv(dataset)
-    make_label_column_uniform(data_frame)
-    make_data_column_uniform(data_frame)
-    make_reftime_column_uniform(data_frame)
+    data_frame = make_label_column_uniform(data_frame, const.ALIAS_TRAIN_PATH)
+    data_frame = make_data_column_uniform(data_frame)
+    data_frame = make_reftime_column_uniform(data_frame)
+    logger.info(
+        f"Model will be trained for the following classes:\
+        \n{data_frame[const.TAG].value_counts(dropna=False)}"
+    )
 
     logger.info("Training started.")
     workflow.train(data_frame)

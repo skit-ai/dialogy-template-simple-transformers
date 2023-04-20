@@ -1,0 +1,14 @@
+- type: alias_validity
+  args:
+    file: tests/test_contextual_slu/data/input/invalid-alias-1.yaml
+    is_valid: False
+
+- type: alias_validity
+  args:
+    file: tests/test_contextual_slu/data/input/invalid-alias-2.yaml
+    is_valid: False
+
+- type: alias_validity
+  args:
+    file: tests/test_contextual_slu/data/input/invalid-alias-3.yaml
+    is_valid: False
